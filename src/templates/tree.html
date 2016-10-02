@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+
+<html>
+	<head>
+		<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+		<script type="text/javascript" src="https://cdn.rawgit.com/asvd/dragscroll/master/dragscroll.js"></script>
+		<link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+		<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+		<script src="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+		<script src="http://davidlynch.org/projects/maphilight/jquery.maphilight.min.js"></script>
+		
+		<style>
+			#person-snippet-container {
+				margin-bottom: -20px;
+				
+			}
+			#person-snippet-container .panel-body {
+				padding: 10px 15px 0px 15px;
+				max-height: 180px;
+				min-height: 180px;
+				overflow-y: auto;
+			}
+			
+			#person-snippet-container .panel-heading {
+				padding: 5px 15px 5px 15px;
+			}
+			
+			.hilighted-person {
+			    position: absolute;
+			    box-shadow: 0px 0px 50px #0000ff;
+                border-radius: 10px;
+			}
+			
+			
+		</style>	
+		<script>
+		    // отображает информацию о персоне в блоке внизу страницы
+			function viewPersonSnippet(person_uid) {
+			    snippet = $('#snippets').find('#snippet-for-'+person_uid).first().clone(withDataAndEvents=true);
+				setPersonSnippet(snippet);
+			}
+
+			function hilightPersonArea(person_uid) {
+			    var person_area = $('#tree-map .select-person-'+person_uid);
+                if (!person_area.length) {
+                    return; // некоторые персоны могут не присутствовать в дереве
+                }    
+			    coords = person_area.attr('coords').split(',').map(function(item) {
+					return parseInt(item, 10);
+				});
+			
+				var left = coords[0];
+				var top = coords[1];
+				var width = coords[2] - left;
+				var height = coords[3] - top;
+
+                scrollIfNeed(left, top, width, height);                
+				
+				h = $('.hilighted-person');
+				h.css({'left': left+'px', 'top': top+'px', 'width': width+'px', 'height': height+'px'});
+			}
+            
+            function scrollIfNeed(left, top, width, height) {
+                var scrollTop = document.body.scrollTop;
+                var scrollLeft = document.body.scrollLeft;
+                // ширина и высота области для отображения документа в браузере
+                var wWidth = document.documentElement.clientWidth; 
+                var wHeight = document.documentElement.clientHeight;
+                var navHeight = $('#person-snippet-container').height();
+                
+                // если area целиком влазит в экран (и не скрыта нижней панелью) - скролллинг не нужен (ее и так видно)
+                var padding = 10
+                if (scrollLeft+padding < left && left+width+padding < scrollLeft+wWidth &&
+                    scrollTop+padding < top && top+height+padding < scrollTop+wHeight-navHeight) {
+                    return;
+                }    
+                // позиция, которая будет в левом верхнем углу браузера
+                window.scrollTo(left+width/2-wWidth/2, top+height/2-(wHeight-navHeight)/2);               
+            }
+			
+		</script>
+		{% import 'person_snippet.html' as ps %}
+		
+	</head>
+	<body class="dragscroll">
+
+			<img id="tree-img" src="/static/tree/tree_img.png" usemap="#tree_nodes_map" style="display: block; cursor: move;"></img>
+			<map id="tree-map" name='tree_nodes_map'>
+				{% for person_uid, node in map.nodes.items() %}
+				<area class="select-person-{{person_uid}}" coords="{{node.rect}}" shape="rect" href="#">
+				{% endfor %}
+			</map>
+			<div class='hilighted-person'></div>
+
+			<nav id="person-snippet-container" class="navbar navbar-default navbar-fixed-bottom">
+			</nav>
+			
+			<script>
+				function setPersonSnippet(snippet) {
+					var container = $('#person-snippet-container');
+					container.empty();
+					container.append(snippet);
+				}
+			</script>
+			
+			<div id="snippets" style="display:none;">
+				{% for person_uid, person_snippet in person_snippets.items() %}
+					<div id="snippet-for-{{person_uid}}">
+						{{ ps.draw_person_snippet(person_snippet) }}
+					</div>
+					<!--comment надо навесить такую функцию на все элементы имеющие определенный класс -->
+					<script>
+						$(document).ready(function(){
+						    items = $(".select-person-{{person_uid}}");
+							$(".select-person-{{person_uid}}").click(function(e) {
+								e.preventDefault();
+								viewPersonSnippet('{{person_uid}}');
+								hilightPersonArea('{{person_uid}}');
+							});
+						});
+					</script>
+				{% endfor %}
+			</div>	
+		
+	</body>
+</html>

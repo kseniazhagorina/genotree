@@ -1,0 +1,6 @@
+tree
+data
+/__pycache__
+/.ipynb_checkpoints
+__pycache__
+/src/*.pyc
