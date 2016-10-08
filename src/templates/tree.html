@@ -7,13 +7,14 @@
 		<link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
 		<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
 		<script src="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
-		<script src="http://davidlynch.org/projects/maphilight/jquery.maphilight.min.js"></script>
 		
 		<style>
 			#person-snippet-container {
-				margin-bottom: -20px;
-				
+				margin-bottom: 18px;
 			}
+            #person-snippet-container .panel {
+                margin-bottom: 0px;
+            }
 			#person-snippet-container .panel-body {
 				padding: 10px 15px 0px 15px;
 				max-height: 180px;
@@ -30,8 +31,18 @@
 			    box-shadow: 0px 0px 50px #0000ff;
                 border-radius: 10px;
 			}
-			
-			
+            body {
+                padding: 0px;
+            }
+            
+            #tree-container {
+                position: absolute;
+                overflow: auto;
+                width: 100%;
+                height: 100vh;
+                cursor: move;
+            }
+		
 		</style>	
 		<script>
 		    // отображает информацию о персоне в блоке внизу страницы
@@ -61,12 +72,14 @@
 			}
             
             function scrollIfNeed(left, top, width, height) {
-                var scrollTop = document.body.scrollTop;
-                var scrollLeft = document.body.scrollLeft;
-                // ширина и высота области для отображения документа в браузере
-                var wWidth = document.documentElement.clientWidth; 
-                var wHeight = document.documentElement.clientHeight;
+                tree = $('#tree-container')
+                var scrollTop = tree.scrollTop();
+                var scrollLeft = tree.scrollLeft();
+                
+                var wWidth = tree.width(); 
+                var wHeight = tree.height();
                 var navHeight = $('#person-snippet-container').height();
+
                 
                 // если area целиком влазит в экран (и не скрыта нижней панелью) - скролллинг не нужен (ее и так видно)
                 var padding = 10
@@ -75,23 +88,26 @@
                     return;
                 }    
                 // позиция, которая будет в левом верхнем углу браузера
-                window.scrollTo(left+width/2-wWidth/2, top+height/2-(wHeight-navHeight)/2);               
+                tree.scrollLeft(left+width/2-wWidth/2);
+                tree.scrollTop(top+height/2-(wHeight-navHeight)/2);               
             }
 			
 		</script>
 		{% import 'person_snippet.html' as ps %}
 		
 	</head>
-	<body class="dragscroll">
-
-			<img id="tree-img" src="/static/tree/tree_img.png" usemap="#tree_nodes_map" style="display: block; cursor: move;"></img>
-			<map id="tree-map" name='tree_nodes_map'>
-				{% for person_uid, node in map.nodes.items() %}
-				<area class="select-person-{{person_uid}}" coords="{{node.rect}}" shape="rect" href="#">
-				{% endfor %}
-			</map>
-			<div class='hilighted-person'></div>
-
+	<body>
+            <div id="tree-container" class="dragscroll">
+                <img id="tree-img" src="/static/tree/tree_img.png" usemap="#tree_nodes_map"></img>
+                <div class='hilighted-person'></div>
+                
+                <map id="tree-map" name='tree_nodes_map'>
+                    {% for person_uid, node in map.nodes.items() %}
+                    <area class="select-person-{{person_uid}}" coords="{{node.rect}}" shape="rect" href="#">
+                    {% endfor %}
+                </map>
+			
+            </div>
 			<nav id="person-snippet-container" class="navbar navbar-default navbar-fixed-bottom">
 			</nav>
 			
