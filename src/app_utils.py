@@ -5,6 +5,7 @@ import os.path
 import xml.etree.ElementTree
 from gedcom import GedcomReader
 from geddate import GedDate
+from privacy import hide_address
 import re
 
 def first_or_default(arr, predicate=None, default=None):
@@ -86,10 +87,10 @@ class PersonSnippet:
             self.place = place
             self.info = info # доп.информация отображаемая в скобочках
     class RelPerson:
-        def __init__(self, role, uid, name=None):
-            self.uid = uid
+        '''человек+отношение'''
+        def __init__(self, role, person=None):
             self.role = role
-            self.name = name
+            self.person = person #PersonSnippet
     class Family:
         def __init__(self, spouse=None, children=None):
             self.spouse = spouse #RelPerson
@@ -132,7 +133,7 @@ def get_person_snippets(gedcom):
         death_event = first_or_default(person.events, lambda e: e.event_type == "DEAT")
         residence_event = first_or_default(person.events, lambda e: e.event_type == "RESI" and 'PLAC' in e and \
                                      ('NOTE' not in e or ('Откуда:' not in e['NOTE'] and 'Куда:' not in e['NOTE'])))
-        residence_place = residence_event.get('PLAC', None) if residence_event else None
+        residence_place = hide_address(residence_event.get('PLAC', None)) if residence_event else None
         
         indi_to_uid[person.id] = person_uid
         snippet = PersonSnippet(person_uid, 
@@ -140,36 +141,37 @@ def get_person_snippets(gedcom):
                                 photo=photo,
                                 sex=sex,
                                 main_occupation=main_occupation, 
-                                residence=residence_place, 
+                                residence=residence_place,
+                                # позже при обработке семей будут назначены реальные люди                                
+                                mother=PersonSnippet.RelPerson('Мать'),
+                                father=PersonSnippet.RelPerson('Отец'),
                                 comment=comment)
         if birth_event is not None:
             birth_date = GedDate.parse(birth_event.get('DATE', ''))
-            snippet.birth = PersonSnippet.Event(date=birth_date, place=birth_event.get('PLAC', None))
+            snippet.birth = PersonSnippet.Event(date=birth_date, place=hide_address(birth_event.get('PLAC', None)))
         if death_event is not None:
             death_date = GedDate.parse(death_event.get('DATE', ''))
-            snippet.death = PersonSnippet.Event(date=death_date, place=death_event.get('PLAC', None))
+            snippet.death = PersonSnippet.Event(date=death_date, place=hide_address(death_event.get('PLAC', None)))
         snippets[person_uid] = snippet   
     
     for family in gedcom.families:
         wife = snippets.get(indi_to_uid.get(family.get('WIFE')), None)
         husband = snippets.get(indi_to_uid.get(family.get('HUSB')), None)
-        mother = PersonSnippet.RelPerson('Мать', wife.uid, wife.name) if wife else None
-        father = PersonSnippet.RelPerson('Отец', husband.uid, husband.name) if husband else None
         children = []
         for child_indi in family.get('CHIL', []):
             child = snippets.get(indi_to_uid.get(child_indi), None)
             if child is None:
                 print ('cant find child with id ['+child_indi+']')
                 continue
-            child.mother = mother
-            child.father = father 
+            child.mother.person = wife
+            child.father.person = husband 
             child_role = child.choose_by_sex('Сын', 'Дочь', 'Ребенок')
-            children.append(PersonSnippet.RelPerson(child_role, child.uid, child.name))
+            children.append(PersonSnippet.RelPerson(child_role, child))
         if wife:
-            spouse = PersonSnippet.RelPerson('Супруг', husband.uid, husband.name) if husband else None
+            spouse = PersonSnippet.RelPerson('Супруг', husband)
             wife.families.append(PersonSnippet.Family(spouse, children))
         if husband:
-            spouse = PersonSnippet.RelPerson('Супруга', wife.uid, wife.name) if wife else None
+            spouse = PersonSnippet.RelPerson('Супруга', wife)
             husband.families.append(PersonSnippet.Family(spouse, children))     
             
     return snippets
