@@ -21,9 +21,8 @@
 				<div class="col-md-6 media">
 					<div class="media-left">
 						<a href="#" class='select-person-{{person.uid}}'><img 
-                            {% if person.photo %} src="/static/tree/tr_tree.files/{{person.photo}}" 
-                            {% else %} src="/static/{{person.choose_by_sex('BlankMale.jpg', 'BlankFemale.jpg')}}" 
-                            {% endif %} 
+                            src="/static/{{person.choose_by_sex('BlankMale.jpg', 'BlankFemale.jpg')}}"
+                            {% if person.photo %} lazy-src="/static/tree/tr_tree.files/{{person.photo}}" {% endif %} 
                             class="img-fluid img-rounded" style="max-width: 160px; max-height: 160px;"/>
                         </a>
 					</div>	

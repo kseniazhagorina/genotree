@@ -5,8 +5,8 @@
 		<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
 		<script type="text/javascript" src="https://cdn.rawgit.com/asvd/dragscroll/master/dragscroll.js"></script>
 		<link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
-		<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
 		<script src="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+        <link rel="icon" href="/static/favicon.png">
 		
 		<style>
 			#person-snippet-container {
@@ -45,9 +45,20 @@
 		
 		</style>	
 		<script>
+            // загружает фотографии имеющие аттрибут lazy-src
+            function loadLazyContent(container) {
+                container.find('img[lazy-src]').each(function(){
+                    var img = $(this);
+                    img.attr("src", img.attr("lazy-src"));
+                    img.removeAttr("lazy-src");
+                });
+            }
+            
 		    // отображает информацию о персоне в блоке внизу страницы
 			function viewPersonSnippet(person_uid) {
-			    snippet = $('#snippets').find('#snippet-for-'+person_uid).first().clone(withDataAndEvents=true);
+			    var snippet = $('#snippets').find('#snippet-for-'+person_uid).first();
+                loadLazyContent(snippet);
+                snippet = snippet.clone(withDataAndEvents=true);
 				setPersonSnippet(snippet);
 			}
 
@@ -91,6 +102,8 @@
                 tree.scrollLeft(left+width/2-wWidth/2);
                 tree.scrollTop(top+height/2-(wHeight-navHeight)/2);               
             }
+        
+            
 			
 		</script>
 		{% import 'person_snippet.html' as ps %}
