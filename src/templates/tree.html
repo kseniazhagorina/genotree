@@ -31,6 +31,11 @@
 			    box-shadow: 0px 0px 50px #0000ff;
                 border-radius: 10px;
 			}
+            
+            .map-search-tag {
+                position:absolute;
+                z-index: -1;
+            }
             body {
                 padding: 0px;
             }
@@ -113,6 +118,14 @@
             <div id="tree-container" class="dragscroll">
                 <img id="tree-img" src="/static/tree/tree_img.png" usemap="#tree_nodes_map"></img>
                 <div class='hilighted-person'></div>
+                <!-- поисковые теги - невидимые надписи под картой - используются для ctrl+F -->
+                {% for person_uid, node in map.nodes.items() %}
+                    {% if person_uid in person_snippets %}
+                        {% set person = person_snippets[person_uid] %}
+                        <div class="map-search-tag" style="top: {{node.y1}}px; left: {{node.x1}}px;">{{person.name}}</div>
+                    {% endif %}
+                {% endfor %}    
+                            
                 
                 <map id="tree-map" name='tree_nodes_map'>
                     {% for person_uid, node in map.nodes.items() %}

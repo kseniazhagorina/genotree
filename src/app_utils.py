@@ -57,7 +57,7 @@ class GedName:
         parts = []
         if self.surname != "":
             parts.append(self.surname)
-        if self.surname_at_birth != "":
+        if self.surname_at_birth != "" and self.surname_at_birth != self.surname:
             parts.append('('+self.surname_at_birth+')')
         parts.append(self.name if self.name != "" else '...')
         if self.patronymic != "":
