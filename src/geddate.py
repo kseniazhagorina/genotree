@@ -10,7 +10,7 @@ class ReMaker:
         def __call__(self, _match):
             self.ind += 1
             return self.name + '_{0:04}'.format(self.ind)
-            
+
     def __init__(self, group_names):
         self.group_names = dict([(name, ReMaker.NextName(name)) for name in group_names])
 
@@ -22,25 +22,25 @@ class ReMaker:
         for name, get_next_name in self.group_names.items():
             regex_string = re.sub(r'(?<=\(\?P<){0}(?=>)'.format(name), get_next_name, regex_string)
         return regex_string
-        
+
     def remove_groups(self, regex_string):
         for name in self.group_names:
             regex_string = re.sub('\?P<{0}>'.format(name), "", regex_string)
-        return regex_string    
+        return regex_string
 
-    @staticmethod    
+    @staticmethod
     def group(match, name):
         groups = [(gname, gvalue) for gname,gvalue in match.groupdict().items() if gname.startswith(name+'_') and gvalue is not None]
         groups = list(sorted(groups, key=lambda item: item[0])) #sort by gname
         if len(groups) > 0:
             return groups[0][1]
-        return None    
+        return None
 
 class GedDate:
     '''
     дата для генеалогических целей - какие-то части могут отсутствовать
     а также есть специальные пометки для обозначения временных периодов и точности
-    http://wiki-en.genealogy.net/GEDCOM/DATE-Tag 
+    http://wiki-en.genealogy.net/GEDCOM/DATE-Tag
     '''
 
     STANDARD = 0
@@ -88,7 +88,7 @@ class DateFormat(object):
         '''
         rm = ReMaker(['day', 'month', 'year'])
         self.date_regex = re.compile(rm.rename_groups('^{0}$'.format(date_regex)))
-        
+
         self.type_to_format = formats
         self.regex_to_type = []
         # собираем регулярки в которых day, month и year уже непоименованы
@@ -101,7 +101,7 @@ class DateFormat(object):
                                 date_format.format(d1, d2))
             format_regex = re.compile(format_regex_str)
             self.regex_to_type.append((format_regex, date_type))
-							
+
         self.monthes = monthes
 
 

@@ -5,15 +5,16 @@ import os.path
 import xml.etree.ElementTree
 from gedcom import GedcomReader
 from geddate import GedDate
-from privacy import hide_address
+from genery_note import Note
+from privacy import PrivacyMode, Privacy
 import re
 
 def first_or_default(arr, predicate=None, default=None):
     for item in arr:
         if predicate is None or predicate(item):
             return item
-    return default    
-    
+    return default
+
 
 class TreeMap:
     class Node:
@@ -24,7 +25,7 @@ class TreeMap:
             self.x2 = node.attrib['x2']
             self.y2 = node.attrib['y2']
             self.rect = ','.join([self.x1, self.y1, self.x2, self.y2])
-   
+
     def __init__(self, root):
         self.date = root.attrib['date']
         self.height = root.attrib['height']
@@ -50,7 +51,7 @@ class GedName:
         self.surname = surname or ""
         self.surname_at_birth = surname_at_birth or ""
         self.unparsed = unparsed
-    
+
     def __repr__(self):
         if self.unparsed is not None:
             return self.unparsed
@@ -62,8 +63,8 @@ class GedName:
         parts.append(self.name if self.name != "" else '...')
         if self.patronymic != "":
             parts.append(self.patronymic)
-        return ' '.join(parts)    
-            
+        return ' '.join(parts)
+
     # Александр Сергеевич /Пушкин/
     # Наталья Николаевна /Пушкина (Гончарова)/
     gedcom_name_regex = re.compile('^(((?P<name>[\w\?-]*) )?(?P<patronymic>[\w\?-]*) )?/(?P<surname>[\w\?-]*)\s*(\((?P<surname_at_birth>[\w\?-]*)\))?/$')
@@ -77,8 +78,8 @@ class GedName:
             surname_at_birth = m.groupdict().get('surname_at_birth')
             return GedName(name=name, patronymic=patronymic, surname=surname, surname_at_birth=surname_at_birth)
         return GedName(unparsed=s.strip())
-            
-                                
+
+
 class PersonSnippet:
     '''модель для отображения сниппета о персоне на странице дерева'''
     class Event:
@@ -95,7 +96,7 @@ class PersonSnippet:
         def __init__(self, spouse=None, children=None):
             self.spouse = spouse #RelPerson
             self.children = children #RelPerson
-        
+
     def __init__(self, person_uid, name=None, sex=None, birth=None, death=None, main_occupation=None, residence=None, photo=None, comment=None, mother=None, father=None, families=None):
         self.uid = person_uid
         self.name = name
@@ -109,15 +110,15 @@ class PersonSnippet:
         self.father = father #RelPerson
         self.families = families or []
         self.photo = photo
-        
+
     def choose_by_sex(self, male, female, unknown=None):
         if self.sex == 'M':
             return male
         if self.sex == 'F':
             return female
         return unknown if unknown is not None else male
-        
-        
+
+
 def get_person_snippets(gedcom):
     snippets = dict()
     indi_to_uid = dict()
@@ -126,34 +127,34 @@ def get_person_snippets(gedcom):
         name = str(GedName.parse(person.get('NAME', '')))
         sex = person.get('SEX', None)
         main_occupation = person.get('OCCU', None)
-        comment = person.get('NOTE', None)
+        comment = Note.parse(person.get('NOTE', None))
         main_document = first_or_default(person.documents, lambda d: d.get('DFLT') == 'T')
         photo = (main_document.get('FILE') if main_document else "").replace("\\","/")
         birth_event = first_or_default(person.events, lambda e: e.event_type == "BIRT")
         death_event = first_or_default(person.events, lambda e: e.event_type == "DEAT")
         residence_event = first_or_default(person.events, lambda e: e.event_type == "RESI" and 'PLAC' in e and \
                                      ('NOTE' not in e or ('Откуда:' not in e['NOTE'] and 'Куда:' not in e['NOTE'])))
-        residence_place = hide_address(residence_event.get('PLAC', None)) if residence_event else None
-        
+        residence_place = residence_event.get('PLAC', None) if residence_event else None
+
         indi_to_uid[person.id] = person_uid
-        snippet = PersonSnippet(person_uid, 
+        snippet = PersonSnippet(person_uid,
                                 name=name,
                                 photo=photo,
                                 sex=sex,
-                                main_occupation=main_occupation, 
+                                main_occupation=main_occupation,
                                 residence=residence_place,
-                                # позже при обработке семей будут назначены реальные люди                                
+                                # позже при обработке семей будут назначены реальные люди
                                 mother=PersonSnippet.RelPerson('Мать'),
                                 father=PersonSnippet.RelPerson('Отец'),
                                 comment=comment)
         if birth_event is not None:
             birth_date = GedDate.parse(birth_event.get('DATE', ''))
-            snippet.birth = PersonSnippet.Event(date=birth_date, place=hide_address(birth_event.get('PLAC', None)))
+            snippet.birth = PersonSnippet.Event(date=birth_date, place=birth_event.get('PLAC', None))
         if death_event is not None:
             death_date = GedDate.parse(death_event.get('DATE', ''))
-            snippet.death = PersonSnippet.Event(date=death_date, place=hide_address(death_event.get('PLAC', None)))
-        snippets[person_uid] = snippet   
-    
+            snippet.death = PersonSnippet.Event(date=death_date, place=death_event.get('PLAC', None))
+        snippets[person_uid] = snippet
+
     for family in gedcom.families:
         wife = snippets.get(indi_to_uid.get(family.get('WIFE')), None)
         husband = snippets.get(indi_to_uid.get(family.get('HUSB')), None)
@@ -164,7 +165,7 @@ def get_person_snippets(gedcom):
                 print ('cant find child with id ['+child_indi+']')
                 continue
             child.mother.person = wife
-            child.father.person = husband 
+            child.father.person = husband
             child_role = child.choose_by_sex('Сын', 'Дочь', 'Ребенок')
             children.append(PersonSnippet.RelPerson(child_role, child))
         if wife:
@@ -172,16 +173,24 @@ def get_person_snippets(gedcom):
             wife.families.append(PersonSnippet.Family(spouse, children))
         if husband:
             spouse = PersonSnippet.RelPerson('Супруга', wife)
-            husband.families.append(PersonSnippet.Family(spouse, children))     
-            
+            husband.families.append(PersonSnippet.Family(spouse, children))
+
     return snippets
-            
-            
-            
-        
-        
-        
-        
-    
-                
-        
+
+class PrivacySettingsStub:
+    '''все люди публичны, доступ только public'''
+    def __getitem__(self, person_uid):
+        return Privacy(privacy=PrivacyMode.PUBLIC, access=PrivacyMode.PUBLIC)
+
+def get_privacy_settings(person_snippets):
+    return PrivacySettingsStub()
+
+
+
+
+
+
+
+
+
+

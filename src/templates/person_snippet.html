@@ -9,7 +9,7 @@
 
 {% endmacro %}
 
-{% macro draw_person_snippet(person) %}
+{% macro draw_person_snippet(person, privacy) %}
 
 	<div class="panel {{person.choose_by_sex('panel-info', 'panel-danger', 'panel-default')}}">
 		<div class="panel-heading" data-toggle="collapse" data-target="#snippet-body-{{person.uid}}">
@@ -32,17 +32,25 @@
 							{% if person.birth %}
 							<li>Рождение: 
 								{% if person.birth.date %} {{person.birth.date}} {% else %} ? {% endif %}
-								{% if person.birth.place %} ,{{person.birth.place}} {% endif %}
+								{% if person.birth.place %} , {{privacy.address(person.birth.place)}} {% endif %}
 							</li>
 							{% endif %}
 							{% if person.death %}
 							<li>Смерть: {% if person.death.date %} {{person.death.date}} {% else %} ? {% endif %} 
-										{% if person.death.place %} ,{{person.death.place}} {% endif %}
+										{% if person.death.place %} , {{privacy.address(person.death.place)}} {% endif %}
 							</li>
 							{% endif %}
 							{% if person.residence %}
-							<li>Место жительства: {{person.residence}}</li>
-							{% endif %}								
+							<li>Место жительства: {{privacy.address(person.residence)}}</li>
+							{% endif %}
+                            {% set comment=privacy.comment(person.comment) %}
+                            {% if comment %}
+                            <li>Комментарий: <br/>
+ 							    {% for line in (person.comment|string).split('\n') %}
+ 									{{line|urlize(40, nofollow=true)}}<br/>
+ 								{% endfor %}
+ 						    </li>
+                            {% endif %}
 						</ul>
 					</div>		
 				</div>	
