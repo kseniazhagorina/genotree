@@ -22,7 +22,7 @@
 					<div class="media-left">
 						<a href="#" class='select-person-{{person.uid}}'><img 
                             src="/static/{{person.choose_by_sex('BlankMale.jpg', 'BlankFemale.jpg')}}"
-                            {% if person.photo %} lazy-src="/static/tree/tr_tree.files/{{person.photo}}" {% endif %} 
+                            {% if person.photo %} lazy-src="/static/tree/files/{{person.photo}}" {% endif %} 
                             class="img-fluid img-rounded" style="max-width: 160px; max-height: 160px;"/>
                         </a>
 					</div>	
@@ -45,8 +45,8 @@
 							{% endif %}
                             {% set comment=privacy.comment(person.comment) %}
                             {% if comment %}
-                            <li>Комментарий: <br/>
- 							    {% for line in (person.comment|string).split('\n') %}
+                            <li>Комментарий:<br/>
+ 							    {% for line in comment.split('\n') %}
  									{{line|urlize(40, nofollow=true)}}<br/>
  								{% endfor %}
  						    </li>

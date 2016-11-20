@@ -116,10 +116,10 @@
 	</head>
 	<body>
             <div id="tree-container" class="dragscroll">
-                <img id="tree-img" src="/static/tree/tree_img.png" usemap="#tree_nodes_map"></img>
+                <img id="tree-img" src="{{data.tree_img}}" usemap="#tree_nodes_map"></img>
                 <div class='hilighted-person'></div>
                 <!-- поисковые теги - невидимые надписи под картой - используются для ctrl+F -->
-                {% for person_uid, node in map.nodes.items() %}
+                {% for person_uid, node in data.tree_map.nodes.items() %}
                     {% if person_uid in person_snippets %}
                         {% set person = person_snippets[person_uid] %}
                         <div class="map-search-tag" style="top: {{node.y1}}px; left: {{node.x1}}px;">{{person.name}}</div>
@@ -128,7 +128,7 @@
 
 
                 <map id="tree-map" name='tree_nodes_map'>
-                    {% for person_uid, node in map.nodes.items() %}
+                    {% for person_uid, node in data.tree_map.nodes.items() %}
                     <area class="select-person-{{person_uid}}" coords="{{node.rect}}" shape="rect" href="#">
                     {% endfor %}
                 </map>
@@ -146,9 +146,9 @@
 			</script>
 
 			<div id="snippets" style="display:none;">
-				{% for person_uid, person_snippet in person_snippets.items() %}
+				{% for person_uid, person_snippet in data.persons_snippets.items() %}
 					<div id="snippet-for-{{person_uid}}">
-						{{ ps.draw_person_snippet(person_snippet, privacy_settings[person_uid]) }}
+						{{ ps.draw_person_snippet(person_snippet, data.privacy_settings[person_uid]) }}
 					</div>
 
 					<script>

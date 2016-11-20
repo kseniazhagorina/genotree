@@ -3,6 +3,7 @@
 
 import os.path
 import xml.etree.ElementTree
+import codecs
 from gedcom import GedcomReader
 from geddate import GedDate
 from genery_note import Note
@@ -119,7 +120,7 @@ class PersonSnippet:
         return unknown if unknown is not None else male
 
 
-def get_person_snippets(gedcom):
+def get_person_snippets(gedcom, files):
     snippets = dict()
     indi_to_uid = dict()
     for person in gedcom.persons:
@@ -129,7 +130,7 @@ def get_person_snippets(gedcom):
         main_occupation = person.get('OCCU', None)
         comment = Note.parse(person.get('NOTE', None))
         main_document = first_or_default(person.documents, lambda d: d.get('DFLT') == 'T')
-        photo = (main_document.get('FILE') if main_document else "").replace("\\","/")
+        photo = files.get(main_document.get('FILE', "") if main_document else "")        
         birth_event = first_or_default(person.events, lambda e: e.event_type == "BIRT")
         death_event = first_or_default(person.events, lambda e: e.event_type == "DEAT")
         residence_event = first_or_default(person.events, lambda e: e.event_type == "RESI" and 'PLAC' in e and \
@@ -177,6 +178,14 @@ def get_person_snippets(gedcom):
 
     return snippets
 
+def get_files_dict(filename):
+    dict = {}
+    with codecs.open(filename, 'r', 'utf-8') as input:
+        for line in input:
+            k, v = line.strip().split('\t')
+            dict[k] = v
+    return dict 
+    
 class PrivacySettingsStub:
     '''все люди публичны, доступ только public'''
     def __getitem__(self, person_uid):

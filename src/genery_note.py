@@ -22,9 +22,9 @@ class TagSection(KeyValueSection):
         self.tags = set([tag for tag in [part.strip() for part in value.split(',')] if tag != ""])
 
 class Note:
-    possible_keys = ["Куда", "Откуда", "Образовательное учреждение", "Специальность", "Причина смерти", "Внешность", "Tags"]
-    key_value_regex = re.compile("^(?P<key>{0}):\s*(?P<value>.*)$".format('|'.join(possible_keys)))
-    privacy_mode_regex = re.compile("^(?P<mode>public|protected|private):$")
+    possible_keys = ['Куда', 'Откуда', 'Образовательное учреждение', 'Специальность', 'Причина смерти', 'Внешность', 'Tags']
+    key_value_regex = re.compile(r'^(?P<key>{0}):\s*(?P<value>.*)'.format('|'.join(possible_keys)))
+    privacy_mode_regex = re.compile(r'^(?P<mode>public|protected|private):$')
     def __init__(self, sections=[]):
         self.sections = sections
 
@@ -57,7 +57,7 @@ class Note:
         sections = []
         section = None
         privacy = PrivacyMode.PUBLIC
-        for line in text.split('\r\n'):
+        for line in text.split('\n'):
             m = Note.key_value_regex.match(line.strip())
             if m is not None:
                 if section is not None:
@@ -76,9 +76,9 @@ class Note:
                     sections.append(NoteSection(section, privacy))
                     section = None
                 privacy_mode = m.group('mode')
-                if privacy_mode == "private":
+                if privacy_mode == 'private':
                     privacy = PrivacyMode.PRIVATE
-                elif privacy_mode == "protected":
+                elif privacy_mode == 'protected':
                     privacy = PrivacyMode.PROTECTED
                 else:
                     privacy = PrivacyMode.PUBLIC

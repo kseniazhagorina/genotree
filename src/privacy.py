@@ -9,6 +9,10 @@ class PrivacyMode:
     PRIVATE = 2
 
 class Privacy:
+    AddressRegex = re.compile(r'\d+(\s*([/-]|(стр|корп|лит)\w*\.?)?)?(\s*([а-я]|\d+))?\b', flags=re.IGNORECASE)
+    PhoneRegex = re.compile(r'(\b(моб|тел|сот)\w*\W*)[\d\(\)\s\+\-,]{5,}', flags=re.IGNORECASE|re.MULTILINE)
+    EmailRegex = re.compile(r'\b(?P<login>[\w\-\.]+)@(?P<domain>\w+\.\w{2,6})\b', flags=re.IGNORECASE)
+    
     def __init__(self, privacy, access):
         '''privacy - уровень приватности персоны
                public - для умерших,
@@ -34,10 +38,10 @@ class Privacy:
         return self.phone(self.email(str(comment)))
 
     def address(self, place):
-        return re.sub('\d+(\s*([/-]|(стр|корп|лит)\.?)?\s*)?([а-я]|\d+)?\b', '***', place, flags=re.IGNORECASE)
+        return Privacy.AddressRegex.sub('***', place)
 
     def phone(self, text):
-        return re.sub('(\b(тел\.?|сот\.?|телефона?)\W*)[\d\(\)\s\+\-,]{5,}', lambda match: re.sub('\d', match.group(0), '*'), text, flags=re.IGNORECASE)
+        return Privacy.PhoneRegex.sub(lambda match: re.sub('\d','*',match.group(0)), text)
 
     def email(self, text):
-        return re.sub('(?P<login>[\w\-\.])@(?P<domain>\w+\.\w{2,6})\b', lambda match: '*'*len(match.group('login'))+'@'+m.group('domain'), text, flags=re.IGNORECASE)
+        return Privacy.EmailRegex.sub(lambda match: '*'*len(match.group('login'))+'@'+match.group('domain'), text)
