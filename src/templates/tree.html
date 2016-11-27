@@ -64,9 +64,12 @@
 			    var snippet = $('#snippets').find('#snippet-for-'+person_uid).first();
                 loadLazyContent(snippet);
                 snippet = snippet.clone(withDataAndEvents=true);
-				setPersonSnippet(snippet);
+				var container = $('#person-snippet-container');
+                container.empty();
+                container.append(snippet);
 			}
 
+            // фокусируется на выбранной персоне в дереве и подсвечивает ее
 			function hilightPersonArea(person_uid) {
 			    var person_area = $('#tree-map .select-person-'+person_uid);
                 if (!person_area.length) {
@@ -81,13 +84,14 @@
 				var width = coords[2] - left;
 				var height = coords[3] - top;
 
-                scrollIfNeed(left, top, width, height);
+                scrollTreeIfNeed(left, top, width, height);
 
 				h = $('.hilighted-person');
 				h.css({'left': left+'px', 'top': top+'px', 'width': width+'px', 'height': height+'px'});
 			}
 
-            function scrollIfNeed(left, top, width, height) {
+            // скроллит дерево (если нужно) для того чтобы выбранный участок оказался на экране 
+            function scrollTreeIfNeed(left, top, width, height) {
                 tree = $('#tree-container')
                 var scrollTop = tree.scrollTop();
                 var scrollLeft = tree.scrollLeft();
@@ -137,14 +141,6 @@
 			<nav id="person-snippet-container" class="navbar navbar-default navbar-fixed-bottom">
 			</nav>
 
-			<script>
-				function setPersonSnippet(snippet) {
-					var container = $('#person-snippet-container');
-					container.empty();
-					container.append(snippet);
-				}
-			</script>
-
 			<div id="snippets" style="display:none;">
 				{% for person_uid, person_snippet in data.persons_snippets.items() %}
 					<div id="snippet-for-{{person_uid}}">
@@ -158,11 +154,22 @@
 								e.preventDefault();
 								viewPersonSnippet('{{person_uid}}');
 								hilightPersonArea('{{person_uid}}');
+                                window.location.hash = "{{person_uid}}";
 							});
 						});
 					</script>
 				{% endfor %}
 			</div>
+
+
+            <script>
+                $(document).ready(function(){
+                    selected_uid = window.location.hash.substring(1);
+                    if (selected_uid) {
+                        $(".select-person-"+selected_uid).first().click();
+                    }
+                });
+            </script>
 
 	</body>
 </html>
