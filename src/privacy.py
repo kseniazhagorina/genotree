@@ -44,4 +44,4 @@ class Privacy:
         return Privacy.PhoneRegex.sub(lambda match: re.sub('\d','*',match.group(0)), text)
 
     def email(self, text):
-        return Privacy.EmailRegex.sub(lambda match: '*'*len(match.group('login'))+'@'+match.group('domain'), text)
+        return Privacy.EmailRegex.sub(lambda match: '*'*len(match.group('login'))+' @'+match.group('domain'), text)

@@ -181,6 +181,9 @@ def load_package(archive, static_dir, data_dir):
         create_folder(tmp_dir, empty=True)
         shutil.unpack_archive(archive, tmp_dir)
         
+        create_folder(static_dir)
+        create_folder(data_dir)
+        
         # обработка gedcom файла
         gedcom = GedcomReader().read_gedcom(os.path.join(tmp_dir, 'tree.ged'))
         treexml = xml.etree.ElementTree.fromstring(codecs.open(os.path.join(tmp_dir, 'tree.xml'), 'r', 'utf-8').read())
@@ -192,7 +195,7 @@ def load_package(archive, static_dir, data_dir):
         copy(tmp_dir, static_dir, ['tree_img.png'])
         copy(tmp_dir, data_dir, ['tree_img.xml', 'files.tsv'])
 
-        files_dir = 'static/tree/files'
+        files_dir = os.path.join(static_dir, 'files')
         if os.path.exists(files_dir):
             shutil.rmtree(files_dir)
         shutil.copytree(src=os.path.join(tmp_dir, 'files'), dst=files_dir)
