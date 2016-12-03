@@ -39,6 +39,11 @@
 							<li>Смерть: {{person.death.date|default("?", true)}}
 										{% if person.death.place %} , {{privacy.address(person.death.place)}} {% endif %}
 							</li>
+                            {% endif %}
+                            {% if person.age() %}
+                            <li>{% if person.is_alive() %} Возраст: {% else %} Продолжительность жизни: {% endif %}
+                                {{person.age()}}
+                            </li>       
 							{% endif %}
 							{% if person.residence %}
 							<li>Место жительства: {{privacy.address(person.residence)}}</li>

@@ -4,11 +4,14 @@
 import os.path
 import xml.etree.ElementTree
 import codecs
+import re
+from datetime import date
+from dateutil.relativedelta import relativedelta
 from gedcom import GedcomReader
 from geddate import GedDate
 from genery_note import Note
 from privacy import PrivacyMode, Privacy
-import re
+
 
 def first_or_default(arr, predicate=None, default=None):
     for item in arr:
@@ -118,7 +121,18 @@ class PersonSnippet:
         if self.sex == 'F':
             return female
         return unknown if unknown is not None else male
-
+        
+    def is_alive(self):
+        return self.death is None
+        
+    def age(self):  
+        birth_date = self.birth.date.to_date() if self.birth and self.birth.date else None
+        death_date = self.death.date.to_date() if self.death and self.death.date else None
+        end_date = date.today() if self.is_alive() else death_date
+        if birth_date is not None and end_date is not None:
+            return relativedelta(end_date, birth_date).years
+        else:
+            return None
 
 def get_person_snippets(gedcom, files):
     snippets = dict()

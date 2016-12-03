@@ -1,8 +1,12 @@
 # -*- coding: utf-8 -*-
 
 import re
+from datetime import date
+from calendar import monthrange
 
 class ReMaker:
+    '''Класс для составления сложных регекспов'''
+   
     class NextName:
         def __init__(self, name):
             self.name = name
@@ -17,7 +21,7 @@ class ReMaker:
     def rename_groups(self, regex_string):
         '''
         переименовывает встречающиеся группы с именем name в группы name_1, name_2, ...
-        после прогона через make куски регулярок можно склеивать в бОльшие регулярки и по-прежнему пользоваться именованными группами
+        куски регулярок можно склеивать в бОльшие регулярки и после прогона через make по-прежнему пользоваться именованными группами
         '''
         for name, get_next_name in self.group_names.items():
             regex_string = re.sub(r'(?<=\(\?P<){0}(?=>)'.format(name), get_next_name, regex_string)
@@ -68,9 +72,15 @@ class GedDate:
 
     def __init__(self, date=None, date2=None, type=None):
         '''date,date2 - None or 3-tuple (year, month, date) some of items can be None'''
-        self.date = date
-        self.date2 = date2
-        self.type = type
+        self.type = type or GedDate.STANDARD
+        if self.type in [GedDate.STANDARD, GedDate.ABOUT, GedDate.CALCULATED, GedDate.ESTIMATED]:
+            # одноэлементные даты, в которых границы описываются одной и той же датой
+            self.date = date or date2
+            self.date2 = self.date
+        else:    
+            self.date = date
+            self.date2 = date2 
+        
         self.format = GedDate.Genery
 
     def __eq__(self, other):
@@ -78,6 +88,29 @@ class GedDate:
 
     def __repr__(self):
         return self.format.format(self)
+        
+    def min_date(self):
+        if self.date is not None:
+            year, month, day = self.date
+            if year is not None:
+                month = month+1 if month else 1
+                day = day if day else 1
+                return date(year, month, day)
+        return None
+    
+    def max_date(self):
+        if self.date2 is not None:
+            year, month, day = self.date2
+            if year is not None:
+                month = month+1 if month else 12
+                day = day if day else monthrange(year, month)[1]
+                return date(year, month, day)
+        return None
+
+    def to_date(self):
+        return self.min_date() or self.max_date()
+            
+        
 
 class DateFormat(object):
     def __init__(self, date_regex, monthes, formats):
