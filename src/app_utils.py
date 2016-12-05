@@ -101,7 +101,7 @@ class PersonSnippet:
             self.spouse = spouse #RelPerson
             self.children = children #RelPerson
 
-    def __init__(self, person_uid, name=None, sex=None, birth=None, death=None, main_occupation=None, residence=None, photo=None, comment=None, mother=None, father=None, families=None):
+    def __init__(self, person_uid, name=None, sex=None, birth=None, death=None, main_occupation=None, residence=None, photo=None, photos=None, comment=None, mother=None, father=None, families=None):
         self.uid = person_uid
         self.name = name
         self.sex = sex
@@ -114,6 +114,7 @@ class PersonSnippet:
         self.father = father #RelPerson
         self.families = families or []
         self.photo = photo
+        self.photos = photos or []
 
     def choose_by_sex(self, male, female, unknown=None):
         if self.sex == 'M':
@@ -134,6 +135,15 @@ class PersonSnippet:
         else:
             return None
 
+def get_photos(documents, files):
+    photos = []
+    for document in sorted(documents, key = lambda d: d.get('DFLT') == 'T', reverse=True): # сначала DFLT документ
+        file = files.get(document.get('FILE', ''))
+        if file and os.path.splitext(file)[-1].lower() in ['.jpg', '.jpeg', '.png', '.tiff', '.gif']:
+            photos.append(file)
+    return photos
+          
+        
 def get_person_snippets(gedcom, files):
     snippets = dict()
     indi_to_uid = dict()
@@ -143,8 +153,8 @@ def get_person_snippets(gedcom, files):
         sex = person.get('SEX', None)
         main_occupation = person.get('OCCU', None)
         comment = Note.parse(person.get('NOTE', None))
-        main_document = first_or_default(person.documents, lambda d: d.get('DFLT') == 'T')
-        photo = files.get(main_document.get('FILE', "") if main_document else "")        
+        photos = get_photos(person.documents, files)
+        photo = first_or_default(photos)      
         birth_event = first_or_default(person.events, lambda e: e.event_type == "BIRT")
         death_event = first_or_default(person.events, lambda e: e.event_type == "DEAT")
         residence_event = first_or_default(person.events, lambda e: e.event_type == "RESI" and 'PLAC' in e and \
@@ -154,8 +164,9 @@ def get_person_snippets(gedcom, files):
         indi_to_uid[person.id] = person_uid
         snippet = PersonSnippet(person_uid,
                                 name=name,
-                                photo=photo,
                                 sex=sex,
+                                photos=photos,
+                                photo=photo,
                                 main_occupation=main_occupation,
                                 residence=residence_place,
                                 # позже при обработке семей будут назначены реальные люди

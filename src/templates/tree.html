@@ -48,8 +48,28 @@
                 cursor: move;
                 padding-bottom: 220px;
             }
-
 		</style>
+        
+        <style>
+          .carousel.full-screen {
+            #background-image: url(/static/photo_background.jpg);
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+          }
+          
+          .carousel.full-screen > .carousel-inner > .item > img,
+          .carousel.full-screen > .carousel-inner > .item > a > img {
+              margin: 0 auto;
+              max-height: 100%;
+              max-width: 100%;
+              position:relative;
+              top:50%;
+              transform: translateY(-50%);
+          }
+          
+        </style>
+  
 		<script>
             // загружает фотографии имеющие аттрибут lazy-src
             function loadLazyContent(container) {
@@ -117,6 +137,7 @@
 
 		</script>
 		{% import 'person_snippet.html' as ps %}
+        {% import 'photo_carousel.html' as pc %}
 
 	</head>
 	<body>
@@ -161,8 +182,40 @@
 					</script>
 				{% endfor %}
 			</div>
+            
+            <div id="carousels">
+                {% for person_uid, person_snippet in data.persons_snippets.items() %}
+                    {% if person_snippet.photos %}
+                        {{ pc.draw_photo_carousel('carousel-for-'+person_uid, person_snippet.photos) }}
+                    {% endif %}    
+                {% endfor %}
+            </div>
 
 
+            <script>
+                $(document).ready(function() {
+                    // карусель в режиме полного экрана
+                    var $item = $('.carousel.full-screen .item'); 
+                    var $wHeight = $(window).height();
+                    $item.height($wHeight);
+                    $(window).on('resize', function (){
+                      $wHeight = $(window).height();
+                      $item.height($wHeight);
+                    });
+                    
+                    // загрузка ленивого контента в модальных окнах
+                    $('.modal').on('shown.bs.modal', function() {
+                        loadLazyContent($(this));
+                    })
+            
+                    // запуск карусельки
+                    //$('.carousel').carousel({
+                    //  interval: 5000,
+                    //  pause: "true"
+                    //});
+                });    
+            </script>    
+  
             <script>
                 $(document).ready(function(){
                     selected_uid = window.location.hash.substring(1);

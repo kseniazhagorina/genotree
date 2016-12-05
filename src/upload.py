@@ -52,6 +52,8 @@ def copy_documents(gedcom, folder):
                     continue
                 if not os.path.exists(file_path):
                     continue
+                if '(private)' in file_path:
+                    continue
                 # копируем файл в папку folder/uid
                 person_folder = os.path.join(folder, uid)
                 create_folder(person_folder)
