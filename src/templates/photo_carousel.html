@@ -1,0 +1,35 @@
+{% macro draw_photo_carousel(carousel_id, images) %}
+    <div class="modal carousel full-screen" id="{{carousel_id}}" tabindex="-1" role="dialog" data-ride="carousel"
+        style="position: absolute; top: 0px; left: 0px; width:100%; height:100%; display: none;">
+       
+        {% if images|length > 1 %}
+            <!-- Indicators -->
+            <ol class="carousel-indicators">
+            {% for _ in images %}
+              <li data-target="#{{carousel_id}}" data-slide-to="{{loop.index0}}" {% if loop.index0 == 0 %} class="active" {% endif %}></li>
+            {% endfor %}  
+            </ol>
+        {% endif %}    
+
+        <!-- Wrapper for slides -->
+        <div class="carousel-inner" role="listbox">
+        {% for image in images %}
+          <div class="item {% if loop.index0 == 0 %} active {% endif %}">
+            <img src="/static/BlankMale.jpg" lazy-src="/static/tree/files/{{image}}" class="img-fluid img-rounded">
+          </div>
+        {% endfor %}
+        </div>
+
+        {% if images|length > 1 %}
+            <!-- Left and right controls -->
+            <a class="left carousel-control" href="#{{carousel_id}}" role="button" data-slide="prev">
+              <span class="glyphicon glyphicon-chevron-left" aria-hidden="true"></span>
+              <span class="sr-only">Previous</span>
+            </a>
+            <a class="right carousel-control" href="#{{carousel_id}}" role="button" data-slide="next">
+              <span class="glyphicon glyphicon-chevron-right" aria-hidden="true"></span>
+              <span class="sr-only">Next</span>
+            </a>
+        {% endif %}    
+    </div>
+{% endmacro %}
