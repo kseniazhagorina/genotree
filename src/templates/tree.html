@@ -8,6 +8,11 @@
 		<script src="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
         <link rel="icon" href="/static/favicon.png">
 
+        <meta property="og:type" content="website" />
+        <meta property="og:image" content="/static/preview.tree.png">
+        <meta property="og:title" content="Мое родословие">
+        <meta property="og:description" content="Родословное древо Жагориных, Черепановых, Мотыревых, Фаренюков...">
+
 		<style>
 			#person-snippet-container {
 				margin-bottom: 18px;
@@ -111,7 +116,7 @@
 				h.css({'left': left+'px', 'top': top+'px', 'width': width+'px', 'height': height+'px'});
 			}
 
-            // скроллит дерево (если нужно) для того чтобы выбранный участок оказался на экране 
+            // скроллит дерево (если нужно) для того чтобы выбранный участок оказался на экране
             function scrollTreeIfNeed(left, top, width, height) {
                 tree = $('#tree-container')
                 var scrollTop = tree.scrollTop();
