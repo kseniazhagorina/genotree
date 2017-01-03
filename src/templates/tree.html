@@ -141,8 +141,10 @@
 		</script>
 		{% import 'person_snippet.html' as ps %}
         {% import 'photo_carousel.html' as pc %}
-
-	</head>
+        {% import 'yandex_metrika.html' as metrika %}
+        
+        {{ metrika.tree_counter() }}
+    </head>
 	<body>
             {% set tree = context.tree %}
             {% set persons_snippets = context.data.persons_snippets %}
