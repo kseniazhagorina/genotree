@@ -210,14 +210,6 @@ def get_files_dict(filename):
             k, v = line.strip().split('\t')
             dict[k] = v
     return dict 
-    
-class PrivacySettingsStub:
-    '''все люди публичны, доступ только public'''
-    def __getitem__(self, person_uid):
-        return Privacy(privacy=PrivacyMode.PUBLIC, access=PrivacyMode.PUBLIC)
-
-def get_privacy_settings(person_snippets):
-    return PrivacySettingsStub()
 
 
 

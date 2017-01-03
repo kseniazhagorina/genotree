@@ -9,8 +9,9 @@
 
 {% endmacro %}
 
-{% macro draw_person_snippet(person, privacy) %}
+{% macro draw_person_snippet(person, context) %}
 
+    {% set privacy = context.privacy %}
 	<div class="panel {{person.choose_by_sex('panel-info', 'panel-danger', 'panel-default')}}">
 		<div class="panel-heading" data-toggle="collapse" data-target="#snippet-body-{{person.uid}}">
 			<span class="panel-title">{{person.name}}</span>
@@ -24,7 +25,7 @@
 						<a href="#" data-toggle="modal" data-target="#carousel-for-{{person.uid}}">
                             <img 
                                 src="/static/{{person.choose_by_sex('BlankMale.jpg', 'BlankFemale.jpg')}}"
-                                lazy-src="/static/tree/files/{{person.photo}}"
+                                lazy-src="{{context.files_dir}}/{{person.photo}}"
                                 class="img-fluid img-rounded" style="max-width: 160px; max-height: 160px;"/>
                         </a>
                         {% else %}
@@ -67,7 +68,7 @@
 						</ul>
 					</div>		
 				</div>	
-				<div class="col-md-6">
+				<div class="col-md-5">
 					<ul class="list-unstyled">
 						<li>{{ draw_related_person(person.father) }}</li>
 						<li>{{ draw_related_person(person.mother) }}</li>
@@ -90,7 +91,22 @@
 							{% endif %}
 						{% endfor %}	
 					</ul>
-				</div>				
+				</div>
+                <div class="col-md-1">
+                    {% if context.trees|length > 0 %}
+                    <div class="btn-group btn-group-vertical pull-right">
+                        <div class="btn-group">
+                            <a type="button" class="dropdown-toggle btn btn-default" data-toggle="dropdown">
+                            Древо <span class="caret"></span></a>
+                            <ul class="dropdown-menu pull-right" role="menu">
+                                {% for tree in context.trees %}
+                                <li><a href="/{{tree.uid}}#{{person.uid}}">{{tree.name}}</a></li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>                
 			</div>
 		</div>
 	</div>

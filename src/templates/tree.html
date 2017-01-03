@@ -29,8 +29,8 @@
 
 			#person-snippet-container .panel-heading {
 				padding: 5px 15px 5px 15px;
-			}
-
+			} 
+            
 			.hilighted-person {
 			    position: absolute;
 			    box-shadow: 0px 0px 50px #0000ff;
@@ -138,28 +138,29 @@
                 tree.scrollTop(top+height/2-(wHeight-navHeight)/2);
             }
 
-
-
 		</script>
 		{% import 'person_snippet.html' as ps %}
         {% import 'photo_carousel.html' as pc %}
 
 	</head>
 	<body>
+            {% set tree = context.tree %}
+            {% set persons_snippets = context.data.persons_snippets %}
+            
             <div id="tree-container" class="dragscroll">
-                <img id="tree-img" src="{{data.tree_img}}" usemap="#tree_nodes_map"></img>
+                <img id="tree-img" src="{{tree.img}}" usemap="#tree_nodes_map"></img>
                 <div class='hilighted-person'></div>
                 <!-- поисковые теги - невидимые надписи под картой - используются для ctrl+F -->
-                {% for person_uid, node in data.tree_map.nodes.items() %}
-                    {% if person_uid in person_snippets %}
-                        {% set person = person_snippets[person_uid] %}
+                {% for person_uid, node in tree.map.nodes.items() %}
+                    {% if person_uid in persons_snippets %}
+                        {% set person = persons_snippets[person_uid] %}
                         <div class="map-search-tag" style="top: {{node.y1}}px; left: {{node.x1}}px;">{{person.name}}</div>
                     {% endif %}
                 {% endfor %}
 
 
                 <map id="tree-map" name='tree_nodes_map'>
-                    {% for person_uid, node in data.tree_map.nodes.items() %}
+                    {% for person_uid, node in tree.map.nodes.items() %}
                     <area class="select-person-{{person_uid}}" coords="{{node.rect}}" shape="rect" href="#">
                     {% endfor %}
                 </map>
@@ -169,9 +170,9 @@
 			</nav>
 
 			<div id="snippets" style="display:none;">
-				{% for person_uid, person_snippet in data.persons_snippets.items() %}
+				{% for person_uid, person_snippet in persons_snippets.items() %}
 					<div id="snippet-for-{{person_uid}}">
-						{{ ps.draw_person_snippet(person_snippet, data.privacy_settings[person_uid]) }}
+						{{ ps.draw_person_snippet(person_snippet, context.person_context(person_uid)) }}
 					</div>
 
 					<script>
@@ -189,7 +190,7 @@
 			</div>
             
             <div id="carousels">
-                {% for person_uid, person_snippet in data.persons_snippets.items() %}
+                {% for person_uid, person_snippet in persons_snippets.items() %}
                     {% if person_snippet.photos %}
                         {{ pc.draw_photo_carousel('carousel-for-'+person_uid, person_snippet.photos) }}
                     {% endif %}    

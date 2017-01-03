@@ -21,12 +21,26 @@ def random_string(length, letters=None):
     letters = string.ascii_lowercase + string.digits
     return ''.join(random.choice(letters) for i in range(length))
 
+def strip_end(text, suffix):
+    if not text.endswith(suffix):
+        return text
+    return text[:len(text)-len(suffix)]
+    
 def create_folder(folder, empty=False):
     if empty and os.path.exists(folder):
         shutil.rmtree(folder)
     if not os.path.exists(folder):
         os.makedirs(folder)    
 
+def select_tree_img_files(folder):
+    """Ищет *_tree_img.png файлы, составляет список требуемых *_tree_img.xml файлов"""
+    png_files = [f for f in os.listdir(folder) if os.path.isfile(os.path.join(folder, f)) and (f == 'tree_img.png' or f.endswith('_tree_img.png'))]
+    xml_files = [strip_end(f, '.png')+'.xml' for f in png_files]
+    names = ["" if f == 'tree_img.png' else strip_end(f, '_tree_img.png') for f in png_files]
+    return names, png_files, xml_files
+               
+    
+    
 ###################################################################################
 ##### CLIENT SIDE #################################################################
 ###################################################################################
@@ -81,7 +95,8 @@ def create_package(export_dir, archive_name):
     tmp_dir = os.path.join(export_dir, 'data')
     try:
         create_folder(tmp_dir, empty=True)
-        copy(export_dir, tmp_dir, ['tree.ged', 'tree.xml', 'tree_img.png', 'tree_img.xml'])
+        _, png_files, xml_files = select_tree_img_files(export_dir)
+        copy(export_dir, tmp_dir, ['tree.ged', 'tree.xml'] + png_files + xml_files)
         files_dir = os.path.join(tmp_dir, 'files')
         files = copy_documents(os.path.join(export_dir, 'tree.ged'), files_dir)
         with codecs.open(os.path.join(tmp_dir, 'files.tsv'), 'w+', 'utf-8') as files_out:
@@ -194,8 +209,9 @@ def load_package(archive, static_dir, data_dir):
         set_divorce_events_to_families(gedcom, treexml)
         GedcomWriter().write_gedcom(gedcom, os.path.join(data_dir, 'tree.ged'))
         # копирование документов
-        copy(tmp_dir, static_dir, ['tree_img.png'])
-        copy(tmp_dir, data_dir, ['tree_img.xml', 'files.tsv'])
+        _, png_files, xml_files = select_tree_img_files(tmp_dir)
+        copy(tmp_dir, static_dir, png_files)
+        copy(tmp_dir, data_dir, ['files.tsv'] + xml_files)
 
         files_dir = os.path.join(static_dir, 'files')
         if os.path.exists(files_dir):
