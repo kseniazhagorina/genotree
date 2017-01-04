@@ -14,12 +14,12 @@
     {% set privacy = context.privacy %}
 	<div class="panel {{person.choose_by_sex('panel-info', 'panel-danger', 'panel-default')}}">
 		<div class="panel-heading" data-toggle="collapse" data-target="#snippet-body-{{person.uid}}">
-			<span class="panel-title">{{person.name}}</span>
+			<h3 class="panel-title">{{person.name}}</h3>
 		</div>
 		
 		<div class="panel-body panel-collapse collapse in" id="snippet-body-{{person.uid}}">
 			<div class="row">
-				<div class="col-md-6 media">
+				<div class="col-sm-6 media">
 					<div class="media-left">
                         {% if person.photo %}
 						<a href="#" data-toggle="modal" data-target="#carousel-for-{{person.uid}}">
@@ -68,7 +68,7 @@
 						</ul>
 					</div>		
 				</div>	
-				<div class="col-md-5">
+				<div class="col-sm-5">
 					<ul class="list-unstyled">
 						<li>{{ draw_related_person(person.father) }}</li>
 						<li>{{ draw_related_person(person.mother) }}</li>
@@ -92,7 +92,7 @@
 						{% endfor %}	
 					</ul>
 				</div>
-                <div class="col-md-1">
+                <div class="col-sm-1">
                     {% if context.trees|length > 0 %}
                     <div class="btn-group btn-group-vertical pull-right">
                         <div class="btn-group">
