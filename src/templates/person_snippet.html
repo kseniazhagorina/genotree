@@ -9,13 +9,17 @@
 
 {% endmacro %}
 
-{% macro draw_person_photo(person, context) %}
+{% macro draw_person_photo(person, context, lazy=true) %}
     {% if person.photo %}
     <a href="#" data-toggle="modal" data-target="#carousel-for-{{person.uid}}">
-        <img 
+        <img class="img-fluid img-rounded img-person"
+            {% if lazy %}
             src="/static/{{person.choose_by_sex('BlankMale.jpg', 'BlankFemale.jpg')}}"
             lazy-src="{{context.files_dir}}/{{person.photo}}"
-            class="img-fluid img-rounded img-person"/>
+            {% else %}
+            src="{{context.files_dir}}/{{person.photo}}"
+            {% endif %}
+            />
     </a>
     {% else %}
         <img 
@@ -46,15 +50,16 @@
         {% if person.residence %}
         <li>Место жительства: {{privacy.address(person.residence)}}</li>
         {% endif %}
-        {% set comment=privacy.comment(person.comment) %}
-        {% if comment %}
-        <li>Комментарий:<br/>
-            {% for line in comment.split('\n') %}
-                {{line|urlize(40, nofollow=true)}}<br/>
-            {% endfor %}
-        </li>
-        {% endif %}
-    </ul>
+    </ul>    
+    {% set comment=privacy.comment(person.comment) %}
+    {% if comment %}
+    <p>
+        {% for line in comment.split('\n') %}
+            {{line|urlize(40, nofollow=true)}}<br/>
+        {% endfor %}
+    </p>
+    {% endif %}
+
 {% endmacro %}
 
 {% macro draw_person_family(person) %}
@@ -82,6 +87,22 @@
     </ul>
 {% endmacro %}
 
+{% macro draw_tree_button(person, context) %}
+    {% if context.trees|length > 0 %}
+    <div class="btn-group btn-group-vertical pull-right">
+        <div class="btn-group">
+            <a type="button" class="dropdown-toggle btn btn-default" data-toggle="dropdown">
+            Древо <span class="caret"></span></a>
+            <ul class="dropdown-menu pull-right" role="menu">
+                {% for tree in context.trees %}
+                <li><a href="/{{tree.uid}}#{{person.uid}}">{{tree.name}}</a></li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+    {% endif %}
+{% endmacro %}
+
 {% macro draw_person_snippet(person, context) %}
 
     {% set privacy = context.privacy %}
@@ -105,19 +126,10 @@
 					{{ draw_person_family(person) }}
 				</div>
                 <div class="col-sm-1">
-                    {% if context.trees|length > 0 %}
-                    <div class="btn-group btn-group-vertical pull-right">
-                        <div class="btn-group">
-                            <a type="button" class="dropdown-toggle btn btn-default" data-toggle="dropdown">
-                            Древо <span class="caret"></span></a>
-                            <ul class="dropdown-menu pull-right" role="menu">
-                                {% for tree in context.trees %}
-                                <li><a href="/{{tree.uid}}#{{person.uid}}">{{tree.name}}</a></li>
-                                {% endfor %}
-                            </ul>
-                        </div>
-                    </div>
-                    {% endif %}
+                    {{ draw_tree_button(person, context) }}
+                    <div style="display:none">
+                        <a href="/person/{{person.uid}}">Биография</a>
+                    </div>    
                 </div>                
 			</div>
 		</div>

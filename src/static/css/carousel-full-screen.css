@@ -1,0 +1,16 @@
+.carousel.full-screen {
+    #background-image: url(/static/photo_background.jpg);
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+}
+
+.carousel.full-screen > .carousel-inner > .item > img,
+.carousel.full-screen > .carousel-inner > .item > a > img {
+      margin: 0 auto;
+      max-height: 100%;
+      max-width: 100%;
+      position:relative;
+      top:50%;
+      transform: translateY(-50%);
+}

@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+    <head>
+            <title>{{person.name|default("...")}}</title>
+            <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+            <link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+            <script src="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+            
+            <link rel="icon" href="/static/favicon.png">
+            <link rel="stylesheet" type="text/css" href="/static/css/carousel-full-screen.css">
+            <script type="text/javascript" src="/static/js/carousel-full-screen.js"></script>
+            <script type="text/javascript" src="/static/js/lazy-content.js"></script>
+            
+            <style>
+                .img-person {
+                    max-width: 200px;
+                    max-height: 320px;
+                }  
+            </style>
+            
+            {% import 'person_snippet.html' as ps %}
+            {% import 'photo_carousel.html' as pc %}
+    </head>
+    <body>
+        {% set privacy = context.privacy %}
+        <div class="container">
+            <h1>{{person.name}}</h1>
+            <div class="row">
+                <div class="col-sm-7 media">
+                    <div class="media-left">
+                        {{ ps.draw_person_photo(person, context, lazy=false) }}       
+                    </div>	
+                        
+                    <div class="media-body">
+                        {{ ps.draw_short_person_info(person, privacy) }}
+                    </div>
+                </div>
+                
+                <div class="col-sm-4">
+                    <h4>Семья</h4>
+                    {{ ps.draw_person_family(person) }}
+                </div>   
+                <div class="col-sm-1">
+                    {{ ps.draw_tree_button(person, context) }}
+                </div>
+            </div>
+        </div>
+        
+        <div id="carousels">
+            {% if person.photos %}
+                {{ pc.draw_photo_carousel('carousel-for-'+person.uid, person.photos) }}
+            {% endif %}   
+        </div>
+        
+        <script>
+            initCarouselFullScreen();
+        </script>
+        
+        <script>
+            // Выставляем ссылки на select-person-person_uid
+            $(document).ready(function(){
+                $('a[class^="select-person-"]').each(function(i, a){
+                    m = /\bselect-person-([a-zA-Z0-9]+)\b/.exec(a.className);
+                    if (m.length == 2) {
+                        person_uid = m[1];
+                        a.href = '/person/'+person_uid;
+                    }
+                });    
+            });
+        </script>        
+    </body>
+    
+</html>

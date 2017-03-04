@@ -11,8 +11,9 @@ from flask import Flask, render_template, request
 app = Flask(__name__)
 app.debug = True
 
+DEFAULT_TREE = ''
 TREE_NAMES = {
-    '': 'Общее',
+    DEFAULT_TREE: 'Общее',
     'zhagoriny': 'Жагорины',
     'motyrevy': 'Мотыревы',
     'cherepanovy': 'Черепановы',
@@ -53,8 +54,9 @@ class Data:
                 raise Exception('No files *_tree_img.png in /static/tree directory')
             self.trees = {}
             for tree_uid, png, xml in zip(tree_uids, pngs, xmls):
+                tree_uid = tree_uid or DEFAULT_TREE
                 self.trees[tree_uid] = Data.Tree(tree_uid, '/static/tree/'+png, get_tree_map('data/tree/'+xml))
-            self.default_tree_name = '' if '' in self.trees else tree_uids[0]    
+            self.default_tree_name = DEFAULT_TREE if DEFAULT_TREE in self.trees else tree_uids[0]  
             self.load_error = None
         except:
             self.load_error = traceback.format_exc()
@@ -63,44 +65,60 @@ class Context:
     '''Данные о том, какой пользователь запрашивает страницу, его настройки приватности
        Какая страница была запрошена, какое дерево сейчас отображается
     '''
-    def __init__(self, data, requested_tree):
+    def __init__(self, data, requested_tree=None):
         self.data = data
-        self.tree = data.trees[requested_tree]
+        self.tree = data.trees.get(requested_tree) #may be None
     
     class PersonContext:
-        def __init__(self, data, tree, person_uid):
+        '''контекст отображения персоны в дереве'''
+        def __init__(self, person_uid, data, tree=None):
             self.files_dir = data.files_dir
             self.person_uid = person_uid
             # все персоны публичны, доступ для пользователей только public
             self.privacy = Privacy(privacy=PrivacyMode.PUBLIC, access=PrivacyMode.PUBLIC)
             # в каких деревьях за исключением текущего присутствует данная персона
             self.tree = tree
-            self.trees = [tree for tree in data.trees.values() if tree.uid != self.tree.uid and person_uid in tree.map.nodes]
+            curr_tree_uid = self.tree.uid if self.tree else None
+            self.trees = [tree for tree in data.trees.values() if person_uid in tree.map.nodes and tree.uid != curr_tree_uid]
             
-    
     def person_context(self, person_uid):
-        return Context.PersonContext(self.data, self.tree, person_uid)         
+        return Context.PersonContext(person_uid, self.data, self.tree)         
     
 
 data = Data()        
 data.load()
 
+def check_data_is_valid(func):
+    def wrapper(*args, **kwargs):
+        if not data.is_valid():
+            return 'Что-то пошло не так... Попробуйте зайти на сайт позже.\n\n'+data.load_error
+        return func(*args, **kwargs)
+    wrapper.__name__ = func.__name__    
+    return wrapper 
+
+        
 @app.route('/<tree_name>')
+@check_data_is_valid
 def tree(tree_name):
-    if data.is_valid():
-        tree_name = tree_name or data.default_tree_name
-        if tree_name in data.trees:
-            return render_template('tree.html', context=Context(data, tree_name))
-        return 'Дерево \'{0}\' не найдено...'.format(tree_name)
-    return 'Something went wrong... =(\n' + data.load_error      
+    tree_name = tree_name or data.default_tree_name
+    if tree_name in data.trees:
+        return render_template('tree.html', context=Context(data, tree_name))
+    return 'Дерево \'{0}\' не найдено...'.format(tree_name)
+          
 
 @app.route('/')
 def default_tree():
     return tree(None)
     
-    
-  
-    
+@app.route('/person/<person_uid>')
+@check_data_is_valid
+def biography(person_uid):
+    if person_uid in data.persons_snippets:
+        person_snippet = data.persons_snippets[person_uid]
+        person_context = Context(data).person_context(person_uid)
+        return render_template('biography.html', person=person_snippet, context=person_context)
+    return 'Персона \'{0}\' не найдена...'.format(person_uid)
+
 @app.route('/admin/load/<archive>')
 def load(archive):
     archive = 'upload/{0}.zip'.format(archive)

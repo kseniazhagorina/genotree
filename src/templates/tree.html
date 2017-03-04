@@ -2,16 +2,24 @@
 
 <html>
 	<head>
+        <title>{{context.tree.name}}</title>
+        
 		<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
 		<script type="text/javascript" src="https://cdn.rawgit.com/asvd/dragscroll/master/dragscroll.js"></script>
 		<link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
 		<script src="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
-        <link rel="icon" href="/static/favicon.png">
-
+        
         <meta property="og:type" content="website" />
         <meta property="og:image" content="/static/preview.tree.png">
         <meta property="og:title" content="Мое родословие">
         <meta property="og:description" content="Родословное древо Жагориных, Черепановых, Мотыревых, Фаренюков...">
+        
+        <meta name="robots" content="noindex" />
+
+        <link rel="icon" href="/static/favicon.png">
+        <link rel="stylesheet" type="text/css" href="/static/css/carousel-full-screen.css">
+        <script type="text/javascript" src="/static/js/carousel-full-screen.js"></script>
+        <script type="text/javascript" src="/static/js/lazy-content.js"></script>
 
 		<style>
 			#person-snippet-container {
@@ -59,37 +67,8 @@
                 padding-bottom: 220px;
             }
 		</style>
-        
-        <style>
-          .carousel.full-screen {
-            #background-image: url(/static/photo_background.jpg);
-            background-size: cover;
-            background-position: center;
-            background-repeat: no-repeat;
-          }
-          
-          .carousel.full-screen > .carousel-inner > .item > img,
-          .carousel.full-screen > .carousel-inner > .item > a > img {
-              margin: 0 auto;
-              max-height: 100%;
-              max-width: 100%;
-              position:relative;
-              top:50%;
-              transform: translateY(-50%);
-          }
-          
-        </style>
   
 		<script>
-            // загружает фотографии имеющие аттрибут lazy-src
-            function loadLazyContent(container) {
-                container.find('img[lazy-src]').each(function(){
-                    var img = $(this);
-                    img.attr("src", img.attr("lazy-src"));
-                    img.removeAttr("lazy-src");
-                });
-            }
-
 		    // отображает информацию о персоне в блоке внизу страницы
 			function viewPersonSnippet(person_uid) {
 			    var snippet = $('#snippets').find('#snippet-for-'+person_uid).first();
@@ -204,32 +183,12 @@
                 {% endfor %}
             </div>
 
-
             <script>
-                $(document).ready(function() {
-                    // карусель в режиме полного экрана
-                    var $item = $('.carousel.full-screen .item'); 
-                    var $wHeight = $(window).height();
-                    $item.height($wHeight);
-                    $(window).on('resize', function (){
-                      $wHeight = $(window).height();
-                      $item.height($wHeight);
-                    });
-                    
-                    // загрузка ленивого контента в модальных окнах
-                    $('.modal').on('shown.bs.modal', function() {
-                        loadLazyContent($(this));
-                    })
-            
-                    // запуск карусельки
-                    //$('.carousel').carousel({
-                    //  interval: 5000,
-                    //  pause: "true"
-                    //});
-                });    
+                initCarouselFullScreen();
             </script>    
   
             <script>
+                // Эмулируем клик на персону, если в якоре урла передан person_uid
                 $(document).ready(function(){
                     selected_uid = window.location.hash.substring(1);
                     if (selected_uid) {
