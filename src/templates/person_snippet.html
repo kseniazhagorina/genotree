@@ -15,9 +15,9 @@
         <img class="img-fluid img-rounded img-person"
             {% if lazy %}
             src="/static/{{person.choose_by_sex('BlankMale.jpg', 'BlankFemale.jpg')}}"
-            lazy-src="{{context.files_dir}}/{{person.photo}}"
+            lazy-src="{{context.files_dir}}/{{person.photo.path}}"
             {% else %}
-            src="{{context.files_dir}}/{{person.photo}}"
+            src="{{context.files_dir}}/{{person.photo.path}}"
             {% endif %}
             />
     </a>

@@ -1,5 +1,5 @@
 .carousel.full-screen {
-    #background-image: url(/static/photo_background.jpg);
+    background-image: url(/static/carousel_background.jpg);
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
@@ -13,4 +13,20 @@
       position:relative;
       top:50%;
       transform: translateY(-50%);
+}
+
+.carousel.full-screen .carousel-caption {
+      display: none;
+      left: 10%;
+      right: 10%;
+      bottom: 0%;
+      padding-left:20%;
+      padding-right:20%;
+      padding-bottom: 5%;
+      background: linear-gradient(to right,rgba(0,0,0,.0001) 0, rgba(0,0,0,.7) 20%, rgba(0,0,0,.7) 20%, rgba(0,0,0,0.0001) 100%);
+  }
+  
+.carousel.full-screen .item img:hover + .carousel-caption,
+.carousel.full-screen .carousel-caption:hover  {
+    display:block;
 }

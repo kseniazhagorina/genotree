@@ -134,13 +134,19 @@ class PersonSnippet:
             return relativedelta(end_date, birth_date).years
         else:
             return None
+            
+class Document:
+    def __init__(self, path, title=None):
+        self.path = path
+        self.title = title
 
 def get_photos(documents, files):
     photos = []
     for document in sorted(documents, key = lambda d: d.get('DFLT') == 'T', reverse=True): # сначала DFLT документ
         file = files.get(document.get('FILE', ''))
         if file and os.path.splitext(file)[-1].lower() in ['.jpg', '.jpeg', '.png', '.tiff', '.gif']:
-            photos.append(file)
+            title = document.get('TITL', '')
+            photos.append(Document(path=file, title=title))
     return photos
           
         

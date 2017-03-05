@@ -15,8 +15,14 @@
         <div class="carousel-inner" role="listbox">
         {% for image in images %}
           <div class="item {% if loop.index0 == 0 %} active {% endif %}">
-            <img src="/static/BlankMale.jpg" lazy-src="/static/tree/files/{{image}}" class="img-fluid img-rounded">
+            <img src="/static/BlankMale.jpg" lazy-src="/static/tree/files/{{image.path}}" class="img-fluid img-rounded"/>
+            {% if image.title %}
+            <div class="carousel-caption">
+                <h3>{{ image.title }}</h3>
+            </div>  
+           {% endif %}
           </div>
+          
         {% endfor %}
         </div>
 
