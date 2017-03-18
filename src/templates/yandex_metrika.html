@@ -9,7 +9,6 @@
                         clickmap:true,
                         trackLinks:true,
                         accurateTrackBounce:true,
-                        webvisor:true,
                         trackHash:true
                     });
                 } catch(e) { }
@@ -29,4 +28,47 @@
     </script>
     <noscript><div><img src="https://mc.yandex.ru/watch/41928029" style="position:absolute; left:-9999px;" alt="" /></div></noscript>
     <!-- /Yandex.Metrika counter -->
-{% endmacro %}    
+{% endmacro %}  
+
+{% macro common_counter() %}
+    <!-- Yandex.Metrika counter -->
+    <script type="text/javascript">
+        (function (d, w, c) {
+            (w[c] = w[c] || []).push(function() {
+                try {
+                    w.yaCounter43549634 = new Ya.Metrika({
+                        id:43549634,
+                        clickmap:true,
+                        trackLinks:true,
+                        accurateTrackBounce:true,
+                        webvisor:true,
+                        trackHash:true
+                    });
+                } catch(e) { }
+            });
+
+            var n = d.getElementsByTagName("script")[0],
+                s = d.createElement("script"),
+                f = function () { n.parentNode.insertBefore(s, n); };
+            s.type = "text/javascript";
+            s.async = true;
+            s.src = "https://mc.yandex.ru/metrika/watch.js";
+
+            if (w.opera == "[object Opera]") {
+                d.addEventListener("DOMContentLoaded", f, false);
+            } else { f(); }
+        })(document, window, "yandex_metrika_callbacks");
+    </script>
+    <noscript><div><img src="https://mc.yandex.ru/watch/43549634" style="position:absolute; left:-9999px;" alt="" /></div></noscript>
+<!-- /Yandex.Metrika counter -->
+
+{% endmacro %} 
+
+{% macro goals() %}
+    <script type="text/javascript">
+        window.yaGoals = {
+            open_photo_gallery: function(){window.yaCounter43549634.reachGoal('open_photo_gallery');}
+        };
+    </script>
+{% endmacro %}
+    

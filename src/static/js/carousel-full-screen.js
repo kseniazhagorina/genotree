@@ -12,8 +12,9 @@ function initCarouselFullScreen() {
         });
         
         // загрузка ленивого контента в модальных окнах
-        $('.modal').on('shown.bs.modal', function() {
+        $('.modal.carousel.full-screen').on('shown.bs.modal', function() {
             loadLazyContent($(this));
+            yaGoals.open_photo_gallery();
         })
 
         // запуск карусельки

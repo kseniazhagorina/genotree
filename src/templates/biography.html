@@ -1,25 +1,30 @@
 <!DOCTYPE html>
 <html>
     <head>
-            <title>{{person.name|default("...")}}</title>
-            <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
-            <link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
-            <script src="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
-            
-            <link rel="icon" href="/static/favicon.png">
-            <link rel="stylesheet" type="text/css" href="/static/css/carousel-full-screen.css">
-            <script type="text/javascript" src="/static/js/carousel-full-screen.js"></script>
-            <script type="text/javascript" src="/static/js/lazy-content.js"></script>
-            
-            <style>
-                .img-person {
-                    max-width: 200px;
-                    max-height: 320px;
-                }  
-            </style>
-            
-            {% import 'person_snippet.html' as ps %}
-            {% import 'photo_carousel.html' as pc %}
+        <title>{{person.name|default("...")}}</title>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+        <link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+        <script src="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+        
+        <link rel="icon" href="/static/favicon.png">
+        <link rel="stylesheet" type="text/css" href="/static/css/carousel-full-screen.css">
+        <script type="text/javascript" src="/static/js/carousel-full-screen.js"></script>
+        <script type="text/javascript" src="/static/js/lazy-content.js"></script>
+        
+        <style>
+            .img-person {
+                max-width: 200px;
+                max-height: 320px;
+            }  
+        </style>
+        
+        {% import 'person_snippet.html' as ps %}
+        {% import 'photo_carousel.html' as pc %}
+        
+        {% import 'yandex_metrika.html' as metrika %}
+ 
+        {{ metrika.common_counter() }}
+        {{ metrika.goals() }}
     </head>
     <body>
         {% set privacy = context.privacy %}

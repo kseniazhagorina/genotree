@@ -14,6 +14,8 @@
         <meta property="og:title" content="Мое родословие">
         <meta property="og:description" content="Родословное древо Жагориных, Черепановых, Мотыревых, Фаренюков...">
         
+        <meta name="yandex-verification" content="d3a78397fee01474" />
+        
         <link rel="icon" href="/static/favicon.png">
         <link rel="stylesheet" type="text/css" href="/static/css/carousel-full-screen.css">
         <script type="text/javascript" src="/static/js/carousel-full-screen.js"></script>
@@ -126,6 +128,8 @@
         {% import 'yandex_metrika.html' as metrika %}
         
         {{ metrika.tree_counter() }}
+        {{ metrika.common_counter() }}
+        {{ metrika.goals() }}
     </head>
 	<body>
             {% set tree = context.tree %}
@@ -149,10 +153,12 @@
                     {% endfor %}
                 </map>
 
+                
             </div>
 			<nav id="person-snippet-container" class="navbar navbar-default navbar-fixed-bottom">
 			</nav>
 
+<!--noindex-->            
 			<div id="snippets" style="display:none;">
 				{% for person_uid, person_snippet in persons_snippets.items() %}
 					<div id="snippet-for-{{person_uid}}">
@@ -194,6 +200,6 @@
                     }
                 });
             </script>
-
+<!--/noindex-->
 	</body>
 </html>
