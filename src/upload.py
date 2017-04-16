@@ -6,6 +6,7 @@ __all__ = ['create_package']
 import shutil
 import os.path
 import codecs
+import hashlib
 
 # Загрузка базы данных и дерева единым пакетом
 # Внутри: 
@@ -15,11 +16,6 @@ import codecs
 # tree_img.xml - карта узлов в дереве
 # files.tsv - соответствие исходных имен файлов в tree.ged и относительных путей в папке files (tsv)
 # files - папка с картинками
-
-import random, string
-def random_string(length, letters=None):
-    letters = string.ascii_lowercase + string.digits
-    return ''.join(random.choice(letters) for i in range(length))
 
 def strip_end(text, suffix):
     if not text.endswith(suffix):
@@ -32,6 +28,13 @@ def create_folder(folder, empty=False):
     if not os.path.exists(folder):
         os.makedirs(folder)    
 
+def md5(fname):
+    hash_md5 = hashlib.md5()
+    with open(fname, "rb") as f:
+        for chunk in iter(lambda: f.read(4096), b""):
+            hash_md5.update(chunk)
+    return hash_md5.hexdigest()
+    
 def select_tree_img_files(folder):
     """Ищет *_tree_img.png файлы, составляет список требуемых *_tree_img.xml файлов"""
     png_files = [f for f in os.listdir(folder) if os.path.isfile(os.path.join(folder, f)) and (f == 'tree_img.png' or f.endswith('_tree_img.png'))]
@@ -72,7 +75,7 @@ def copy_documents(gedcom, folder):
                 person_folder = os.path.join(folder, uid)
                 create_folder(person_folder)
                 ext = os.path.splitext(file_path)[-1]
-                new_filename = random_string(10)+ext    
+                new_filename = md5(file_path)+ext    
                 new_file_path = os.path.join(person_folder, new_filename)
                 shutil.copy(src=file_path, dst=new_file_path)
                 files[file_path] = os.path.join(uid, new_filename)
