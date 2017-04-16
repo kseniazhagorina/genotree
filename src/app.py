@@ -83,8 +83,7 @@ class Context:
             
     def person_context(self, person_uid):
         return Context.PersonContext(person_uid, self.data, self.tree)         
-    
-
+        
 data = Data()        
 data.load()
 

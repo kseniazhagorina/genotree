@@ -11,14 +11,14 @@ class NoteSection:
 class KeyValueSection(NoteSection):
     '''кусок текста вида:  "ключ: значение"'''
     def __init__(self, key, value, privacy=PrivacyMode.PUBLIC):
-        super(self.__class__, self).__init__(text = key+": "+value, privacy=privacy)
+        super(KeyValueSection, self).__init__(key+": "+value, privacy=privacy)
         self.key = key
         self.value = value
 
 class TagSection(KeyValueSection):
     '''Tags: участник ВОВ, private, еще какой-то тег'''
     def __init__(self, key, value, privacy=PrivacyMode.PUBLIC):
-        super(self.__class__, self).__init__(key, value, privacy)
+        super(TagSection, self).__init__(key, value, privacy)
         self.tags = set([tag for tag in [part.strip() for part in value.split(',')] if tag != ""])
 
 class Note:
@@ -27,29 +27,44 @@ class Note:
     privacy_mode_regex = re.compile(r'^(?P<mode>public|protected|private):$')
     def __init__(self, sections=[]):
         self.sections = sections
-
+        self.privacy_note = self.privacy('note')
+        
     def __repr__(self):
         text = '\n'.join([s.text for s in self.sections])
         return text
-
-    def filter(self, privacy=PrivacyMode.PUBLIC, text=True, key_values=True, tags=True):
-        sections = [s for s in self.sections
-                   if s.privacy <= privacy and (
-                        (type(s) == NoteSection and text) or
-                        (type(s) == KeyValueSection and key_values) or
-                        (type(s) == TagSection and tags)
-                    )]
+    
+    def privacy(self, item=None):
+        '''определяет приватность по тегам private_<item>, protected_<item>, public_<item>'''
+        suff = '_'+item if item else ''
+        if self.has_tag('private'+suff):
+            return PrivacyMode.PRIVATE
+        if self.has_tag('protected'+suff):
+            return PrivacyMode.PROTECTED
+        return PrivacyMode.PUBLIC
+        
+    def filter(self, access=PrivacyMode.PUBLIC, text=True, key_values=True, tags=True):
+        sections = []
+        if self.privacy_note <= access:
+            sections = [s for s in self.sections
+                       if s.privacy <= access and (
+                            (type(s) == NoteSection and text) or
+                            (type(s) == KeyValueSection and key_values) or
+                            (type(s) == TagSection and tags)
+                        )]
         if len(sections) == 0:
             return None
         return Note(sections)
-
+    
+    @property
+    def tags_sections(self):
+        return [s for s in self.sections if isinstance(s, TagSection)]
+        
     def has_tag(self, tag):
-        for s in self.sections:
-            if isinstance(s, TagSection):
-                if tag in s.tags:
+        for s in self.tags_sections:
+            if tag in s.tags:
                     return True
         return False
-
+    
     @staticmethod
     def parse(text):
         if text is None or text.strip() == "":

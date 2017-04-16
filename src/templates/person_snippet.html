@@ -89,7 +89,7 @@
 
 {% macro draw_tree_button(person, context) %}
     {% if context.trees|length > 0 %}
-    <div class="btn-group btn-group-vertical pull-right">
+    
         <div class="btn-group">
             <a type="button" class="dropdown-toggle btn btn-default" data-toggle="dropdown">
             Древо <span class="caret"></span></a>
@@ -99,7 +99,6 @@
                 {% endfor %}
             </ul>
         </div>
-    </div>
     {% endif %}
 {% endmacro %}
 
@@ -126,10 +125,10 @@
 					{{ draw_person_family(person) }}
 				</div>
                 <div class="col-sm-1">
-                    {{ draw_tree_button(person, context) }}
-                    <div style="display:none">
-                        <a href="/person/{{person.uid}}">Биография</a>
-                    </div>    
+                    <div class="btn-group btn-group-vertical pull-right">
+                        {{ draw_tree_button(person, context) }}
+                        <a  type="button" class="btn btn-default pull-right" href="/person/{{person.uid}}" target="blank">Биография</a>
+                    </div>                    
                 </div>                
 			</div>
 		</div>

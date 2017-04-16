@@ -32,7 +32,7 @@ class Privacy:
 
     def comment(self, comment):
         '''comment is instance of Note class'''
-        comment = comment.filter(privacy=max(self.access, self.privacy), text=True, key_values=False, tags=False) if comment else None
+        comment = comment.filter(access=self.access, text=True, key_values=False, tags=False) if comment else None
         if comment is None:
             return None
         return self.phone(self.email(str(comment)))
@@ -45,3 +45,6 @@ class Privacy:
 
     def email(self, text):
         return Privacy.EmailRegex.sub(lambda match: '*'*len(match.group('login'))+' @'+match.group('domain'), text)
+
+    def sources(self, sources):
+        return [s for s in sources if s.quote is None or s.quote.privacy() <= self.access]

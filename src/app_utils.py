@@ -77,7 +77,7 @@ class GedName:
         m = GedName.gedcom_name_regex.match(s)
         if m is not None:
             name = m.groupdict().get('name')
-            patronymic =m.groupdict().get('patronymic')
+            patronymic = m.groupdict().get('patronymic')
             surname = m.groupdict().get('surname')
             surname_at_birth = m.groupdict().get('surname_at_birth')
             return GedName(name=name, patronymic=patronymic, surname=surname, surname_at_birth=surname_at_birth)
@@ -101,7 +101,11 @@ class PersonSnippet:
             self.spouse = spouse #RelPerson
             self.children = children #RelPerson
 
-    def __init__(self, person_uid, name=None, sex=None, birth=None, death=None, main_occupation=None, residence=None, photo=None, photos=None, comment=None, mother=None, father=None, families=None):
+    def __init__(self, person_uid, 
+                 name=None, sex=None, birth=None, death=None, 
+                 main_occupation=None, residence=None, 
+                 photo=None, photos=None, sources=None, comment=None, 
+                 mother=None, father=None, families=None):
         self.uid = person_uid
         self.name = name
         self.sex = sex
@@ -115,6 +119,7 @@ class PersonSnippet:
         self.families = families or []
         self.photo = photo
         self.photos = photos or []
+        self.sources = sources or []
 
     def choose_by_sex(self, male, female, unknown=None):
         if self.sex == 'M':
@@ -140,16 +145,59 @@ class Document:
         self.path = path
         self.title = title
 
-def get_photos(documents, files):
+def get_documents(documents, files):
     photos = []
+    docs = []
     for document in sorted(documents, key = lambda d: d.get('DFLT') == 'T', reverse=True): # сначала DFLT документ
         file = files.get(document.get('FILE', ''))
-        if file and os.path.splitext(file)[-1].lower() in ['.jpg', '.jpeg', '.png', '.tiff', '.gif']:
-            title = document.get('TITL', '')
-            photos.append(Document(path=file, title=title))
-    return photos
-          
         
+        if file:
+            ext = os.path.splitext(file)[-1].lower()
+            title = document.get('TITL', '')
+            document = Document(path=file, title=title)
+            if ext in ['.jpg', '.jpeg', '.png', '.tiff', '.gif']:
+                photos.append(document)
+            else:
+                docs.append(document)
+    return photos, docs
+         
+          
+class Source:
+    def __init__(self, name, page, quote, document_path):
+        '''quote - Note'''
+        self.name = name
+        self.page = page
+        self.quote = quote
+        self.document_path = document_path # путь до сохраненного документа-источника
+    
+    @staticmethod
+    def create_from_source(source, source_link):
+        name = source.get('TITL', None)
+        page = source_link.get('PAGE')
+        quote = Note((Note.parse(source_link.get('NOTE')) or Note()).sections + (Note.parse(source.get('TEXT')) or Note()).tags_sections)
+        return Source(name, page, quote, None)
+    
+    @staticmethod    
+    def create_from_document(document):
+        ext = os.path.splitext(document.path)[-1].lower()
+        name = document.title
+        if ext == '.txt':
+            quote = Note.parse(open('src/static/tree/files/'+document.path).read())
+            return Source(name, None, quote, None)
+        return Source(name, None, None, document.path)
+    
+    @staticmethod
+    def create_from_sources(sources, source_links):
+        for s_link in source_links:
+            source = first_or_default(sources, lambda s: s.id == s_link.id)
+            if source:
+                yield Source.create_from_source(source, s_link)
+            
+    @staticmethod
+    def create_from_documents(documents):
+        for document in documents:
+            yield Source.create_from_document(document)
+    
 def get_person_snippets(gedcom, files):
     snippets = dict()
     indi_to_uid = dict()
@@ -159,7 +207,7 @@ def get_person_snippets(gedcom, files):
         sex = person.get('SEX', None)
         main_occupation = person.get('OCCU', None)
         comment = Note.parse(person.get('NOTE', None))
-        photos = get_photos(person.documents, files)
+        photos, docs = get_documents(person.documents, files)
         photo = first_or_default(photos)      
         birth_event = first_or_default(person.events, lambda e: e.event_type == "BIRT")
         death_event = first_or_default(person.events, lambda e: e.event_type == "DEAT")
@@ -167,14 +215,17 @@ def get_person_snippets(gedcom, files):
                                      ('NOTE' not in e or ('Откуда:' not in e['NOTE'] and 'Куда:' not in e['NOTE'])))
         residence_place = residence_event.get('PLAC', None) if residence_event else None
 
+        sources = list(Source.create_from_sources(gedcom.sources, person.sources)) + list(Source.create_from_documents(docs))
         indi_to_uid[person.id] = person_uid
         snippet = PersonSnippet(person_uid,
                                 name=name,
                                 sex=sex,
                                 photos=photos,
                                 photo=photo,
+                                sources = sources,
                                 main_occupation=main_occupation,
                                 residence=residence_place,
+                                
                                 # позже при обработке семей будут назначены реальные люди
                                 mother=PersonSnippet.RelPerson('Мать'),
                                 father=PersonSnippet.RelPerson('Отец'),

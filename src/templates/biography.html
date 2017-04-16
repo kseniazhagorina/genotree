@@ -18,9 +18,35 @@
             }  
         </style>
         
+        <style>
+        a .readMore {
+            display: none;
+        }
+
+        a .readLess {
+            display: inline;
+        }
+
+        a.collapsed .readMore {
+            display: inline;
+        }
+
+        a.collapsed .readLess {
+            display: none;
+        }
+
+        .source-content:not(.in) {
+            min-height: 4.25em;
+            height: 4.25em;
+            display: block;
+            overflow: hidden;
+        }
+        
+        </style>
+        
         {% import 'person_snippet.html' as ps %}
         {% import 'photo_carousel.html' as pc %}
-        
+        {% import 'source.html' as src %}
         {% import 'yandex_metrika.html' as metrika %}
  
         {{ metrika.common_counter() }}
@@ -28,6 +54,7 @@
     </head>
     <body>
         {% set privacy = context.privacy %}
+        {% set sources_on_page = [] %}
         <div class="container">
             <h1>{{person.name}}</h1>
             <div class="row">
@@ -38,6 +65,21 @@
                         
                     <div class="media-body">
                         {{ ps.draw_short_person_info(person, privacy) }}
+                        
+                        <div>
+                        {% set person_sources = privacy.sources(person.sources) %}
+                        {% if person_sources %}
+                        Источники:
+                        <p class="small">
+                            
+                            {% for s in privacy.sources(person.sources) %}
+                                {% set _ = sources_on_page.append(s) %}
+                                {{ src.draw_source_link(s, sources_on_page|length, context) }}
+                                </br>
+                            {% endfor %}
+                        </p>
+                        {% endif %}
+                        </div>
                     </div>
                 </div>
                 
@@ -46,9 +88,25 @@
                     {{ ps.draw_person_family(person) }}
                 </div>   
                 <div class="col-sm-1">
-                    {{ ps.draw_tree_button(person, context) }}
+                    <div class="btn-group btn-group-vertical pull-right">
+                        {{ ps.draw_tree_button(person, context) }}
+                    </div>    
                 </div>
             </div>
+            
+            {% if sources_on_page %}
+            <h3>Источники</h3>
+            <div class="row"> 
+                    {% for s in sources_on_page %}
+                        <div class="col-sm-6">
+                        {{src.draw_source_content(s, loop.index, context, privacy)}}
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+            
+            
         </div>
         
         <div id="carousels">

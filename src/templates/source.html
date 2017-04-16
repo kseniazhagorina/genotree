@@ -1,0 +1,40 @@
+{% macro draw_source_link(source, index, context) %}
+    <span>
+    <a href="#source_{{index}}">[{{index}}]</a> {{source.name}} {{source.page|default('', true)|urlize(40)}} 
+    {% if source.document_path %}
+        <a href="{{context.files_dir}}/{{source.document_path}}">
+           <span class="glyphicon glyphicon-file"/>
+        </a>
+    {% endif %}
+    </span>
+{% endmacro %}
+
+
+{% macro draw_source_content(source, index, context, privacy) %}
+    <div id="source_{{index}}_container">
+        <h5><a id="source_{{index}}"></a><strong>
+        <span style="display: inline-block; width: 30px;">[{{index}}]</span>{{source.name}} {{source.page|default('', true)|urlize(40)}}
+        {% if source.document_path %}
+        <a href="{{context.files_dir}}/{{source.document_path}}">
+           <span class="glyphicon glyphicon-file"/>
+        </a>
+        {% endif %}
+        </strong></h5>
+        {% set quote = privacy.comment(source.quote) %}
+        {% if quote %}
+        <div style="padding-left: 30px;">
+            <div id="source_{{index}}_content" class="collapse source-content">
+                <p>
+                {% for line in quote.strip('\n').split('\n') %}
+                    {{line|urlize(40, nofollow=true)}}<br/>
+                {% endfor %}
+                </p>
+            </div>
+            <a href="#source_{{index}}_content" data-toggle="collapse" class="collapsed">
+                <span class="text-danger readMore">Читать далее</span>
+                <span class="text-danger readLess">Свернуть</span>
+            </a>
+        </div>
+        {% endif %}
+    </div>    
+{% endmacro %}    
