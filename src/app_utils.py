@@ -4,6 +4,7 @@
 import os.path
 import xml.etree.ElementTree
 import codecs
+import chardet
 import re
 from datetime import date
 from dateutil.relativedelta import relativedelta
@@ -12,6 +13,10 @@ from geddate import GedDate
 from genery_note import Note
 from privacy import PrivacyMode, Privacy
 
+def opendet(filename):
+    with open(filename, 'rb') as f:
+        enc = chardet.detect(f.read())
+    return codecs.open(filename, 'r', encoding=enc['encoding'])
 
 def first_or_default(arr, predicate=None, default=None):
     for item in arr:
@@ -101,10 +106,10 @@ class PersonSnippet:
             self.spouse = spouse #RelPerson
             self.children = children #RelPerson
 
-    def __init__(self, person_uid, 
-                 name=None, sex=None, birth=None, death=None, 
-                 main_occupation=None, residence=None, 
-                 photo=None, photos=None, sources=None, comment=None, 
+    def __init__(self, person_uid,
+                 name=None, sex=None, birth=None, death=None,
+                 main_occupation=None, residence=None,
+                 photo=None, photos=None, sources=None, comment=None,
                  mother=None, father=None, families=None):
         self.uid = person_uid
         self.name = name
@@ -127,11 +132,11 @@ class PersonSnippet:
         if self.sex == 'F':
             return female
         return unknown if unknown is not None else male
-        
+
     def is_alive(self):
         return self.death is None
-        
-    def age(self):  
+
+    def age(self):
         birth_date = self.birth.date.to_date() if self.birth and self.birth.date else None
         death_date = self.death.date.to_date() if self.death and self.death.date else None
         end_date = date.today() if self.is_alive() else death_date
@@ -139,7 +144,7 @@ class PersonSnippet:
             return relativedelta(end_date, birth_date).years
         else:
             return None
-            
+
 class Document:
     def __init__(self, path, title=None):
         self.path = path
@@ -150,7 +155,7 @@ def get_documents(documents, files):
     docs = []
     for document in sorted(documents, key = lambda d: d.get('DFLT') == 'T', reverse=True): # сначала DFLT документ
         file = files.get(document.get('FILE', ''))
-        
+
         if file:
             ext = os.path.splitext(file)[-1].lower()
             title = document.get('TITL', '')
@@ -160,8 +165,8 @@ def get_documents(documents, files):
             else:
                 docs.append(document)
     return photos, docs
-         
-          
+
+
 class Source:
     def __init__(self, name, page, quote, document_path):
         '''quote - Note'''
@@ -169,35 +174,35 @@ class Source:
         self.page = page
         self.quote = quote
         self.document_path = document_path # путь до сохраненного документа-источника
-    
+
     @staticmethod
     def create_from_source(source, source_link):
         name = source.get('TITL', None)
         page = source_link.get('PAGE')
         quote = Note((Note.parse(source_link.get('NOTE')) or Note()).sections + (Note.parse(source.get('TEXT')) or Note()).tags_sections)
         return Source(name, page, quote, None)
-    
-    @staticmethod    
+
+    @staticmethod
     def create_from_document(document):
         ext = os.path.splitext(document.path)[-1].lower()
         name = document.title
         if ext == '.txt':
-            quote = Note.parse(open('src/static/tree/files/'+document.path).read())
+            quote = Note.parse(opendet('src/static/tree/files/'+document.path.replace('\\', '/')).read())
             return Source(name, None, quote, None)
         return Source(name, None, None, document.path)
-    
+
     @staticmethod
     def create_from_sources(sources, source_links):
         for s_link in source_links:
             source = first_or_default(sources, lambda s: s.id == s_link.id)
             if source:
                 yield Source.create_from_source(source, s_link)
-            
+
     @staticmethod
     def create_from_documents(documents):
         for document in documents:
             yield Source.create_from_document(document)
-    
+
 def get_person_snippets(gedcom, files):
     snippets = dict()
     indi_to_uid = dict()
@@ -208,7 +213,7 @@ def get_person_snippets(gedcom, files):
         main_occupation = person.get('OCCU', None)
         comment = Note.parse(person.get('NOTE', None))
         photos, docs = get_documents(person.documents, files)
-        photo = first_or_default(photos)      
+        photo = first_or_default(photos)
         birth_event = first_or_default(person.events, lambda e: e.event_type == "BIRT")
         death_event = first_or_default(person.events, lambda e: e.event_type == "DEAT")
         residence_event = first_or_default(person.events, lambda e: e.event_type == "RESI" and 'PLAC' in e and \
@@ -225,7 +230,7 @@ def get_person_snippets(gedcom, files):
                                 sources = sources,
                                 main_occupation=main_occupation,
                                 residence=residence_place,
-                                
+
                                 # позже при обработке семей будут назначены реальные люди
                                 mother=PersonSnippet.RelPerson('Мать'),
                                 father=PersonSnippet.RelPerson('Отец'),
@@ -266,7 +271,7 @@ def get_files_dict(filename):
         for line in input:
             k, v = line.strip().split('\t')
             dict[k] = v
-    return dict 
+    return dict
 
 
 
