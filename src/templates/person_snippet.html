@@ -107,7 +107,7 @@
     {% set privacy = context.privacy %}
 	<div class="panel {{person.choose_by_sex('panel-info', 'panel-danger', 'panel-default')}}">
 		<div class="panel-heading" data-toggle="collapse" data-target="#snippet-body-{{person.uid}}">
-			<h3 class="panel-title">{{person.name}}</h3>
+			<h3 class="panel-title">{{person.name|default('...')}}</h3>
 		</div>
 		
 		<div class="panel-body panel-collapse collapse in" id="snippet-body-{{person.uid}}">
@@ -133,4 +133,17 @@
 			</div>
 		</div>
 	</div>
+{% endmacro %}
+
+{% macro draw_person_opengraph(person, context) %}
+    <meta property="og:type" content="profile"/>
+    
+    <meta property="og:image" content="
+    {%- if person.photo -%}
+        {{context.files_dir}}/{{person.photo.path}}
+    {%- else -%}
+        /static/{{person.choose_by_sex('BlankMale.jpg', 'BlankFemale.jpg')}}
+    {%- endif -%}
+    ">
+    <meta property="og:title" content="{{person.name|default('...')}}">
 {% endmacro %}
