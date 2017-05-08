@@ -2,6 +2,8 @@
 # -*- coding: utf-8 -*-
 
 import re
+from datetime import date
+from dateutil.relativedelta import relativedelta
 
 class PrivacyMode:
     PUBLIC = 0
@@ -48,3 +50,11 @@ class Privacy:
 
     def sources(self, sources):
         return [s for s in sources if s.quote is None or s.quote.privacy() <= self.access]
+    
+    def events(self, person):
+        if person.is_alive():
+            return []
+        if person.birth and person.birth.date and relativedelta(date.today(), person.birth.date.to_date()).years < 70:
+            return []
+        return [e for e in person.events if e.comment is None or e.comment.privacy() <= self.access]    
+        

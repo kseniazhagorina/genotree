@@ -192,7 +192,7 @@ class GedcomDateFormat(DateFormat):
         month_regex = r'(?P<month>{0})'.format('|'.join(monthes))
         day_regex = r'(?P<day>\d\d?)'
         year_regex = r'(?P<year>\d\d\d\d)'
-        date_regex = r'(({d} {m} {y})|({d} {m})|({m} {y})|({d} {y})|({d})|({m})|({y}))'.format(d=day_regex, m=month_regex, y=year_regex)
+        date_regex = r'(({d} {m} {y})|({d} {m})|({m} {y})|({d} {y})|({d})|({m})|({y})|)'.format(d=day_regex, m=month_regex, y=year_regex)
 
         formats = {GedDate.STANDARD: '{0}',
                    GedDate.BEFORE: 'BEF {1}',

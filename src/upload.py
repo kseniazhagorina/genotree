@@ -7,6 +7,7 @@ import shutil
 import os.path
 import codecs
 import hashlib
+import re
 
 # Загрузка базы данных и дерева единым пакетом
 # Внутри: 
@@ -61,9 +62,13 @@ def copy_documents(gedcom, folder):
             if line.startswith('1 _UID'):
                 uid = line[len('1 _UID'):].strip()
                 continue
+            m = re.search('0 @F(?P<family>\d+)@ FAM', line)
+            if m is not None:
+                uid = m.group('family')
+                continue
             if uid is None:
                 continue
-            if line.startswith('2 FILE'):
+            if line.startswith('2 FILE') or line.startswith('3 FILE'):
                 file_path = line[len('2 FILE'):].strip()
                 if file_path in files:
                     continue

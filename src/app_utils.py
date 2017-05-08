@@ -88,19 +88,21 @@ class GedName:
             return GedName(name=name, patronymic=patronymic, surname=surname, surname_at_birth=surname_at_birth)
         return GedName(unparsed=s.strip())
 
-
+class RelPerson:
+    '''человек+отношение'''
+    def __init__(self, role, person=None):
+        self.role = role
+        self.person = person #PersonSnippet
+        
 class PersonSnippet:
     '''модель для отображения сниппета о персоне на странице дерева'''
-    class Event:
+    class ShortEvent:
+        '''краткая информация о событии, отображаемая в сниппете на странице дерева'''
         def __init__(self, date=None, place=None, info=None):
             self.date = date
             self.place = place
             self.info = info # доп.информация отображаемая в скобочках
-    class RelPerson:
-        '''человек+отношение'''
-        def __init__(self, role, person=None):
-            self.role = role
-            self.person = person #PersonSnippet
+    
     class Family:
         def __init__(self, spouse=None, children=None):
             self.spouse = spouse #RelPerson
@@ -114,8 +116,8 @@ class PersonSnippet:
         self.uid = person_uid
         self.name = name
         self.sex = sex
-        self.birth = birth #event
-        self.death = death #event
+        self.birth = birth #ShortEvent
+        self.death = death #ShortEvent
         self.main_occupation = main_occupation
         self.residence = residence
         self.comment = comment
@@ -125,6 +127,7 @@ class PersonSnippet:
         self.photo = photo
         self.photos = photos or []
         self.sources = sources or []
+        self.events = []
 
     def choose_by_sex(self, male, female, unknown=None):
         if self.sex == 'M':
@@ -145,12 +148,14 @@ class PersonSnippet:
         else:
             return None
 
+            
 class Document:
     def __init__(self, path, title=None):
         self.path = path
         self.title = title
 
 def get_documents(documents, files):
+    '''документы персоны или события распределить на фотографии и документы-источники'''
     photos = []
     docs = []
     for document in sorted(documents, key = lambda d: d.get('DFLT') == 'T', reverse=True): # сначала DFLT документ
@@ -202,7 +207,22 @@ class Source:
     def create_from_documents(documents):
         for document in documents:
             yield Source.create_from_document(document)
-
+            
+class Event:
+    '''Событие для отображения на странице биографии пользователя'''
+    def __init__(self, type, head, date=None, place=None, members=None, 
+                 photo=None, photos=None, sources=None, comment=None):
+        self.type = type
+        self.head = head
+        self.date = date
+        self.place = place
+        self.comment = comment
+        self.members = members or [] # [RelPerson]
+        self.photo = photo
+        self.photos = photos or []
+        self.sources = sources or []
+        
+    
 def get_person_snippets(gedcom, files):
     snippets = dict()
     indi_to_uid = dict()
@@ -214,11 +234,6 @@ def get_person_snippets(gedcom, files):
         comment = Note.parse(person.get('NOTE', None))
         photos, docs = get_documents(person.documents, files)
         photo = first_or_default(photos)
-        birth_event = first_or_default(person.events, lambda e: e.event_type == "BIRT")
-        death_event = first_or_default(person.events, lambda e: e.event_type == "DEAT")
-        residence_event = first_or_default(person.events, lambda e: e.event_type == "RESI" and 'PLAC' in e and \
-                                     ('NOTE' not in e or ('Откуда:' not in e['NOTE'] and 'Куда:' not in e['NOTE'])))
-        residence_place = residence_event.get('PLAC', None) if residence_event else None
 
         sources = list(Source.create_from_sources(gedcom.sources, person.sources)) + list(Source.create_from_documents(docs))
         indi_to_uid[person.id] = person_uid
@@ -229,18 +244,51 @@ def get_person_snippets(gedcom, files):
                                 photo=photo,
                                 sources = sources,
                                 main_occupation=main_occupation,
-                                residence=residence_place,
 
                                 # позже при обработке семей будут назначены реальные люди
-                                mother=PersonSnippet.RelPerson('Мать'),
-                                father=PersonSnippet.RelPerson('Отец'),
+                                mother=RelPerson('Мать'),
+                                father=RelPerson('Отец'),
                                 comment=comment)
-        if birth_event is not None:
-            birth_date = GedDate.parse(birth_event.get('DATE', ''))
-            snippet.birth = PersonSnippet.Event(date=birth_date, place=birth_event.get('PLAC', None))
-        if death_event is not None:
-            death_date = GedDate.parse(death_event.get('DATE', ''))
-            snippet.death = PersonSnippet.Event(date=death_date, place=death_event.get('PLAC', None))
+                                
+        for event in person.events:
+            event_type = event.event_type 
+            event_date = GedDate.parse(event.get('DATE', ''))
+            event_place = event.get('PLAC', None)
+            event_comment_row = event.get('NOTE', None)
+            event_comment = Note.parse(event_comment_row)
+            event_photos, event_docs = get_documents(event.documents, files)
+            event_photo = first_or_default(event_photos)
+            event_sources = list(Source.create_from_sources(gedcom.sources, event.sources)) + list(Source.create_from_documents(event_docs))
+            event_head = None
+
+            if event_type == 'BIRT':
+                event_head = snippet.choose_by_sex('Родился', 'Родилась')
+                snippet.birth = PersonSnippet.ShortEvent(date=event_date, place=event_place)
+            if event_type == 'DEAT':
+                event_head = snippet.choose_by_sex('Умер', 'Умерла')
+                snippet.death = PersonSnippet.ShortEvent(date=event_date, place=event_place)
+            if event_type == 'RESI':
+                has_from_to = event_comment_row is not None and ('Откуда:' in event_comment_row or 'Куда:' in event_comment_row)
+                if event_place is not None and not has_from_to:
+                    # это не событие, это место жительства
+                    snippet.residence = event_place
+                else:
+                    # это событие переезд
+                    event_head = 'Переезд'
+            if event_type == 'EDUC':
+                event_head = 'Обучение'
+            if event_type == 'OCCU':
+                event_head = 'Устройство на работу'
+            if event_type == '__2':
+                event_head = 'Служба в армии'
+            
+            if event_head is not None:
+                snippet.events.append(
+                    Event(type=event_type, head=event_head, date=event_date, place=event_place, 
+                          comment = event_comment, photo = event_photo, photos = event_photos,
+                          sources = event_sources))
+
+        
         snippets[person_uid] = snippet
 
     for family in gedcom.families:
@@ -255,12 +303,12 @@ def get_person_snippets(gedcom, files):
             child.mother.person = wife
             child.father.person = husband
             child_role = child.choose_by_sex('Сын', 'Дочь', 'Ребенок')
-            children.append(PersonSnippet.RelPerson(child_role, child))
+            children.append(RelPerson(child_role, child))
         if wife:
-            spouse = PersonSnippet.RelPerson('Супруг', husband)
+            spouse = RelPerson('Супруг', husband)
             wife.families.append(PersonSnippet.Family(spouse, children))
         if husband:
-            spouse = PersonSnippet.RelPerson('Супруга', wife)
+            spouse = RelPerson('Супруга', wife)
             husband.families.append(PersonSnippet.Family(spouse, children))
 
     return snippets
