@@ -6,10 +6,19 @@ from app_utils import get_tree, get_tree_map, get_person_snippets, get_files_dic
 from gedcom import GedcomReader
 from upload import load_package, select_tree_img_files
 from privacy import Privacy, PrivacyMode
+import oauth_api as oauth
 
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, url_for
 app = Flask(__name__)
 app.debug = True
+
+global OAUTH_API
+OAUTH_API = None
+def OAuth():
+    global OAUTH_API
+    if OAUTH_API is None:
+        OAUTH_API = oauth.Api(url_for)
+    return OAUTH_API
 
 DEFAULT_TREE = ''
 TREE_NAMES = {
@@ -122,9 +131,23 @@ def biography(person_uid):
 def load(archive):
     archive = 'upload/{0}.zip'.format(archive)
     data.load(archive)
-    return 'Success!' if data.is_valid() else 'Fail!\n' + data.load_error 
+    return 'Success!' if data.is_valid() else 'Fail!\n' + data.load_error
 
+@app.route('/index')
+def index():
+    return render_template('index.html', api=OAuth())
+    
+@app.route('/login/auth/<service>')
+def auth(service):
+    code = request.args['code']
+    token = OAuth().get(service).auth.get_access_token(code)
+    return 'auth: {}\ntoken: {}'.format(request.args, token)
+
+@app.route('/login/unauth/<service>')
+def unauth(service):
+    return 'unauth: {}'.format(request.args)
+    
 if __name__ == "__main__":
     app.run()
-    
+        
     
