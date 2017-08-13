@@ -7,18 +7,18 @@ from gedcom import GedcomReader
 from upload import load_package, select_tree_img_files
 from privacy import Privacy, PrivacyMode
 import oauth_api as oauth
+import json
 
 from flask import Flask, render_template, request, url_for
 app = Flask(__name__)
 app.debug = True
 
-global OAUTH_API
-OAUTH_API = None
-def OAuth():
-    global OAUTH_API
-    if OAUTH_API is None:
-        OAUTH_API = oauth.Api(url_for)
-    return OAUTH_API
+oauth.API = None
+def OAuth():   
+    if oauth.API is None:
+        config = json.loads(open('data/config/oauth.config').read())
+        oauth.API = oauth.Api(url_for, config)
+    return oauth.API
 
 DEFAULT_TREE = ''
 TREE_NAMES = {

@@ -321,33 +321,6 @@ def get_files_dict(filename):
             dict[k] = v
     return dict
 
-class AsObj(object):
-    def __init__(self, data):
-        self.__data = data
-    
-    def __construct(self, value):
-        if isinstance(value, dict) or isinstance(value, list):
-            return AsObj(value)
-        return value
-        
-    def __getattribute__(self,name):
-        if isinstance(self.__data, dict):
-            value = self.__data.get(name)
-            return self.__construct(value)
-        return object.__getattribute__(self, name)
-        
-    def __setattribute__(self,name,value):
-        if isinstance(self.__data, dict):
-            self.__data[name] = value
-        return object.__setattribute__(self, name, value)
-    
-    def __setitem__(self, key, item):
-        self.__data[key] = item
-
-    def __getitem__(self, key):
-        value = self.__data[key]
-        return self.__construct(value)
-
 
 
 

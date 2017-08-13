@@ -5,14 +5,20 @@ import requests
 import json
 
 class Api:
-    def __init__(self, url_for):
+    def __init__(self, url_for, config):
         make_url = lambda action, service: url_for(action, service=service, _external=True)
-        self.vk = Vk(id='5006214', secret='auzFWlNTns4NSUNnpDC7')
-        self.ok = Ok(id='1253465856', public_key='CBAQFHLLEBABABABA', private_key='7C7C14C7C6BB00CE43F0FFE9')
-        for service in ['vk', 'ok']:
-            app = self.get(service)
-            app.auth_to(make_url('auth', service), make_url('unauth', service))
-
+        
+        def init_service(Service, name):
+            s = None
+            if name in config:
+                s = Service(**config[name])
+                s.auth_to(make_url('auth', name), make_url('unauth', name))
+            self.__dict__[name] = s
+        
+        init_service(Vk, 'vk')
+        init_service(Ok, 'ok')
+        
+            
     def get(self, service):
         if service in self.__dict__:
             return self.__dict__[service]
