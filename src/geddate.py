@@ -65,6 +65,8 @@ class GedDate:
     #форматы
     Gedcom = None
     Genery = None
+    
+    MIN = date(1, 1, 1)
 
     @staticmethod
     def parse(s):

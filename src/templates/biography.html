@@ -119,9 +119,12 @@
                         <div class="col-sm-6">
                         <strong>{{e.head}}</strong>
                         <p>
+                        {% for member in e.members %}
+                           {{ ps.draw_related_person(member) }} {% if loop.index+1 == e.members|length %},{% else %}<br/>{% endif %}
+                        {% endfor %}
+ 
                         {% set e_comment=privacy.comment(e.comment) %}
                         {% if e_comment %}
-                        
                             {% for line in e_comment.split('\n') %}
                                 {{line|urlize(40, nofollow=true)}}<br/>
                             {% endfor %}

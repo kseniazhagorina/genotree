@@ -6,12 +6,14 @@ import xml.etree.ElementTree
 import codecs
 import chardet
 import re
+from copy import copy
 from datetime import date
 from dateutil.relativedelta import relativedelta
 from gedcom import GedcomReader
 from geddate import GedDate
 from genery_note import Note
 from privacy import PrivacyMode, Privacy
+
 
 def opendet(filename):
     with open(filename, 'rb') as f:
@@ -23,7 +25,6 @@ def first_or_default(arr, predicate=None, default=None):
         if predicate is None or predicate(item):
             return item
     return default
-
 
 class TreeMap:
     class Node:
@@ -88,6 +89,13 @@ class GedName:
             return GedName(name=name, patronymic=patronymic, surname=surname, surname_at_birth=surname_at_birth)
         return GedName(unparsed=s.strip())
 
+def choose_by_sex(sex, male, female, unknown=None):
+    if sex == 'M':
+        return male
+    if sex == 'F':
+        return female
+    return unknown if unknown is not None else male
+    
 class RelPerson:
     '''человек+отношение'''
     def __init__(self, role, person=None):
@@ -104,9 +112,10 @@ class PersonSnippet:
             self.info = info # доп.информация отображаемая в скобочках
     
     class Family:
-        def __init__(self, spouse=None, children=None):
+        def __init__(self, spouse=None, children=None, events=None):
             self.spouse = spouse #RelPerson
             self.children = children #RelPerson
+            self.events = events or [] #[Event]
 
     def __init__(self, person_uid,
                  name=None, sex=None, birth=None, death=None,
@@ -123,18 +132,14 @@ class PersonSnippet:
         self.comment = comment
         self.mother = mother #RelPerson
         self.father = father #RelPerson
-        self.families = families or []
+        self.families = families or [] #[Family]
         self.photo = photo
-        self.photos = photos or []
-        self.sources = sources or []
-        self.events = []
+        self.photos = photos or [] #[Document]
+        self.sources = sources or [] #[Document]
+        self.events = [] #[Event]
 
     def choose_by_sex(self, male, female, unknown=None):
-        if self.sex == 'M':
-            return male
-        if self.sex == 'F':
-            return female
-        return unknown if unknown is not None else male
+        return choose_by_sex(self.sex, male, female, unknown)
 
     def is_alive(self):
         return self.death is None
@@ -147,6 +152,7 @@ class PersonSnippet:
             return relativedelta(end_date, birth_date).years
         else:
             return None
+    
 
             
 class Document:
@@ -221,14 +227,80 @@ class Event:
         self.photo = photo
         self.photos = photos or []
         self.sources = sources or []
+    
+    @staticmethod
+    def from_gedcom_event(event, sex, gedcom, files):
+        event_type = event.event_type 
+        event_date = GedDate.parse(event.get('DATE', ''))
+        event_place = event.get('PLAC', None)
+        event_comment_row = event.get('NOTE', None)
+        event_comment = Note.parse(event_comment_row)
+        event_photos, event_docs = get_documents(event.documents, files)
+        event_photo = first_or_default(event_photos)
+        event_sources = list(Source.create_from_sources(gedcom.sources, event.sources)) + list(Source.create_from_documents(event_docs))
+        event_head = None
+
+        if event_type == 'BIRT':
+            event_head = choose_by_sex(sex, 'Родился', 'Родилась')
+        elif event_type == 'DEAT':
+            event_head = choose_by_sex(sex, 'Умер', 'Умерла')
+        elif event_type == 'RESI':
+            has_from_to = event_comment_row is not None and ('Откуда:' in event_comment_row or 'Куда:' in event_comment_row)
+            if event_place is not None and not has_from_to:
+                # это не событие, это место жительства
+                event_type = 'RESIDENCE'
+            else:
+                # это событие переезд
+                event_head = 'Переезд'
+        elif event_type == 'EDUC':
+            event_head = 'Обучение'
+        elif event_type == 'OCCU':
+            event_head = 'Устройство на работу'
+        elif event_type == '__2':
+            event_head = 'Служба в армии'
+        elif event_type == 'MARR':
+            event_head = choose_by_sex(sex, 'Женился', 'Вышла замуж')
+        elif event_type == 'DIV':
+            event_head = choose_by_sex(sex, 'Развелся', 'Развелась')        
         
+        return Event(type=event_type, head=event_head, date=event_date, place=event_place, 
+                     comment = event_comment, photo = event_photo, photos = event_photos,
+                     sources = event_sources)
+                     
+    @staticmethod
+    def order(event):
+        '''метод для получения ключа для упорядочивания персональных событий'''
+        d = event.date.to_date() if event.date else None
+        if event.type == 'BIRT':
+            return (-1, d or GedDate.MIN) # рождение в начале
+        if event.type == 'DEAT':
+            return (1 if d is None else 0, d or GedDate.MIN) # смерть без даты в конце
+        return (0, d or GedDate.MIN)
+        
+    @staticmethod
+    def merge(personal_events, family_events):
+        events = []
+        p = 0
+        f = 0
+        while p < len(personal_events) and f < len(family_events):
+            if Event.order(personal_events[p]) <= Event.order(family_events[f]):
+                events.append(personal_events[p])
+                p += 1
+            else:
+                events.append(family_events[f])
+                f += 1
+        if p < len(personal_events):
+            events += personal_events[p:]
+        if f < len(family_events):
+            events += family_events[f:]
+        return events
     
 def get_person_snippets(gedcom, files):
     snippets = dict()
     indi_to_uid = dict()
     for person in gedcom.persons:
         person_uid = person['_UID']
-        name = str(GedName.parse(person.get('NAME', '')))
+        name = GedName.parse(person.get('NAME', ''))
         sex = person.get('SEX', None)
         main_occupation = person.get('OCCU', None)
         comment = Note.parse(person.get('NOTE', None))
@@ -250,66 +322,112 @@ def get_person_snippets(gedcom, files):
                                 father=RelPerson('Отец'),
                                 comment=comment)
                                 
-        for event in person.events:
-            event_type = event.event_type 
-            event_date = GedDate.parse(event.get('DATE', ''))
-            event_place = event.get('PLAC', None)
-            event_comment_row = event.get('NOTE', None)
-            event_comment = Note.parse(event_comment_row)
-            event_photos, event_docs = get_documents(event.documents, files)
-            event_photo = first_or_default(event_photos)
-            event_sources = list(Source.create_from_sources(gedcom.sources, event.sources)) + list(Source.create_from_documents(event_docs))
-            event_head = None
+        for e in person.events:
+            event = Event.from_gedcom_event(e, sex, gedcom, files) 
 
-            if event_type == 'BIRT':
-                event_head = snippet.choose_by_sex('Родился', 'Родилась')
-                snippet.birth = PersonSnippet.ShortEvent(date=event_date, place=event_place)
-            if event_type == 'DEAT':
-                event_head = snippet.choose_by_sex('Умер', 'Умерла')
-                snippet.death = PersonSnippet.ShortEvent(date=event_date, place=event_place)
-            if event_type == 'RESI':
-                has_from_to = event_comment_row is not None and ('Откуда:' in event_comment_row or 'Куда:' in event_comment_row)
-                if event_place is not None and not has_from_to:
-                    # это не событие, это место жительства
-                    snippet.residence = event_place
-                else:
-                    # это событие переезд
-                    event_head = 'Переезд'
-            if event_type == 'EDUC':
-                event_head = 'Обучение'
-            if event_type == 'OCCU':
-                event_head = 'Устройство на работу'
-            if event_type == '__2':
-                event_head = 'Служба в армии'
-            
-            if event_head is not None:
-                snippet.events.append(
-                    Event(type=event_type, head=event_head, date=event_date, place=event_place, 
-                          comment = event_comment, photo = event_photo, photos = event_photos,
-                          sources = event_sources))
+            if event.type == 'BIRT':
+                snippet.birth = PersonSnippet.ShortEvent(date=event.date, place=event.place)
+            if event.type == 'DEAT':
+                snippet.death = PersonSnippet.ShortEvent(date=event.date, place=event.place)
+            if event.type == 'RESIDENCE':
+                snippet.residence = event.place
 
+            if event.head is not None:
+                snippet.events.append(event)
         
+            
+        snippet.events = list(sorted(snippet.events, key=Event.order))
         snippets[person_uid] = snippet
 
     for family in gedcom.families:
         wife = snippets.get(indi_to_uid.get(family.get('WIFE')), None)
         husband = snippets.get(indi_to_uid.get(family.get('HUSB')), None)
         children = []
-        for child_indi in family.get('CHIL', []):
-            child = snippets.get(indi_to_uid.get(child_indi), None)
-            if child is None:
-                print ('cant find child with id ['+child_indi+']')
-                continue
+        children_birth = []
+        
+        def get_children(family):
+            '''все дети в семье отсортированные по дате рождения'''
+            children = []
+            for child_indi in family.get('CHIL', []):
+                child = snippets.get(indi_to_uid.get(child_indi), None)
+                if child is None:
+                    print ('cant find child with id ['+child_indi+']')
+                    continue
+                children.append(child)
+            return list(sorted(children, key=lambda child: child.birth.date.to_date() or GedDate.MIN if child.birth and child.birth.date else GedDate.MIN))
+            
+        for child in get_children(family):
             child.mother.person = wife
             child.father.person = husband
             child_role = child.choose_by_sex('Сын', 'Дочь', 'Ребенок')
             children.append(RelPerson(child_role, child))
+            
+            # событие для родителей - участник - ребенок
+            birth = copy(first_or_default(child.events, lambda e: e.type == 'BIRT', Event(type='BIRT', head=None)))
+            birth.type = 'CHIL'
+            birth.head = child.choose_by_sex('Родился', 'Родилась') + ' ' + (child.name.name or child.choose_by_sex('сын', 'дочь', 'ребенок'))
+            birth.members = birth.members + [RelPerson(child.choose_by_sex('Родился', 'Родилась'), child)]
+            children_birth.append(birth)
+            
+            # событие для ребенка - участники - родители
+            birth = first_or_default(child.events, lambda e: e.type == 'BIRT')
+            if birth:
+                if child.father.person:
+                    birth.members.append(child.father)
+                if child.mother.person:
+                    birth.members.append(child.mother)
+        
+        marr = first_or_default(family.events, lambda e: e.event_type == 'MARR')
+        div = first_or_default(family.events, lambda e: e.event_type == 'DIV')
+        
+        def get_family_for(person1, person2=None):
+            spouse = RelPerson(person2.choose_by_sex('Супруг', 'Супруга'), person2) if person2 else None
+            parent = RelPerson(person2.choose_by_sex('Отец', 'Мать'), person2) if person2 else None
+            events = []
+            if marr:
+                marr_event = Event.from_gedcom_event(marr, person1.sex, gedcom, files)
+                if spouse:
+                    marr_event.members.append(spouse)
+                events.append(marr_event)
+            for birth in children_birth:
+                birth_event = copy(birth)
+                if parent:
+                    birth_event.members = birth_event.members + [parent]
+                events.append(birth_event)
+            if div:
+                div_event = Event.from_gedcom_event(div, person1.sex, gedcom, files)
+                if spouse:
+                    div_event.members.append(spouse)
+                events.append(div_event)
+            
+            return PersonSnippet.Family(spouse, children, events)
+            
         if wife:
-            spouse = RelPerson('Супруг', husband)
-            wife.families.append(PersonSnippet.Family(spouse, children))
+            wife.families.append(get_family_for(wife, husband))
         if husband:
-            spouse = RelPerson('Супруга', wife)
-            husband.families.append(PersonSnippet.Family(spouse, children))
+            husband.families.append(get_family_for(husband, wife))
+
+    
+    
+    def first_date_of(events):
+        mind = None
+        for e in events:
+            d = e.date.to_date() if e.date else None
+            if d is not None and (mind is None or d < mind):
+                mind = d
+        return mind
+                
+        
+    for person in snippets.values():
+        person.families = list(sorted(person.families, key=lambda fam: first_date_of(fam.events) or GedDate.MIN))
+        family_events = []
+        for family in person.families:
+            family_events += family.events
+        if person.uid == 'owegRxGhr2':
+            print([Event.order(e) for e in person.events])
+            print([Event.order(e) for e in family_events])
+        person.events = Event.merge(person.events, family_events)
+        
 
     return snippets
 
