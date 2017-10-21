@@ -423,9 +423,6 @@ def get_person_snippets(gedcom, files):
         family_events = []
         for family in person.families:
             family_events += family.events
-        if person.uid == 'owegRxGhr2':
-            print([Event.order(e) for e in person.events])
-            print([Event.order(e) for e in family_events])
         person.events = Event.merge(person.events, family_events)
         
 
