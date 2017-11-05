@@ -5,7 +5,8 @@ import requests
 import json
 import urllib.parse as urlparse
 import hashlib
-from app_utils import first_or_default
+from app_utils import first_or_default, dobj
+import re
 
 class Api:
     def __init__(self, url_for, config):
@@ -27,7 +28,16 @@ class Api:
             return self.__dict__[service]
         return None
 
-
+class UserInfo(dobj):
+    def __init__(self, data):
+        super(dobj, self).__init__(data)
+        self.first_name = self.get('first_name', None)
+        self.last_name = self.get('last_name', None)
+        self.login = self.get('login', None)
+        self.uid = self.get('uid', None)
+        self.photo50 = self.get('photo50', None)
+        self.service = self.get('service', None)
+    
 class Vk:
     version = "5.35";
 
@@ -41,7 +51,6 @@ class Vk:
         Groups = 262144
         Email = 4194304
         Offline = 65536
-
 
     def __init__(self, id, secret):
         self.id = "5006214";
@@ -80,12 +89,12 @@ class Vk:
             self.app = app
             self.token = token
             self.access_token = self.token.get('access_token', '')
-            self.user = None
+            self.__user = None
 
         def me(self):
-            if self.user is None and self.token is not None and 'user_id' in self.token:
-                self.user = first_or_default(self.users([self.token['user_id']]))
-            return self.user
+            if self.__user is None and self.token is not None and 'user_id' in self.token:
+                self.__user = self.user(self.token['user_id'])
+            return self.__user
 
         def users(self, uids):
             url = 'https://api.vk.com/method/users.get?user_ids={uids}&v=5.52&access_token={access_token}&fields=verified,sex,bdate,city,country,home_town,has_photo,photo_50,photo_100,photo_200_orig,photo_200,photo_400_orig,photo_max,photo_max_orig,online,domain,has_mobile,contacts,site,education,universities,schools,status,last_seen,followers_count,occupation,nickname,relatives,relation,personal,connections,exports,wall_comments,activities,interests,music,movies,tv,books,games,about,quotes,can_post,can_see_all_posts,can_see_audio,can_write_private_message,can_send_friend_request,is_favorite,is_hidden_from_feed,timezone,screen_name,maiden_name,crop_photo,is_friend,friend_status,career,military,blacklisted,blacklisted_by_me'
@@ -94,7 +103,18 @@ class Vk:
             if 'response' not in response:
                 print('Api.Vk error: {} respond {}'.format(url, response))
                 return []
-            return response['response']
+            return [Vk.User(user) for user in response['response']]
+            
+        def user(self, uid):
+            return first_or_default(self.users([uid]))
+
+    class User(UserInfo):
+        '''конвертирует данные о пользователе в общее представление'''
+        def __init__(self, data):
+            data['login'] = data.get('domain', None)
+            data['photo50'] = data.get('photo_50', None)
+            data['service'] = 'vk' # по идее название сервисаы нужно брать из oauth.config
+            super(UserInfo, self).__init__(data)            
 
 class Ok:
     '''https://apiok.ru/ext/oauth/server'''
@@ -107,6 +127,7 @@ class Ok:
         VIDEO_CONTENT = 5       # Доступ к видео
         APP_INVITE = 6	        # Разрешение приглашать друзей в игру методом friends.appInvite
         GET_EMAIL = 7           # Email пользователя
+    
 
     def __init__(self, id, public_key, private_key):
         self.id = id
@@ -134,12 +155,12 @@ class Ok:
             return token
 
     class Session:
-        __FIELDS = 'ACCESSIBLE,AGE,ALLOWS_ANONYM_ACCESS,ALLOWS_MESSAGING_ONLY_FOR_FRIENDS,BECOME_VIP_ALLOWED,BIRTHDAY,BLOCKED,BLOCKS,CAN_VCALL,CAN_VMAIL,CITY_OF_BIRTH,COMMON_FRIENDS_COUNT,CURRENT_LOCATION,CURRENT_STATUS,CURRENT_STATUS_DATE,CURRENT_STATUS_DATE_MS,CURRENT_STATUS_ID,CURRENT_STATUS_MOOD,CURRENT_STATUS_TRACK_ID,EMAIL,FIRST_NAME,FRIEND,FRIEND_INVITATION,FRIEND_INVITE_ALLOWED,GENDER,GROUP_INVITE_ALLOWED,HAS_EMAIL,HAS_PHONE,HAS_SERVICE_INVISIBLE,INTERNAL_PIC_ALLOW_EMPTY,INVITED_BY_FRIEND,IS_ACTIVATED,LAST_NAME,LAST_ONLINE,LAST_ONLINE_MS,LOCALE,LOCATION,LOCATION_OF_BIRTH,MODIFIED_MS,NAME,ODKL_BLOCK_REASON,ODKL_EMAIL,ODKL_LOGIN,ODKL_MOBILE,ODKL_MOBILE_STATUS,ODKL_USER_OPTIONS,ODKL_USER_STATUS,ODKL_VOTING,ONLINE,PHOTO_ID,PIC1024X768,PIC128MAX,PIC128X128,PIC180MIN,PIC190X190,PIC224X224,PIC240MIN,PIC288X288,PIC320MIN,PIC50X50,PIC600X600,PIC640X480,PIC_1,PIC_2,PIC_3,PIC_4,PIC_5,PIC_BASE,PIC_FULL,PIC_MAX,PREMIUM,PRESENTS,PRIVATE,PYMK_PIC224X224,PYMK_PIC288X288,PYMK_PIC600X600,PYMK_PIC_FULL,REF,REGISTERED_DATE,REGISTERED_DATE_MS,RELATIONS,RELATIONSHIP,SEND_MESSAGE_ALLOWED,SHOW_LOCK,STATUS,UID,URL_CHAT,URL_CHAT_MOBILE,URL_PROFILE,URL_PROFILE_MOBILE,VIP'
+        __FIELDS = 'user.relationship,relationship.*,ACCESSIBLE,AGE,ALLOWS_ANONYM_ACCESS,ALLOWS_MESSAGING_ONLY_FOR_FRIENDS,BECOME_VIP_ALLOWED,BIRTHDAY,BLOCKED,BLOCKS,CAN_VCALL,CAN_VMAIL,CITY_OF_BIRTH,COMMON_FRIENDS_COUNT,CURRENT_LOCATION,CURRENT_STATUS,CURRENT_STATUS_DATE,CURRENT_STATUS_DATE_MS,CURRENT_STATUS_ID,CURRENT_STATUS_MOOD,CURRENT_STATUS_TRACK_ID,EMAIL,FIRST_NAME,FRIEND,FRIEND_INVITATION,FRIEND_INVITE_ALLOWED,GENDER,GROUP_INVITE_ALLOWED,HAS_EMAIL,HAS_PHONE,HAS_SERVICE_INVISIBLE,INTERNAL_PIC_ALLOW_EMPTY,INVITED_BY_FRIEND,IS_ACTIVATED,LAST_NAME,LAST_ONLINE,LAST_ONLINE_MS,LOCALE,LOCATION,LOCATION_OF_BIRTH,MODIFIED_MS,NAME,ODKL_BLOCK_REASON,ODKL_EMAIL,ODKL_LOGIN,ODKL_MOBILE,ODKL_MOBILE_STATUS,ODKL_USER_OPTIONS,ODKL_USER_STATUS,ODKL_VOTING,ONLINE,PHOTO_ID,PIC1024X768,PIC128MAX,PIC128X128,PIC180MIN,PIC190X190,PIC224X224,PIC240MIN,PIC288X288,PIC320MIN,PIC50X50,PIC600X600,PIC640X480,PIC_1,PIC_2,PIC_3,PIC_4,PIC_5,PIC_BASE,PIC_FULL,PIC_MAX,PREMIUM,PRESENTS,PRIVATE,PYMK_PIC224X224,PYMK_PIC288X288,PYMK_PIC600X600,PYMK_PIC_FULL,REF,REGISTERED_DATE,REGISTERED_DATE_MS,RELATIONS,RELATIONSHIP,SEND_MESSAGE_ALLOWED,SHOW_LOCK,STATUS,UID,URL_CHAT,URL_CHAT_MOBILE,URL_PROFILE,URL_PROFILE_MOBILE,VIP'
         def __init__(self, token, app):
             self.app = app
             self.token = token
             self.access_token = self.token.get('access_token', '')
-            self.user = None
+            self.__user = None
 
         def __sig(self, url, with_access_token=True):
             '''
@@ -178,7 +199,7 @@ class Ok:
             return url
 
         def me(self):
-            if self.user is None and self.access_token:
+            if self.__user is None and self.access_token:
                 url = 'https://api.ok.ru/api/users/getCurrentUser?application_key={application_key}&fields='+self.__FIELDS
                 url = url.format(application_key=self.app.public_key)
                 url = self.__sig(url)
@@ -186,8 +207,9 @@ class Ok:
                 if 'error' in user:
                     print('Api.Ok error: {} respond {}'.format(url, user))
                     return None
-                self.user = first_or_default(self.users([user['uid']]))
-            return self.user
+                user['login'] = self.__get_login(user['uid'])    
+                self.__user = Ok.User(user)
+            return self.__user
 
         def users(self, uids):
             url = 'https://api.ok.ru/api/users/getInfo?uids={uids}&application_key={application_key}&emptyPictures=true&fields='+self.__FIELDS
@@ -197,5 +219,34 @@ class Ok:
             if 'error' in response:
                 print('Api.Ok error: {} respond {}'.format(url, response))
                 return []
-            return response
+                
+            return [Ok.User(user) for user in response]
+            
+        def user(self, uid):
+            url = 'https://api.ok.ru/api/users/getInfoBy?uid={uid}&application_key={application_key}&register_as_guest=false&emptyPictures=true&fields='+self.__FIELDS
+            url = url.format(application_key=self.app.public_key, uid=uid)
+            url = self.__sig(url)
+            response = json.loads(requests.get(url).text)
+            if 'error' in response:
+                print('Api.Ok error: {} respond {}'.format(url, response))
+                return None
+            return Ok.User(response['user'])
+            
+        def __get_login(self, uid):
+            url = 'https://ok.ru/profile/{}'.format(uid)
+            response = requests.get(url).text
+            m = re.search('<a itemprop="url" href="https://ok.ru/([\w+\.-]+)', response)
+            if m:
+                login = m.group(1)
+                if login != uid:
+                    return login
+            return None
+
+    class User(UserInfo):
+        '''конвертирует данные о пользователе в общее представление'''
+        def __init__(self, data):
+            data['photo50'] = data.get('pic50x50', None)
+            data['service'] = 'ok' # по идее название сервисаы нужно брать из oauth.config
+            super(UserInfo, self).__init__(data)
+            
 

@@ -26,6 +26,29 @@ def first_or_default(arr, predicate=None, default=None):
             return item
     return default
 
+class dobj(dict):
+    @staticmethod
+    def convert(value):
+        if isinstance(value, (list, tuple)):
+            converted_value = [dobj.convert(x) for x in value]
+            return tuple(converted_value) if isinstance(value, tuple) else converted_value
+        if isinstance(value, dict) and not isinstance(value, dobj):
+            converted_value = dict([(k, dobj.convert(v)) for k,v in value.items()])
+            return dobj(converted_value)
+        return value
+
+    def __init__(self, d):
+        for key, value in d.items():
+            self.__setattr__(key, value)
+
+    def __getattr__(self, name):
+        return self[name]
+    def __setattr__(self, name, value):
+        self[name] = dobj.convert(value)
+    def __delattr__(self, name):
+        del self[name]
+
+
 class TreeMap:
     class Node:
         def __init__(self, node):
@@ -95,13 +118,13 @@ def choose_by_sex(sex, male, female, unknown=None):
     if sex == 'F':
         return female
     return unknown if unknown is not None else male
-    
+
 class RelPerson:
     '''человек+отношение'''
     def __init__(self, role, person=None):
         self.role = role
         self.person = person #PersonSnippet
-        
+
 class PersonSnippet:
     '''модель для отображения сниппета о персоне на странице дерева'''
     class ShortEvent:
@@ -110,7 +133,7 @@ class PersonSnippet:
             self.date = date
             self.place = place
             self.info = info # доп.информация отображаемая в скобочках
-    
+
     class Family:
         def __init__(self, spouse=None, children=None, events=None):
             self.spouse = spouse #RelPerson
@@ -152,9 +175,9 @@ class PersonSnippet:
             return relativedelta(end_date, birth_date).years
         else:
             return None
-    
 
-            
+
+
 class Document:
     def __init__(self, path, title=None):
         self.path = path
@@ -213,10 +236,10 @@ class Source:
     def create_from_documents(documents):
         for document in documents:
             yield Source.create_from_document(document)
-            
+
 class Event:
     '''Событие для отображения на странице биографии пользователя'''
-    def __init__(self, type, head, date=None, place=None, members=None, 
+    def __init__(self, type, head, date=None, place=None, members=None,
                  photo=None, photos=None, sources=None, comment=None):
         self.type = type
         self.head = head
@@ -227,10 +250,10 @@ class Event:
         self.photo = photo
         self.photos = photos or []
         self.sources = sources or []
-    
+
     @staticmethod
     def from_gedcom_event(event, sex, gedcom, files):
-        event_type = event.event_type 
+        event_type = event.event_type
         event_date = GedDate.parse(event.get('DATE', ''))
         event_place = event.get('PLAC', None)
         event_comment_row = event.get('NOTE', None)
@@ -261,12 +284,12 @@ class Event:
         elif event_type == 'MARR':
             event_head = choose_by_sex(sex, 'Женился', 'Вышла замуж')
         elif event_type == 'DIV':
-            event_head = choose_by_sex(sex, 'Развелся', 'Развелась')        
-        
-        return Event(type=event_type, head=event_head, date=event_date, place=event_place, 
+            event_head = choose_by_sex(sex, 'Развелся', 'Развелась')
+
+        return Event(type=event_type, head=event_head, date=event_date, place=event_place,
                      comment = event_comment, photo = event_photo, photos = event_photos,
                      sources = event_sources)
-                     
+
     @staticmethod
     def order(event):
         '''метод для получения ключа для упорядочивания персональных событий'''
@@ -276,7 +299,7 @@ class Event:
         if event.type == 'DEAT':
             return (1 if d is None else 0, d or GedDate.MIN) # смерть без даты в конце
         return (0, d or GedDate.MIN)
-        
+
     @staticmethod
     def merge(personal_events, family_events):
         events = []
@@ -294,7 +317,7 @@ class Event:
         if f < len(family_events):
             events += family_events[f:]
         return events
-    
+
 def get_person_snippets(gedcom, files):
     snippets = dict()
     indi_to_uid = dict()
@@ -321,9 +344,9 @@ def get_person_snippets(gedcom, files):
                                 mother=RelPerson('Мать'),
                                 father=RelPerson('Отец'),
                                 comment=comment)
-                                
+
         for e in person.events:
-            event = Event.from_gedcom_event(e, sex, gedcom, files) 
+            event = Event.from_gedcom_event(e, sex, gedcom, files)
 
             if event.type == 'BIRT':
                 snippet.birth = PersonSnippet.ShortEvent(date=event.date, place=event.place)
@@ -334,8 +357,8 @@ def get_person_snippets(gedcom, files):
 
             if event.head is not None:
                 snippet.events.append(event)
-        
-            
+
+
         snippet.events = list(sorted(snippet.events, key=Event.order))
         snippets[person_uid] = snippet
 
@@ -344,7 +367,7 @@ def get_person_snippets(gedcom, files):
         husband = snippets.get(indi_to_uid.get(family.get('HUSB')), None)
         children = []
         children_birth = []
-        
+
         def get_children(family):
             '''все дети в семье отсортированные по дате рождения'''
             children = []
@@ -355,20 +378,20 @@ def get_person_snippets(gedcom, files):
                     continue
                 children.append(child)
             return list(sorted(children, key=lambda child: child.birth.date.to_date() or GedDate.MIN if child.birth and child.birth.date else GedDate.MIN))
-            
+
         for child in get_children(family):
             child.mother.person = wife
             child.father.person = husband
             child_role = child.choose_by_sex('Сын', 'Дочь', 'Ребенок')
             children.append(RelPerson(child_role, child))
-            
+
             # событие для родителей - участник - ребенок
             birth = copy(first_or_default(child.events, lambda e: e.type == 'BIRT', Event(type='BIRT', head=None)))
             birth.type = 'CHIL'
             birth.head = child.choose_by_sex('Родился', 'Родилась') + ' ' + (child.name.name or child.choose_by_sex('сын', 'дочь', 'ребенок'))
             birth.members = birth.members + [RelPerson(child.choose_by_sex('Родился', 'Родилась'), child)]
             children_birth.append(birth)
-            
+
             # событие для ребенка - участники - родители
             birth = first_or_default(child.events, lambda e: e.type == 'BIRT')
             if birth:
@@ -376,10 +399,10 @@ def get_person_snippets(gedcom, files):
                     birth.members.append(child.father)
                 if child.mother.person:
                     birth.members.append(child.mother)
-        
+
         marr = first_or_default(family.events, lambda e: e.event_type == 'MARR')
         div = first_or_default(family.events, lambda e: e.event_type == 'DIV')
-        
+
         def get_family_for(person1, person2=None):
             spouse = RelPerson(person2.choose_by_sex('Супруг', 'Супруга'), person2) if person2 else None
             parent = RelPerson(person2.choose_by_sex('Отец', 'Мать'), person2) if person2 else None
@@ -399,16 +422,17 @@ def get_person_snippets(gedcom, files):
                 if spouse:
                     div_event.members.append(spouse)
                 events.append(div_event)
-            
+
+
             return PersonSnippet.Family(spouse, children, events)
-            
+
         if wife:
             wife.families.append(get_family_for(wife, husband))
         if husband:
             husband.families.append(get_family_for(husband, wife))
 
-    
-    
+
+
     def first_date_of(events):
         mind = None
         for e in events:
@@ -416,15 +440,15 @@ def get_person_snippets(gedcom, files):
             if d is not None and (mind is None or d < mind):
                 mind = d
         return mind
-                
-        
+
+
     for person in snippets.values():
         person.families = list(sorted(person.families, key=lambda fam: first_date_of(fam.events) or GedDate.MIN))
         family_events = []
         for family in person.families:
             family_events += family.events
         person.events = Event.merge(person.events, family_events)
-        
+
 
     return snippets
 

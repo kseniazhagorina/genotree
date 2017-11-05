@@ -142,9 +142,8 @@ def auth(service):
     code = request.args['code']
     token = OAuth().get(service).auth.get_access_token(code)
     session = OAuth().get(service).session(token)
-    kzhagorina = session.me()
-    users = session.users(['329919392375'])
-    return json.dumps({'token': token, 'me': kzhagorina, 'users': users})
+    me = session.me()
+    return json.dumps({'token': token, 'me': me})
 
 @app.route('/login/unauth/<service>')
 def unauth(service):
