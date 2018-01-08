@@ -8,6 +8,7 @@ from upload import load_package, select_tree_img_files
 from privacy import Privacy, PrivacyMode
 import oauth_api as oauth
 import json
+import threading
 
 from flask import Flask, render_template, request, url_for
 app = Flask(__name__)
@@ -27,7 +28,13 @@ TREE_NAMES = {
     'motyrevy': 'Мотыревы',
     'cherepanovy': 'Черепановы',
     'farenuyk': 'Фаренюки'
-}    
+}
+
+def async(f):
+    def wrapper(*args, **kwargs):
+        thr = threading.Thread(target = f, args = args, kwargs = kwargs)
+        thr.start()
+    return wrapper
 
 class Data:
     '''статические данные о персонах/загруженных деревьях не зависящие
@@ -47,7 +54,7 @@ class Data:
         
     def load(self, archive=None):
         try:
-            self.load_error = 'Data is updated right now'          
+            self.load_error = 'Данные сайта обновляются прямо сейчас'          
             if archive is not None:
                 load_package(archive, 'src/static/tree', 'data/tree')
             
@@ -69,7 +76,11 @@ class Data:
             self.load_error = None
         except:
             self.load_error = traceback.format_exc()
-
+    
+    @async
+    def async_load(self, archive=None):        
+        self.load(archive)
+        
 class Context:
     '''Данные о том, какой пользователь запрашивает страницу, его настройки приватности
        Какая страница была запрошена, какое дерево сейчас отображается
@@ -102,8 +113,7 @@ def check_data_is_valid(func):
             return 'Что-то пошло не так... Попробуйте зайти на сайт позже.\n\n'+data.load_error
         return func(*args, **kwargs)
     wrapper.__name__ = func.__name__    
-    return wrapper 
-
+    return wrapper
         
 @app.route('/<tree_name>')
 @check_data_is_valid
@@ -130,8 +140,8 @@ def biography(person_uid):
 @app.route('/admin/load/<archive>')
 def load(archive):
     archive = 'upload/{0}.zip'.format(archive)
-    data.load(archive)
-    return 'Success!' if data.is_valid() else 'Fail!\n' + data.load_error
+    data.async_load(archive)
+    return 'Loading data from {} started!'.format(archive)
 
 @app.route('/index')
 def index():

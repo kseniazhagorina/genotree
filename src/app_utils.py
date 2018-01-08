@@ -26,15 +26,14 @@ def first_or_default(arr, predicate=None, default=None):
             return item
     return default
 
-class dobj(dict):
+class dobj(dict):            
     @staticmethod
     def convert(value):
         if isinstance(value, (list, tuple)):
             converted_value = [dobj.convert(x) for x in value]
             return tuple(converted_value) if isinstance(value, tuple) else converted_value
         if isinstance(value, dict) and not isinstance(value, dobj):
-            converted_value = dict([(k, dobj.convert(v)) for k,v in value.items()])
-            return dobj(converted_value)
+            converted_value = dict([(k, dobj.convert(v)) for k,v in value.items()])       
         return value
 
     def __init__(self, d):
@@ -47,6 +46,8 @@ class dobj(dict):
         self[name] = dobj.convert(value)
     def __delattr__(self, name):
         del self[name]
+        
+        
 
 
 class TreeMap:

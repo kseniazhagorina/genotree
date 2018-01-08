@@ -37,7 +37,7 @@ class UserInfo(dobj):
         self.uid = self.get('uid', None)
         self.photo50 = self.get('photo50', None)
         self.service = self.get('service', None)
-    
+
 class Vk:
     version = "5.35";
 
@@ -104,7 +104,7 @@ class Vk:
                 print('Api.Vk error: {} respond {}'.format(url, response))
                 return []
             return [Vk.User(user) for user in response['response']]
-            
+
         def user(self, uid):
             return first_or_default(self.users([uid]))
 
@@ -114,7 +114,7 @@ class Vk:
             data['login'] = data.get('domain', None)
             data['photo50'] = data.get('photo_50', None)
             data['service'] = 'vk' # по идее название сервисаы нужно брать из oauth.config
-            super(UserInfo, self).__init__(data)            
+            super(UserInfo, self).__init__(data)
 
 class Ok:
     '''https://apiok.ru/ext/oauth/server'''
@@ -127,7 +127,7 @@ class Ok:
         VIDEO_CONTENT = 5       # Доступ к видео
         APP_INVITE = 6	        # Разрешение приглашать друзей в игру методом friends.appInvite
         GET_EMAIL = 7           # Email пользователя
-    
+
 
     def __init__(self, id, public_key, private_key):
         self.id = id
@@ -207,7 +207,7 @@ class Ok:
                 if 'error' in user:
                     print('Api.Ok error: {} respond {}'.format(url, user))
                     return None
-                user['login'] = self.__get_login(user['uid'])    
+                user['login'] = self.__get_login(user['uid'])
                 self.__user = Ok.User(user)
             return self.__user
 
@@ -219,9 +219,9 @@ class Ok:
             if 'error' in response:
                 print('Api.Ok error: {} respond {}'.format(url, response))
                 return []
-                
+
             return [Ok.User(user) for user in response]
-            
+
         def user(self, uid):
             url = 'https://api.ok.ru/api/users/getInfoBy?uid={uid}&application_key={application_key}&register_as_guest=false&emptyPictures=true&fields='+self.__FIELDS
             url = url.format(application_key=self.app.public_key, uid=uid)
@@ -231,7 +231,7 @@ class Ok:
                 print('Api.Ok error: {} respond {}'.format(url, response))
                 return None
             return Ok.User(response['user'])
-            
+
         def __get_login(self, uid):
             url = 'https://ok.ru/profile/{}'.format(uid)
             response = requests.get(url).text
@@ -248,5 +248,5 @@ class Ok:
             data['photo50'] = data.get('pic50x50', None)
             data['service'] = 'ok' # по идее название сервисаы нужно брать из oauth.config
             super(UserInfo, self).__init__(data)
-            
+
 
