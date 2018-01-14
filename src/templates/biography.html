@@ -97,7 +97,7 @@
                 </div>
             </div>
             
-            {% set person_events = privacy.events(person) %}
+            {% set person_events = privacy.events(person.events) %}
             {% if person_events %}
             <h3>События</h3>
                 {% for e in person_events %}

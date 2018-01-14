@@ -17,8 +17,8 @@ class Session:
         # }        
     
     def login(self, service, **kwargs):
-        self.auth[service] = dobj.convert(kwargs)
-        self.auth[service]['service'] = service
+        self.auth[service] = dobj(kwargs)
+        self.auth[service].service = service
 
     def logout(self, service):
         if service in self.auth:
@@ -32,5 +32,11 @@ class Session:
     def auth_info(self, service):
         return self.auth.get(service, None)        
             
-    
-        
+ 
+    def all_logins(self):
+        logins = []
+        for service, info in self.auth.items():
+            print('service: {}\ninfo: {}'.format(service, info))
+            logins.append((service, info.me.login))
+            logins.append((service, info.me.uid))
+        return logins

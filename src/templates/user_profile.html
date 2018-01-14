@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 
-{% set vk_info = sdata.auth_info('vk') if sdata else None %}
-{% set ok_info = sdata.auth_info('ok') if sdata else None %}
+{% set vk_info = user.auth_info('vk') if user else None %}
+{% set ok_info = user.auth_info('ok') if user else None %}
 
 
     
@@ -9,7 +9,7 @@
 <html>
 	<head></head>
     <body>
-        {% if sdata and sdata.is_authenticated() %}
+        {% if user and user.is_authenticated() %}
             {% set auth_info = vk_info or ok_info %}
             <p>Добро пожаловать, {{auth_info.me.first_name}}!</p>
             <p>Рады сообщить, что вы являетесь привелегированным пользователем. Теперь вам доступна расширенная информация обо всех персонах в дереве.</p>

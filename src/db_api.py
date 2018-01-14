@@ -5,6 +5,7 @@ import sqlite3
 import uuid
 import json
 from app_utils import dobj
+from privacy import PrivacyMode
 
 def dict_factory(cursor, row):
     d = {}
@@ -27,14 +28,21 @@ def create_db(db_filename):
     cursor = conn.cursor()
     ua = UserAccessTable(cursor)
     ua.create()
-    sessions = UserSessionTable(cursor)
-    sessions.create()
+    ua.accept('ok', '513483009213', '*', 'USER', 'MODERATED')
+    ua.accept('vk', 'kzhagorina', '*', 'USER', 'MODERATED')
+    #sessions = UserSessionTable(cursor)
+    #sessions.create()
     conn.commit()
     return db     
-        
+
 
 class UserAccessTable:
     '''Protected-доступ отдельных пользователей к отдельным персонам в древе'''
+    class Role(str):
+        USER = 'USER'
+        SUPER_USER = 'SUPER_USER'
+        OWNER = 'OWNER'
+        
     class Status(str):
         ACCEPTED = 'ACCEPTED'
         FORBIDDEN = 'FORBIDDEN'
@@ -44,28 +52,32 @@ class UserAccessTable:
         IMPORTED = 'IMPORTED'
         MODERATED = 'MODERATED'
         AUTOMATIC = 'AUTOMATIC'
+        
+    ANY_PERSON = '*'    
             
     def __init__(self, cursor):
         self.c = cursor
 
     def create(self):
         self.c.execute('''CREATE TABLE IF NOT EXISTS user_access (
-                             service, login, person_uid, status, how,
+                             service, login, person_uid, role, status, how,
                              UNIQUE (service, login, person_uid)
                          )''')
         
-    def accept_if_not_forbidden(self, service, login, person_uid, how):
+    def accept_if_not_forbidden(self, service, login, person_uid, role, how):
         '''сохраняет права доступа как accepted, если не указано forbidden
            return: true if access is provided
         '''
-        exist_row = self.get(service, login, person_uid)           
+        exist_row = self.get(service, login, person_uid)
+        if not exist_row:
+            exist_row = self.get(service, login, UserAccessTable.ANY_PERSON)       
         if exist_row:
             if exist_row.status == UserAccessTable.Status.FORBIDDEN:
                 return False
             if exist_row.status == UserAccessTable.Status.ACCEPTED:
                 return True
             self.delete(service, login, person_uid)
-        self.insert(service, login, person_uid, UserAccessTable.Status.ACCEPTED, how)
+        self.insert(service, login, person_uid, role, UserAccessTable.Status.ACCEPTED, how)
         return True
     
     def get(self, service, login, person_uid):
@@ -89,25 +101,46 @@ class UserAccessTable:
                 WHERE service=? and login=? and person_uid=?)''', 
             (service, login, person_uid))
             
-    def insert(self, service, login, person_uid, status, how):
+    def insert(self, service, login, person_uid, role, status, how):
         self.c.execute('''
-            INSERT INTO user_access VALUES (?, ?, ?, ?, ?)''',
-            (service, login, person_uid, status, how))
+            INSERT INTO user_access VALUES (?, ?, ?, ?, ?, ?)''',
+            (service, login, person_uid, role, status, how))
             
-    def accept(self, service, login, person_uid, how):
+    def accept(self, service, login, person_uid, role, how):
         self.delete(service, login, person_uid)
-        self.insert(service, login, person_uid, UserAccessTable.Status.ACCEPTED, how)
+        self.insert(service, login, person_uid, role, UserAccessTable.Status.ACCEPTED, how)
         
-    def forbid(self, service, login, person_uid, how):
+    def forbid(self, service, login, person_uid, role, how):
         self.delete(service, login, person_uid)
-        self.insert(service, login, person_uid, UserAccessTable.Status.FORBIDDEN, how)
+        self.insert(service, login, person_uid, role, UserAccessTable.Status.FORBIDDEN, how)
         
-    def send_on_moderation(self, service, login, person_uid):
+    def send_on_moderation(self, service, login, role, person_uid):
         exist_row = self.get(service, login, person_uid)
         if exist_row is not None:
             return False
-        self.insert(service, login, person_uid, UserAccessTable.Status.MODERATION, UserAccessTable.How.AUTOMATIC)
+        self.insert(service, login, person_uid, role, UserAccessTable.Status.MODERATION, UserAccessTable.How.AUTOMATIC)
+        
 
+class UserAccessManager:
+    '''Делает высокоуровневые операции над UserAccessTable'''
+    ANY_PERSON = UserAccessTable.ANY_PERSON
+    
+    def __init__(self, db):
+        self.db = db
+    
+    def get(self, logins):
+        access = {UserAccessTable.ANY_PERSON: PrivacyMode.PUBLIC}
+        if logins:
+            ua = UserAccessTable(self.db.connection().cursor())
+            for service, login in logins:
+                for person_uid in ua.get_accepted(service, login):
+                    if person_uid == UserAccessTable.ANY_PERSON:
+                        access = {UserAccessTable.ANY_PERSON: PrivacyMode.PROTECTED}
+                        return access
+                    access[person_uid] = PrivacyMode.PROTECTED
+        
+        return access        
+        
 
 class UserSessionTable:
     '''Сессии пользователя. 
@@ -182,7 +215,6 @@ class UserSessionTable:
             (session_id, session.user_data, session.created))
         return True          
             
-        
     
         
             

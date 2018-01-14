@@ -38,7 +38,7 @@ class dobj(dict):
             converted_value = [dobj.convert(x) for x in value]
             return tuple(converted_value) if isinstance(value, tuple) else converted_value
         if isinstance(value, dict) and not isinstance(value, dobj):
-            converted_value = dict([(k, dobj.convert(v)) for k,v in value.items()])       
+            converted_value = dobj(dict((k, dobj.convert(v)) for k,v in value.items()))       
         return value
 
     def __init__(self, d=None):

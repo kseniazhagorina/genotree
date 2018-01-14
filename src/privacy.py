@@ -15,17 +15,23 @@ class Privacy:
     PhoneRegex = re.compile(r'(\b(моб|тел|сот)\w*\W*)[\d\(\)\s\+\-,]{5,}', flags=re.IGNORECASE|re.MULTILINE)
     EmailRegex = re.compile(r'\b(?P<login>[\w\-\.]+)@(?P<domain>\w+\.\w{2,6})\b', flags=re.IGNORECASE)
     
-    def __init__(self, privacy, access):
+    def __init__(self, privacy, events_privacy, access):
         '''privacy - уровень приватности персоны
-               public - для умерших,
-               protected - для живых,
+               public - для всех,
+               protected - (не используется),
                private - для параноиков
+           events_privacy - уровень приватности для событий
+               public - для умерших
+               protected - для живых и родившихся позднее 70 лет назад
+               private - не используется
            access - права доступа пользователя
                public - незарегистрированный пользователь
                protected - зарегистрированный
-               private - админ
+               private - я
+           Отдельно задается приватность для комментариев/отдельных событий/источников и т.п.               
         '''
         self.privacy = privacy
+        self.events_privacy = events_privacy
         self.access = access
 
     def is_access_denied(self):
@@ -51,10 +57,15 @@ class Privacy:
     def sources(self, sources):
         return [s for s in sources if s.quote is None or s.quote.privacy() <= self.access]
     
-    def events(self, person):
+    def events(self, events):
+        if self.events_privacy > self.access:
+            return []
+        return [e for e in events if e.comment is None or e.comment.privacy() <= self.access]    
+    
+    @staticmethod
+    def is_events_protected(person):
         if person.is_alive():
-            return []
+            return True
         if person.birth and person.birth.date and relativedelta(date.today(), person.birth.date.to_date()).years < 70:
-            return []
-        return [e for e in person.events if e.comment is None or e.comment.privacy() <= self.access]    
-        
+            return True
+        return False

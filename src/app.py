@@ -7,6 +7,7 @@ from gedcom import GedcomReader
 from upload import load_package, select_tree_img_files
 from privacy import Privacy, PrivacyMode
 from session import Session
+from db_api import create_db, UserAccessManager
 import oauth_api as oauth
 import json
 import threading
@@ -31,9 +32,6 @@ TREE_NAMES = {
     'cherepanovy': 'Черепановы',
     'farenuyk': 'Фаренюки'
 }
-
-# sessions data (id -> Session)
-sessions = {}
 
 # pythonanywhere не поддерживает threading
 def async(f):
@@ -86,32 +84,45 @@ class Data:
     @async
     def async_load(self, archive=None):        
         self.load(archive)
+
+data = Data()        
+data.load()
+
+# sessions data (id -> Session)
+sessions = {}
+db = create_db('data/db/tree.db')
+access_manager = UserAccessManager(db)
         
 class Context:
     '''Данные о том, какой пользователь запрашивает страницу, его настройки приватности
        Какая страница была запрошена, какое дерево сейчас отображается
+       user: Session пользователя
     '''
-    def __init__(self, data, requested_tree=None):
+    def __init__(self, data, user=None, requested_tree=None):
         self.data = data
         self.tree = data.trees.get(requested_tree) #may be None
-    
+        self.user = user
+        self.access = access_manager.get(self.user.all_logins() if user else [])
+        
     class PersonContext:
         '''контекст отображения персоны в дереве'''
-        def __init__(self, person_uid, data, tree=None):
-            self.files_dir = data.files_dir
+        def __init__(self, person_uid, context):
+            self.files_dir = context.data.files_dir
             self.person_uid = person_uid
-            # все персоны публичны, доступ для пользователей только public
-            self.privacy = Privacy(privacy=PrivacyMode.PUBLIC, access=PrivacyMode.PUBLIC)
+            # все персоны публичны, события публичны только для живых, 
+            # пользователи имеют доступ public или protected в зависимости от выданных прав
+            person = context.data.persons_snippets[person_uid]
+            self.privacy = Privacy(privacy=PrivacyMode.PUBLIC,
+                                   events_privacy=Privacy.is_events_protected(person),
+                                   access=context.access.get(person_uid) or context.access.get(UserAccessManager.ANY_PERSON) or PrivacyMode.PUBLIC)
             # в каких деревьях за исключением текущего присутствует данная персона
-            self.tree = tree
+            self.tree = context.tree
             curr_tree_uid = self.tree.uid if self.tree else None
-            self.trees = [tree for tree in data.trees.values() if person_uid in tree.map.nodes and tree.uid != curr_tree_uid]
+            self.trees = [tree for tree in context.data.trees.values() if person_uid in tree.map.nodes and tree.uid != curr_tree_uid]
             
     def person_context(self, person_uid):
-        return Context.PersonContext(person_uid, self.data, self.tree)         
-        
-data = Data()        
-data.load()
+        return Context.PersonContext(person_uid, self)         
+
 
 def check_data_is_valid(func):
     def wrapper(*args, **kwargs):
@@ -125,8 +136,9 @@ def check_data_is_valid(func):
 @check_data_is_valid
 def tree(tree_name):
     tree_name = tree_name or data.default_tree_name
+    user = sessions.get(session['suid']) if 'suid' in session else None
     if tree_name in data.trees:
-        return render_template('tree.html', context=Context(data, tree_name))
+        return render_template('tree.html', context=Context(data, user=user, requested_tree=tree_name))
     return 'Дерево \'{0}\' не найдено...'.format(tree_name)
           
 
@@ -137,9 +149,10 @@ def default_tree():
 @app.route('/person/<person_uid>')
 @check_data_is_valid
 def biography(person_uid):
+    user = sessions.get(session['suid']) if 'suid' in session else None
     if person_uid in data.persons_snippets:
         person_snippet = data.persons_snippets[person_uid]
-        person_context = Context(data).person_context(person_uid)
+        person_context = Context(data, user=user).person_context(person_uid)
         return render_template('biography.html', person=person_snippet, context=person_context)
     return 'Персона \'{0}\' не найдена...'.format(person_uid)
 
@@ -151,9 +164,8 @@ def load(archive):
 
 @app.route('/lk')
 def user_profile():
-    suid = session.get('suid')
-    sdata = sessions.get(suid) if suid else None
-    return render_template('user_profile.html', api=OAuth(), sdata=sdata)
+    user = sessions.get(session['suid']) if 'suid' in session else None
+    return render_template('user_profile.html', api=OAuth(), user=user, context=Context(data, user=user))
     
 @app.route('/login/auth/<service>')
 def auth(service):
@@ -163,20 +175,20 @@ def auth(service):
     me = service_session.me()
     
     suid = session.get('suid', random_string(32))
-    sdata = sessions.get(suid, Session(suid))
-    sdata.login(service, token=token, me=me, session=service_session)
-    sessions[suid] = sdata
-    session['suid'] = suid   
-    
+    user = sessions.get(suid, Session(suid))
+    user.login(service, token=token, me=me, session=service_session)
+    sessions[suid] = user
+    session['suid'] = suid  
+
     return redirect(url_for('user_profile'), code=302)
 
 @app.route('/login/unauth/<service>')
 def unauth(service):
     suid = session.get('suid')
-    sdata = sessions.get(suid) if suid else None
-    if sdata:
-        sdata.logout(service)
-        if not sdata.is_authenticated():
+    user = sessions.get(suid) if suid else None
+    if user:
+        user.logout(service)
+        if not user.is_authenticated():
             del sessions[suid]
             del session['suid']
     

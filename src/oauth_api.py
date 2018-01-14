@@ -111,6 +111,7 @@ class Vk:
     class User(UserInfo):
         '''конвертирует данные о пользователе в общее представление'''
         def __init__(self, data):
+            data['uid'] = 'id'+str(data['id']) if 'id' in data else None
             data['login'] = data.get('domain', None)
             data['photo50'] = data.get('photo_50', None)
             data['service'] = 'vk' # по идее название сервисаы нужно брать из oauth.config
