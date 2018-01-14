@@ -6,6 +6,7 @@ import xml.etree.ElementTree
 import codecs
 import chardet
 import re
+import random, string
 from copy import copy
 from datetime import date
 from dateutil.relativedelta import relativedelta
@@ -13,6 +14,7 @@ from gedcom import GedcomReader
 from geddate import GedDate
 from genery_note import Note
 from privacy import PrivacyMode, Privacy
+
 
 
 def opendet(filename):
@@ -25,6 +27,9 @@ def first_or_default(arr, predicate=None, default=None):
         if predicate is None or predicate(item):
             return item
     return default
+    
+def random_string(length):
+   return ''.join(random.choice(string.ascii_lowercase) for i in range(length))    
 
 class dobj(dict):            
     @staticmethod
@@ -36,7 +41,8 @@ class dobj(dict):
             converted_value = dict([(k, dobj.convert(v)) for k,v in value.items()])       
         return value
 
-    def __init__(self, d):
+    def __init__(self, d=None):
+        d = d or {}
         for key, value in d.items():
             self.__setattr__(key, value)
 

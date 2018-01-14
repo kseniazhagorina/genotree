@@ -2,17 +2,19 @@
 # -*- coding: utf-8 -*-
 
 import traceback
-from app_utils import get_tree, get_tree_map, get_person_snippets, get_files_dict
+from app_utils import get_tree, get_tree_map, get_person_snippets, get_files_dict, random_string
 from gedcom import GedcomReader
 from upload import load_package, select_tree_img_files
 from privacy import Privacy, PrivacyMode
+from session import Session
 import oauth_api as oauth
 import json
 import threading
 
-from flask import Flask, render_template, request, url_for
+from flask import Flask, render_template, request, url_for, redirect, session
 app = Flask(__name__)
 app.debug = True
+app.secret_key = open('data/config/app.secret.txt').read().strip()
 
 oauth.API = None
 def OAuth():   
@@ -30,6 +32,10 @@ TREE_NAMES = {
     'farenuyk': 'Фаренюки'
 }
 
+# sessions data (id -> Session)
+sessions = {}
+
+# pythonanywhere не поддерживает threading
 def async(f):
     def wrapper(*args, **kwargs):
         thr = threading.Thread(target = f, args = args, kwargs = kwargs)
@@ -143,23 +149,41 @@ def load(archive):
     data.async_load(archive)
     return 'Loading data from {} started!'.format(archive)
 
-@app.route('/index')
-def index():
-    return render_template('index.html', api=OAuth())
+@app.route('/lk')
+def user_profile():
+    suid = session.get('suid')
+    sdata = sessions.get(suid) if suid else None
+    return render_template('user_profile.html', api=OAuth(), sdata=sdata)
     
 @app.route('/login/auth/<service>')
 def auth(service):
     code = request.args['code']
     token = OAuth().get(service).auth.get_access_token(code)
-    session = OAuth().get(service).session(token)
-    me = session.me()
-    return json.dumps({'token': token, 'me': me})
+    service_session = OAuth().get(service).session(token)
+    me = service_session.me()
+    
+    suid = session.get('suid', random_string(32))
+    sdata = sessions.get(suid, Session(suid))
+    sdata.login(service, token=token, me=me, session=service_session)
+    sessions[suid] = sdata
+    session['suid'] = suid   
+    
+    return redirect(url_for('user_profile'), code=302)
 
 @app.route('/login/unauth/<service>')
 def unauth(service):
-    return 'unauth: {}'.format(request.args)
+    suid = session.get('suid')
+    sdata = sessions.get(suid) if suid else None
+    if sdata:
+        sdata.logout(service)
+        if not sdata.is_authenticated():
+            del sessions[suid]
+            del session['suid']
+    
+    return redirect(url_for('user_profile'), code=302)
     
 if __name__ == "__main__":
     app.run()
+    
         
     

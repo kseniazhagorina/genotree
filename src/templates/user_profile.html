@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+
+{% set vk_info = sdata.auth_info('vk') if sdata else None %}
+{% set ok_info = sdata.auth_info('ok') if sdata else None %}
+
+
+    
+
+<html>
+	<head></head>
+    <body>
+        {% if sdata and sdata.is_authenticated() %}
+            {% set auth_info = vk_info or ok_info %}
+            <p>Добро пожаловать, {{auth_info.me.first_name}}!</p>
+            <p>Рады сообщить, что вы являетесь привелегированным пользователем. Теперь вам доступна расширенная информация обо всех персонах в дереве.</p>
+        {% else %}
+            <p>Здравствуйте, дорогой Гость!</p>
+            <p>Некоторая информация о ныне живущих людях доступна только зарегистрированным пользователям. Чтобы увидеть ее необходимо войти на сайт через Вконтакте или Одноклассники.</p>
+            <p>Если вы нашли себя в дереве - то после этого нужно будет привязать свой профиль из социальной сети к персоне в дереве (возможно он привяжется автоматически). После этого вы сможете просматривать дополнительные материалы о себе и своих ближайших родственниках.</p>
+        {% endif %}
+    
+        <p>
+        {% if vk_info %}
+            <img src="{{vk_info.me.photo50}}"/><a href="{{api.vk.auth.unauth_url}}">Выйти</a>
+        {% else %}
+            <a href="{{api.vk.auth.auth_dialog_url}}">Войти через Вконтакте</a>
+        {% endif %}
+        </p>
+        
+        <p>
+        {% if ok_info %}
+            <img src="{{ok_info.me.photo50}}"/><a href="{{api.ok.auth.unauth_url}}">Выйти</a>
+        {% else %}    
+            <a href="{{api.ok.auth.auth_dialog_url}}">Войти через Одноклассники</a>
+        {% endif %} 
+        </p>    
+    </body>
+</html>    
