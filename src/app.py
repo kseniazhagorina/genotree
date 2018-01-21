@@ -7,7 +7,7 @@ from gedcom import GedcomReader
 from upload import load_package, select_tree_img_files
 from privacy import Privacy, PrivacyMode
 from session import Session
-from db_api import create_db, UserAccessManager
+from db_api import create_db, UserAccessManager, UserSessionManager
 import oauth_api as oauth
 import json
 import threading
@@ -88,10 +88,9 @@ class Data:
 data = Data()        
 data.load()
 
-# sessions data (id -> Session)
-sessions = {}
 db = create_db('data/db/tree.db')
 access_manager = UserAccessManager(db)
+session_manager = UserSessionManager(db)
         
 class Context:
     '''Данные о том, какой пользователь запрашивает страницу, его настройки приватности
@@ -131,12 +130,27 @@ def check_data_is_valid(func):
         return func(*args, **kwargs)
     wrapper.__name__ = func.__name__    
     return wrapper
+    
+def get_user(func):
+    def wrapper(*args, **kwargs):
+        user = None
+        if 'suid' in session:
+            session_id, ts = session.get('suid')
+            user = session_manager.get(session_id, ts)
+            if user:
+                session['suid'] = (user.id, user.ts)
+            else:
+                del session['suid']
+        kwargs['user'] = user
+        return func(*args, **kwargs)
+    wrapper.__name__ = func.__name__
+    return wrapper    
         
 @app.route('/<tree_name>')
 @check_data_is_valid
-def tree(tree_name):
+@get_user
+def tree(tree_name, user):
     tree_name = tree_name or data.default_tree_name
-    user = sessions.get(session['suid']) if 'suid' in session else None
     if tree_name in data.trees:
         return render_template('tree.html', context=Context(data, user=user, requested_tree=tree_name))
     return 'Дерево \'{0}\' не найдено...'.format(tree_name)
@@ -148,8 +162,8 @@ def default_tree():
     
 @app.route('/person/<person_uid>')
 @check_data_is_valid
-def biography(person_uid):
-    user = sessions.get(session['suid']) if 'suid' in session else None
+@get_user
+def biography(person_uid, user):
     if person_uid in data.persons_snippets:
         person_snippet = data.persons_snippets[person_uid]
         person_context = Context(data, user=user).person_context(person_uid)
@@ -163,35 +177,32 @@ def load(archive):
     return 'Loading data from {} started!'.format(archive)
 
 @app.route('/lk')
-def user_profile():
-    user = sessions.get(session['suid']) if 'suid' in session else None
+@get_user
+def user_profile(user):
     return render_template('user_profile.html', api=OAuth(), user=user, context=Context(data, user=user))
     
 @app.route('/login/auth/<service>')
-def auth(service):
+@get_user
+def auth(service, user):
     code = request.args['code']
     token = OAuth().get(service).auth.get_access_token(code)
     service_session = OAuth().get(service).session(token)
     me = service_session.me()
     
-    suid = session.get('suid', random_string(32))
-    user = sessions.get(suid, Session(suid))
-    user.login(service, token=token, me=me, session=service_session)
-    sessions[suid] = user
-    session['suid'] = suid  
-
+    if user is None:
+        user = session_manager.open()
+    user.login(service, token=token, me=me)
+    session['suid'] = (user.id, user.ts)
     return redirect(url_for('user_profile'), code=302)
 
 @app.route('/login/unauth/<service>')
-def unauth(service):
-    suid = session.get('suid')
-    user = sessions.get(suid) if suid else None
+@get_user
+def unauth(service, user):
     if user:
         user.logout(service)
         if not user.is_authenticated():
-            del sessions[suid]
-            del session['suid']
-    
+            session_manager.close(user)
+            del session['suid']     
     return redirect(url_for('user_profile'), code=302)
     
 if __name__ == "__main__":

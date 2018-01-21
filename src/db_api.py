@@ -4,8 +4,10 @@
 import sqlite3
 import uuid
 import json
+import time
 from app_utils import dobj
 from privacy import PrivacyMode
+from session import Session
 
 def dict_factory(cursor, row):
     d = {}
@@ -30,8 +32,8 @@ def create_db(db_filename):
     ua.create()
     ua.accept('ok', '513483009213', '*', 'USER', 'MODERATED')
     ua.accept('vk', 'kzhagorina', '*', 'USER', 'MODERATED')
-    #sessions = UserSessionTable(cursor)
-    #sessions.create()
+    sessions = UserSessionTable(cursor)
+    sessions.create()
     conn.commit()
     return db     
 
@@ -145,7 +147,7 @@ class UserAccessManager:
 class UserSessionTable:
     '''Сессии пользователя. 
        Пользователь может иметь несколько открытых сессий с одним session_id (на разные логины) одновременно.
-       created - дата и время когда пользователь зарегистрировался на сервисе
+       opened - дата и время когда пользователь зарегистрировался на сервисе
        closed - дата и время когда пользователь нажал выйти
        user_data - данные пользователя связанные с сессией
     '''   
@@ -155,18 +157,21 @@ class UserSessionTable:
     def create(self):
         self.c.execute('''
             CREATE TABLE IF NOT EXISTS user_session (
-                session_id UNIQUE PRIMARY KEY, user_data, created DEFAULT CURRENT_TIMESTAMP, closed DEFAULT NULL,
+                session_id UNIQUE PRIMARY KEY, 
+                data, 
+                opened DEFAULT CURRENT_TIMESTAMP, 
+                closed DEFAULT NULL,
                 UNIQUE (session_id)
             )''')
 
-    def open(self, user_data):
+    def open(self, data=''):
         session_id = uuid.uuid4().hex
-        data = json.dumps(user_data, ensure_ascii=False)
+        data = json.dumps(data, ensure_ascii=False)
         self.c.execute('''
-            INSERT INTO user_session (session_id, user_data) 
+            INSERT INTO user_session (session_id, data) 
             VALUES (?, ?)''',
             (session_id, data))
-        return session_id
+        return self.get(session_id)
     
     def get(self, session_id):
         self.c.execute('''
@@ -175,15 +180,6 @@ class UserSessionTable:
         session = self.c.fetchone()
         return session
         
-    def get_data(self, session_id, only_opened=True):
-        session = self.get(session_id)
-        if session is None:
-            return None
-        if only_opened and session.closed is not None:
-            return None
-        data = json.loads(session.user_data)
-        return data
-    
     def delete(self, session_id):
         self.c.execute('''
             DELETE FROM user_session WHERE rowid IN 
@@ -191,17 +187,17 @@ class UserSessionTable:
                 WHERE session_id=?)''', 
             (session_id,))
     
-    def update(self, session_id, user_data):
+    def update(self, session_id, data):
         session = self.get(session_id)
         if session is None or session.closed is not None:
             return False
         
-        data = json.dumps(user_data, ensure_ascii=False)
+        data = json.dumps(data, ensure_ascii=False)
         self.delete(session_id)    
         self.c.execute('''
-            INSERT INTO user_session (session_id, user_data, created) 
+            INSERT INTO user_session (session_id, data, opened) 
             VALUES (?, ?, ?)''',
-            (session_id, data, session.created))
+            (session_id, data, session.opened))
         return True            
          
     def close(self, session_id):
@@ -212,8 +208,63 @@ class UserSessionTable:
         self.c.execute('''
             INSERT INTO user_session 
             VALUES (?, ?, ?, CURRENT_TIMESTAMP)''',
-            (session_id, session.user_data, session.created))
-        return True          
+            (session_id, session.data, session.opened))
+        return True
+
+class UserSessionManager:
+    '''пришел без куки (регистрация)
+       пришел с кукой которой нет в кэше
+           старая кука (None)
+           несуществующая кука (None)
+           просто кука (Session)
+       пришел с кукой которая есть в кэше
+           кука старше чем кэш - обновить кэш
+           кука младше чем кэш
+           кука равна кэшу (но иногда надо пересохранить)
+    '''
+       
+    def __init__(self, db):
+        self.db = db
+        self.cached = {} # id->Session
+    
+    def open(self):
+        with self.db.connection() as conn:
+            us = UserSessionTable(conn.cursor())
+            s = us.open()
+            session = Session(s.session_id, s.opened, self)
+            us.update(session.id, session)
+            conn.commit()
+            self.cached[session.id] = session
+            return session            
+        
+    def get(self, session_id, ts):
+        if session_id not in self.cached or ts != self.cached[session_id].ts:
+            us = UserSessionTable(self.db.connection().cursor())
+            s = us.get(session_id)
+            if s is None or s.closed:
+                return None
+            session = Session.from_json(s.data, self)
+            self.cached[session.id] = session
+            return session
+        return self.cached[session_id]
+
+    def update(self, session):
+        session.ts = time.time()
+        with self.db.connection() as conn:
+            us = UserSessionTable(conn.cursor())
+            us.update(session.id, session)
+            conn.commit()
+        return session
+
+    def close(self, session):
+        with self.db.connection() as conn:
+            us = UserSessionTable(conn.cursor())
+            us.close(session.id)
+            conn.commit()
+
+            
+            
+        
             
     
         

@@ -1,42 +1,59 @@
 #!usr/bin/env
 # -*- coding: utf-8 -*-
 
-from db_api import UserSessionTable
+import time
+import json
+import sys
 from app_utils import dobj
 
 
-class Session:
-    def __init__(self, id):
+class Session(dobj):
+    @staticmethod
+    def from_json(data, manager):
+        data = dobj(json.loads(data))
+        s = Session(manager=manager, **data)
+        return s
+            
+    def __init__(self, id, ts, manager, auth=None):
+        self.manager = manager
         self.id = id
-        self.auth = dobj() 
+        self.ts = ts  # last updated timestamp
+        self.auth = auth or dobj()        
         # vk -> {
         #        'service': 'vk', 
         #        'token': ..., 
-        #        'me': ..., 
-        #        'session': сессия oauth для выполнения запросов
+        #        'me': ...,
+        #        'opened': timestamp
+        #        'closed': timestamp or None  
         # }        
     
     def login(self, service, **kwargs):
-        self.auth[service] = dobj(kwargs)
+        self.auth[service] = dobj.convert(kwargs)
         self.auth[service].service = service
+        self.auth[service].opened = time.time()
+        self.auth[service].closed = None
+        self.manager.update(self)
 
     def logout(self, service):
         if service in self.auth:
-            del self.auth[service]
+            self.auth[service].closed = time.time()
+            self.manager.update(self)
         
     def is_authenticated(self, service=None):
         if service is None:
-            return len(self.auth) > 0
-        return service in self.auth
+            return any(v.closed is None for v in self.auth.values())
+        return service in self.auth and self.auth[service].closed is None
         
-    def auth_info(self, service):
-        return self.auth.get(service, None)        
-            
- 
+    def auth_info(self, service, only_opened=True):
+        s = self.auth.get(service, None)
+        if only_opened and s is not None and s.closed:
+            return None
+        return s
+    
     def all_logins(self):
         logins = []
         for service, info in self.auth.items():
-            print('service: {}\ninfo: {}'.format(service, info))
-            logins.append((service, info.me.login))
-            logins.append((service, info.me.uid))
+            if info.opened:
+                logins.append((service, info.me.login))
+                logins.append((service, info.me.uid))
         return logins
