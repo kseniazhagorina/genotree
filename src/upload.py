@@ -8,6 +8,8 @@ import os.path
 import codecs
 import hashlib
 import re
+from app_utils import first_or_default
+from geddate import GedDate
 
 # Загрузка базы данных и дерева единым пакетом
 # Внутри: 
@@ -151,7 +153,55 @@ def set_default_documents_for_persons(gedcom, treexml):
         if not has_default and len(person.documents) > 0:
             print('Person '+person_uid+' has not default document with title '+ default_documents[person_uid])
 
-def set_divorce_events_to_families(gedcom, treexml):
+
+
+def validate_marriage(marriage, marriage_event):
+    '''проверяем данные о бракосочетании
+      (повторные браки плохо выгружаются в gedcom и данные с xml могут не совпадать)
+    '''
+    valid = True
+    date = marriage.find('date')
+    gedcom_date = GedDate.Gedcom.format(GedDate.Genery.parse(date.text)) if date is not None else None
+    if gedcom_date:
+        if gedcom_date != marriage_event.get('DATE', None):
+            print ('Date of marriage in gedcom: {} date in xml: {} ({})'.format(marriage_event.get('DATE'), date, gedcom_date))
+            marriage_event['DATE'] = gedcom_date
+            valid = False
+    elif marriage_event.get('DATE', None):
+        print ('Date of marriage in gedcom: {} date in xml: {} ({})'.format(marriage_event.get('DATE'))) 
+        del marriage_event['DATE']
+        valid = False
+      
+    comment = marriage.find('comment')
+    comment = comment.text if comment is not None else None
+    if comment:
+        if (marriage_event.get('NOTE', '').split() != comment.split()):
+            print ('Comment of marriage in gedcom: {} comment in xml: {}'.format(marriage_event.get('NOTE'), comment)) 
+            marriage_event['NOTE'] = comment
+            valid = False
+    elif marriage_event.get('NOTE', None):
+        print ('Comment of marriage in gedcom: {} comment in xml: None'.format(marriage_event.get('NOTE'))) 
+        del marriage_event['NOTE']
+        valid = False
+        
+    place = marriage.find('pl_short')
+    place = place.text if place is not None else None
+    if place:
+        if marriage_event.get('PLAC', None) != place:
+            print ('Place of marriage in gedcom: {} place in xml: {}'.format(marriage_event.get('PLAC'), place)) 
+            marriage_event['PLAC'] = place
+            valid = False
+    elif marriage_event.get('PLAC', None):
+        print ('Place of marriage in gedcom: {} place in xml: None'.format(marriage_event.get('PLAC')))
+        del marriage_event['PLAC']
+        valid = False
+    
+    if not valid:
+        marriage_event.documents = []
+        marriage_event.sources = []
+    return valid        
+        
+def validate_gedcom_with_xml(gedcom, treexml):
     '''Устанавниваем событие развод для семьи (оно есть в treexml, но отсутствует в gedcom)'''
     # по gedcom составляем список (uid-супруга1, uid-супруга2) -> family
     person_id_to_uid = dict()
@@ -166,8 +216,9 @@ def set_divorce_events_to_families(gedcom, treexml):
         families_by_uids[(husb_uid, wife_uid)] = family
         families_by_uids[(wife_uid, husb_uid)] = family
 
+    
         
-    # по xml находим у людей события divorce
+    # по xml находим у людей события divorce, которые в gedcom не выгружаются
     for person in treexml.iter('r'):
         person_uid = person.attrib['id']
         for spouse in person.iter('spouse'):
@@ -176,6 +227,14 @@ def set_divorce_events_to_families(gedcom, treexml):
             if family is None:
                 print('Family ', (person_uid, spouse_uid), ' is not found')
                 continue
+            
+            marriage = spouse.find('marriage')
+            marriage_event = first_or_default(family.events, lambda event: event.event_type=='MARR')
+            if marriage is not None and marriage_event is not None:
+                valid = validate_marriage(marriage, marriage_event)
+                if not valid:
+                    print ('Marriage of persons {} and {} does not valid'.format(person_uid, spouse_uid))                
+                
             divorce = spouse.find('divorce')
             if divorce is not None:
                 divorce_event = Gedcom.Event('DIV')
@@ -190,9 +249,8 @@ def set_divorce_events_to_families(gedcom, treexml):
 def set_documents_to_marriage(gedcom):
     '''документы указанные как документы семьи на самом деле относятся к событию свадьба'''
     for family in gedcom.families:
-        marrs = list(filter(lambda event: event.event_type=='MARR', family.events))
-        if len(marrs) > 0:
-            marr = marrs[0]
+        marr = first_or_default(family.events, lambda event: event.event_type=='MARR')
+        if marr:
             marr.documents = family.documents
             family.documents = [] 
                 
@@ -214,7 +272,7 @@ def load_package(archive, static_dir, data_dir):
         treexml = xml.etree.ElementTree.fromstring(codecs.open(os.path.join(tmp_dir, 'tree.xml'), 'r', 'utf-8').read())
         set_default_documents_for_persons(gedcom, treexml)
         set_documents_to_marriage(gedcom)
-        set_divorce_events_to_families(gedcom, treexml)
+        validate_gedcom_with_xml(gedcom, treexml)
         GedcomWriter().write_gedcom(gedcom, os.path.join(data_dir, 'tree.ged'))
         # копирование документов
         _, png_files, xml_files = select_tree_img_files(tmp_dir)

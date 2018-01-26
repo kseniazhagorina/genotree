@@ -212,9 +212,9 @@ class GedcomDateFormat(DateFormat):
 
     def format_simple_date(self, date_as_tuple):
         '''(year, month, day) or None'''
-        if date is None:
+        if date_as_tuple is None:
             return ''
-        (year, month, day) = date
+        (year, month, day) = date_as_tuple
         if year is None and month is None and day is None:
             return ''
         parts = []
@@ -223,7 +223,7 @@ class GedcomDateFormat(DateFormat):
         if month is not None:
             parts.append(self.monthes[month])
         if year is not None:
-            parts.append(int(year))
+            parts.append(str(year))
         return ' '.join(parts)
 
 
@@ -250,11 +250,11 @@ class GeneryDateFormat(DateFormat):
 
         super(GeneryDateFormat, self).__init__(date_regex, monthes, formats)
 
-    def format_simple_date(self, date):
+    def format_simple_date(self, date_as_tuple):
         '''(year, month, day) or None'''
-        if date is None:
+        if date_as_tuple is None:
             return '?'
-        (year, month, day) = date
+        (year, month, day) = date_as_tuple
         if year is None and month is None and day is None:
             return '?'
         year_str = '{0:04}'.format(year) if year is not None else '?'
