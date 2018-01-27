@@ -285,8 +285,7 @@ def load_package(archive, static_dir, data_dir):
         shutil.copytree(src=os.path.join(tmp_dir, 'files'), dst=files_dir)
     finally:
         shutil.rmtree(tmp_dir)
-    
-    
+ 
         
        
     

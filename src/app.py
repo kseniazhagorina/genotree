@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import traceback
-from app_utils import get_tree, get_tree_map, get_person_snippets, get_files_dict, random_string
+from app_utils import get_tree, get_tree_map, get_person_snippets, get_person_owners, get_files_dict, random_string
 from gedcom import GedcomReader
 from upload import load_package, select_tree_img_files
 from privacy import Privacy, PrivacyMode
@@ -67,6 +67,7 @@ class Data:
             
             self.gedcom = GedcomReader().read_gedcom('data/tree/tree.ged')
             self.persons_snippets = get_person_snippets(self.gedcom, self.files)
+            self.persons_owners = get_person_owners(self.persons_snippets)
             
             # Загружаем деревья - 
             tree_uids, pngs, xmls = select_tree_img_files('src/static/tree')
@@ -89,7 +90,7 @@ data = Data()
 data.load()
 
 db = create_db('data/db/tree.db')
-access_manager = UserAccessManager(db)
+access_manager = UserAccessManager(db, data)
 session_manager = UserSessionManager(db)
         
 class Context:
@@ -113,7 +114,7 @@ class Context:
             person = context.data.persons_snippets[person_uid]
             self.privacy = Privacy(privacy=PrivacyMode.PUBLIC,
                                    events_privacy=Privacy.is_events_protected(person),
-                                   access=context.access.get(person_uid) or context.access.get(UserAccessManager.ANY_PERSON) or PrivacyMode.PUBLIC)
+                                   access=context.access.get(person_uid))
             # в каких деревьях за исключением текущего присутствует данная персона
             self.tree = context.tree
             curr_tree_uid = self.tree.uid if self.tree else None
@@ -204,6 +205,7 @@ def unauth(service, user):
             session_manager.close(user)
             del session['suid']     
     return redirect(url_for('user_profile'), code=302)
+        
     
 if __name__ == "__main__":
     app.run()

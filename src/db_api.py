@@ -5,6 +5,7 @@ import sqlite3
 import uuid
 import json
 import time
+from collections import defaultdict
 from app_utils import dobj
 from privacy import PrivacyMode
 from session import Session
@@ -30,8 +31,9 @@ def create_db(db_filename):
     cursor = conn.cursor()
     ua = UserAccessTable(cursor)
     ua.create()
-    ua.accept('ok', '513483009213', '*', 'USER', 'MODERATED')
-    ua.accept('vk', 'kzhagorina', '*', 'USER', 'MODERATED')
+    #ua.accept('ok', '513483009213', '*', 'SUPER_USER', 'MODERATED')
+    #ua.accept('ok', '839113681', '*', 'SUPER_USER', 'MODERATED')
+    #ua.accept('vk', 'kzhagorina', '*', 'SUPER_USER', 'MODERATED')
     sessions = UserSessionTable(cursor)
     sessions.create()
     conn.commit()
@@ -41,9 +43,9 @@ def create_db(db_filename):
 class UserAccessTable:
     '''Protected-доступ отдельных пользователей к отдельным персонам в древе'''
     class Role(str):
-        USER = 'USER'
-        SUPER_USER = 'SUPER_USER'
         OWNER = 'OWNER'
+        RELATIVE = 'RELATIVE'
+        SUPER_USER = 'SUPER_USER'
         
     class Status(str):
         ACCEPTED = 'ACCEPTED'
@@ -54,6 +56,7 @@ class UserAccessTable:
         IMPORTED = 'IMPORTED'
         MODERATED = 'MODERATED'
         AUTOMATIC = 'AUTOMATIC'
+        INHERITED = 'INHERITED' # роль унаследованная пользователем, потому что он имеет какую-то другую роль
         
     ANY_PERSON = '*'    
             
@@ -94,7 +97,7 @@ class UserAccessTable:
             SELECT * FROM user_access 
             WHERE service=? and login=? and status=?''', 
             (service, login, UserAccessTable.Status.ACCEPTED))
-        return [item.person_uid for item in accepted]
+        return self.c.fetchall()
         
     def delete(self, service, login, person_uid):
         self.c.execute('''
@@ -102,6 +105,13 @@ class UserAccessTable:
                 (SELECT rowid FROM user_access 
                 WHERE service=? and login=? and person_uid=?)''', 
             (service, login, person_uid))
+    
+    def delete_temporary(self):
+        self.c.execute('''
+            DELETE FROM user_access WHERE rowid IN
+                (SELECT rowid FROM user_access
+                WHERE how=? or how=?)''',
+            (UserAccessTable.How.IMPORTED, UserAccessTable.How.INHERITED))                
             
     def insert(self, service, login, person_uid, role, status, how):
         self.c.execute('''
@@ -127,20 +137,70 @@ class UserAccessManager:
     '''Делает высокоуровневые операции над UserAccessTable'''
     ANY_PERSON = UserAccessTable.ANY_PERSON
     
-    def __init__(self, db):
-        self.db = db
+    class Access:
+        def __init__(self, roles=None, access=None):
+            self.roles = roles or {} # роль -> set(person_uid)
+            self.access = access or {} # person_uid -> уровень доступа
+        
+        def get(self, person_uid):
+            if person_uid in self.access:
+                return self.access[person_uid]
+            if UserAccessManager.ANY_PERSON in self.access:
+                return self.access[UserAccessManager.ANY_PERSON]
+            return PrivacyMode.PUBLIC
+            
+        def is_super_user(self):
+            return (UserAccessTable.Role.SUPER_USER in self.roles and 
+                    UserAccessManager.ANY_PERSON in self.roles[UserAccessTable.Role.SUPER_USER])
     
-    def get(self, logins):
-        access = {UserAccessTable.ANY_PERSON: PrivacyMode.PUBLIC}
+    def __init__(self, db, data):
+        self.db = db
+        self.data = data
+        with self.db.connection() as conn:
+            ua = UserAccessTable(conn.cursor())
+            ua.delete_temporary()
+            for service, login, person_uid in data.persons_owners:
+                ua.accept_if_not_forbidden(service, login, person_uid, UserAccessTable.Role.OWNER, UserAccessTable.How.IMPORTED)
+            conn.commit()            
+    
+    def __get_roles(self, logins):
+        roles = defaultdict(set)
         if logins:
             ua = UserAccessTable(self.db.connection().cursor())
             for service, login in logins:
-                for person_uid in ua.get_accepted(service, login):
-                    if person_uid == UserAccessTable.ANY_PERSON:
-                        access = {UserAccessTable.ANY_PERSON: PrivacyMode.PROTECTED}
-                        return access
-                    access[person_uid] = PrivacyMode.PROTECTED
+                for accepted in ua.get_accepted(service, login):
+                    roles[accepted.role].add(accepted.person_uid)
+        return roles
+                    
+    def __get_relatives(self, person_uid):
+        person = self.data.persons_snippets.get(person_uid)
+        if person:
+            # прямые предки и потомки персоны, а также ближайшие кровные родственники (до троюродных братьев)
+            for relative_uid, relation in person.relatives.items():
+                if all(c.islower() for c in relation) or all(c.isupper() for c in relation) or len(relation) <=6:
+                    yield relative_uid
+            # родители и кровные дети жены/мужа
+            for family in person.families:
+                spouse = family.spouse.person
+                if spouse:
+                    yield spouse.uid
+                    for relative_uid, relation in spouse.relatives.items():
+                        if len(relation) <= 1:
+                            yield relative_uid                        
         
+    def get(self, logins):
+        roles = self.__get_roles(logins)
+        access = UserAccessManager.Access(roles=roles)
+        if access.is_super_user():
+            access.access[UserAccessManager.ANY_PERSON] = PrivacyMode.PROTECTED
+        else:
+            for role, persons in roles.items():
+                for person_uid in persons:
+                    access.access[person_uid] = PrivacyMode.PROTECTED    
+                    if role == UserAccessTable.Role.OWNER:
+                        # protected доступ ко всем предкам/потомкам и ближайшим кровным родственникам
+                        for relative_uid in self.__get_relatives(person_uid):
+                            access.access[relative_uid] = PrivacyMode.PROTECTED
         return access        
         
 

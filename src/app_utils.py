@@ -13,6 +13,7 @@ from dateutil.relativedelta import relativedelta
 from gedcom import GedcomReader
 from geddate import GedDate
 from genery_note import Note
+from relatives import get_blood_relatives
 from privacy import PrivacyMode, Privacy
 
 
@@ -160,7 +161,7 @@ class PersonSnippet:
     class Family:
         def __init__(self, spouse=None, children=None, events=None):
             self.spouse = spouse #RelPerson
-            self.children = children #RelPerson
+            self.children = children or [] #[RelPerson]
             self.events = events or [] #[Event]
 
     def __init__(self, person_uid,
@@ -179,6 +180,7 @@ class PersonSnippet:
         self.mother = mother #RelPerson
         self.father = father #RelPerson
         self.families = families or [] #[Family]
+        self.relatives = {}
         self.photo = photo
         self.photos = photos or [] #[Document]
         self.sources = sources or [] #[Document]
@@ -472,8 +474,25 @@ def get_person_snippets(gedcom, files):
             family_events += family.events
         person.events = Event.merge(person.events, family_events)
 
+    for person in snippets.values():
+        person.relatives = get_blood_relatives(person)
+        
     return snippets
-    
+
+def get_person_owners(persons_snippets):
+    '''Находим ссылки на страницы в соц.сетях в комментариях к персонам и в источниках'''
+    vk = re.compile(r'https?://(vk\.com|vkontakte\.ru)/(?P<id>[\w\.]+)')
+    ok = re.compile(r'https?://(ok|odnoklassniki)\.ru/profile/(?P<id>[\w\.]+)')
+    owners = set() # (service, login, person_uid)
+    for uid, person in persons_snippets.items():
+        text = str(person.comment) if person.comment else ''
+        for match in  vk.finditer(text):
+            id = match.group('id')
+            owners.add(('vk', id, uid))
+        for match in  ok.finditer(text):
+            id = match.group('id')
+            owners.add(('ok', id, uid))
+    return owners    
 
 def get_files_dict(filename):
     dict = {}
