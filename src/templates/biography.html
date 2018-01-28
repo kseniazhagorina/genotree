@@ -97,60 +97,64 @@
                 </div>
             </div>
             
-            {% set person_events = privacy.events(person.events) %}
-            {% if person_events %}
             <h3>События</h3>
-                {% for e in person_events %}
-                    <div class="row">
-                        
-                        <div class="col-sm-2">
-                        {{e.date|default('?', true)}}
-                        {% if e.photo %}
-                        {% set event_carousel_id = 'carousel-for-event-' ~ loop.index %}
-                        <p>
-                            <a href="#" data-toggle="modal" data-target="#carousel-for-event-{{loop.index}}">
-                                <img src="{{context.files_dir}}/{{e.photo.path}}" style="width:100%;" class="img-rounded img-fluid"/>
-                            </a>    
-                        </p>
+            {% if privacy.is_access_to_events_denied() %}
+                <p class="text-secondary">Подробная информация о событиях скрыта настройками приватности. <a href="/lk">Подробнее...</a></p>
+            {% else %}
+                {% set person_events = privacy.events(person.events) %}
+                {% if person_events %}
+                    {% for e in person_events %}
+                        <div class="row">
                             
-                        {% endif %}
-                        </div>
-                        
-                        <div class="col-sm-6">
-                        <strong>{{e.head}}</strong>
-                        <p>
-                        {% for member in e.members %}
-                           {{ ps.draw_related_person(member) }} {% if loop.index+1 == e.members|length %},{% else %}<br/>{% endif %}
-                        {% endfor %}
- 
-                        {% set e_comment=privacy.comment(e.comment) %}
-                        {% if e_comment %}
-                            {% for line in e_comment.split('\n') %}
-                                {{line|urlize(40, nofollow=true)}}<br/>
+                            <div class="col-sm-2">
+                            {{e.date|default('?', true)}}
+                            {% if e.photo %}
+                            {% set event_carousel_id = 'carousel-for-event-' ~ loop.index %}
+                            <p>
+                                <a href="#" data-toggle="modal" data-target="#carousel-for-event-{{loop.index}}">
+                                    <img src="{{context.files_dir}}/{{e.photo.path}}" style="width:100%;" class="img-rounded img-fluid"/>
+                                </a>    
+                            </p>
+                                
+                            {% endif %}
+                            </div>
+                            
+                            <div class="col-sm-6">
+                            <strong>{{e.head}}</strong>
+                            <p>
+                            {% for member in e.members %}
+                               {{ ps.draw_related_person(member) }} {% if loop.index+1 == e.members|length %},{% else %}<br/>{% endif %}
                             {% endfor %}
-                        {% endif %}
-                        
-                        {% if e.place %}
-                        Место: {{privacy.address(e.place)}}<br/>
-                        {% endif %}
-                        </p>
+     
+                            {% set e_comment=privacy.comment(e.comment) %}
+                            {% if e_comment %}
+                                {% for line in e_comment.split('\n') %}
+                                    {{line|urlize(40, nofollow=true)}}<br/>
+                                {% endfor %}
+                            {% endif %}
+                            
+                            {% if e.place %}
+                            Место: {{privacy.address(e.place)}}<br/>
+                            {% endif %}
+                            </p>
+                            </div>
+                            
+                            <div class="col-sm-4">
+                            {% set event_sources = privacy.sources(e.sources) %}
+                            {% if event_sources %}
+                            Источники:
+                            <p class="small">
+                                {% for s in event_sources %}
+                                    {% set _ = sources_on_page.append(s) %}
+                                    {{ src.draw_source_link(s, sources_on_page|length, context) }}
+                                    </br>
+                                {% endfor %}
+                            </p>
+                            {% endif %}
+                            </div>
                         </div>
-                        
-                        <div class="col-sm-4">
-                        {% set event_sources = privacy.sources(e.sources) %}
-                        {% if event_sources %}
-                        Источники:
-                        <p class="small">
-                            {% for s in event_sources %}
-                                {% set _ = sources_on_page.append(s) %}
-                                {{ src.draw_source_link(s, sources_on_page|length, context) }}
-                                </br>
-                            {% endfor %}
-                        </p>
-                        {% endif %}
-                        </div>
-                    </div>
-                {% endfor %}
+                    {% endfor %}
+                {% endif %}
             {% endif %}
             
             {% if sources_on_page %}

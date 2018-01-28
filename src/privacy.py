@@ -37,6 +37,9 @@ class Privacy:
     def is_access_denied(self):
         '''доступ к информации запрещен если уровень ее приватности больше чем уровень доступа пользователя'''
         return self.access < self.privacy
+        
+    def is_access_to_events_denied(self):
+        return self.access < self.events_privacy    
 
     def comment(self, comment):
         '''comment is instance of Note class'''
@@ -58,7 +61,7 @@ class Privacy:
         return [s for s in sources if s.quote is None or s.quote.privacy() <= self.access]
     
     def events(self, events):
-        if self.events_privacy > self.access:
+        if self.is_access_to_events_denied():
             return []
         return [e for e in events if e.comment is None or e.comment.privacy() <= self.access]    
     
