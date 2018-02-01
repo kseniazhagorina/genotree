@@ -9,6 +9,7 @@
         
         <link rel="icon" href="/static/favicon.png">
         <link rel="stylesheet" type="text/css" href="/static/css/carousel-full-screen.css">
+        <link rel="stylesheet" type="text/css" href="/static/css/collapsed-more-less.css">
         <script type="text/javascript" src="/static/js/carousel-full-screen.js"></script>
         <script type="text/javascript" src="/static/js/lazy-content.js"></script>
         
@@ -20,22 +21,7 @@
         </style>
         
         <style>
-        a .readMore {
-            display: none;
-        }
-
-        a .readLess {
-            display: inline;
-        }
-
-        a.collapsed .readMore {
-            display: inline;
-        }
-
-        a.collapsed .readLess {
-            display: none;
-        }
-
+        
         .source-content:not(.in) {
             min-height: 4.25em;
             height: 4.25em;
@@ -99,7 +85,13 @@
             
             <h3>События</h3>
             {% if privacy.is_access_to_events_denied() %}
-                <p class="text-secondary">Подробная информация о событиях скрыта настройками приватности. <a href="/lk">Подробнее...</a></p>
+                <p class="text-secondary">
+                {% if user and user.is_authenticated() %}
+                Подробная информация о событиях доступна только ближайшим родственникам.
+                {% else %}
+                Подробная информация о событиях скрыта настройками приватности.
+                {% endif %}
+                <a href="/lk" target="_blank">Подробнее...</a></p>
             {% else %}
                 {% set person_events = privacy.events(person.events) %}
                 {% if person_events %}

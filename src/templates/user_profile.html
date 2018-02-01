@@ -3,36 +3,177 @@
 {% set vk_info = user.auth_info('vk') if user else None %}
 {% set ok_info = user.auth_info('ok') if user else None %}
 
-
-    
-
 <html>
-	<head></head>
-    <body>
-        {% if user and user.is_authenticated() %}
-            {% set auth_info = vk_info or ok_info %}
-            <p>Добро пожаловать, {{auth_info.me.first_name}}!</p>
-            <p>Рады сообщить, что вы являетесь привелегированным пользователем. Теперь вам доступна расширенная информация обо всех персонах в дереве.</p>
-        {% else %}
-            <p>Здравствуйте, дорогой Гость!</p>
-            <p>Некоторая информация о ныне живущих людях доступна только зарегистрированным пользователям. Чтобы увидеть ее необходимо войти на сайт через Вконтакте или Одноклассники.</p>
-            <p>Если вы нашли себя в дереве - то после этого нужно будет привязать свой профиль из социальной сети к персоне в дереве (возможно он привяжется автоматически). После этого вы сможете просматривать дополнительные материалы о себе и своих ближайших родственниках.</p>
-        {% endif %}
-    
-        <p>
-        {% if vk_info %}
-            <img src="{{vk_info.me.photo50}}"/><a href="{{api.vk.auth.unauth_url}}">Выйти</a>
-        {% else %}
-            <a href="{{api.vk.auth.auth_dialog_url}}">Войти через Вконтакте</a>
-        {% endif %}
-        </p>
+	<head>
+        <title>Личный кабинет</title>
         
-        <p>
-        {% if ok_info %}
-            <img src="{{ok_info.me.photo50}}"/><a href="{{api.ok.auth.unauth_url}}">Выйти</a>
-        {% else %}    
-            <a href="{{api.ok.auth.auth_dialog_url}}">Войти через Одноклассники</a>
-        {% endif %} 
-        </p>    
+        <script src="/static/js/jquery.min.js"></script>
+		<script type="text/javascript" src="/static/js/dragscroll.js"></script>
+		<link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+		<script src="/static/js/bootstrap.min.js"></script>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
+        
+        <link rel="icon" href="/static/favicon.png">
+        <link rel="stylesheet" type="text/css" href="/static/css/fa-colored.css">
+        <link rel="stylesheet" type="text/css" href="/static/css/collapsed-more-less.css">
+        
+        <style>
+        
+        .collapse-more-less:not(.in) {
+            min-height: 12.8em;
+            max-height: 12.8em;
+            display: block;
+            overflow: hidden;
+        }
+        
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            
+            {% if user and user.is_authenticated() %}
+                {% set auth_info = vk_info or ok_info %}
+                <h2>Добро пожаловать, {{auth_info.me.first_name}}!</h2>
+                <div class="row">
+                    <div class="col-sm-6">
+                        <div class="row">
+                            {% if vk_info %}
+                            <div class="col-sm-1">
+                                <img src="{{vk_info.me.photo50}}"/>
+                                <div class="caption">
+                                   <a href="{{api.vk.auth.unauth_url}}">Выйти</a>
+                                </div>                        
+                            </div>
+                            {% endif %}
+                            
+                            {% if ok_info %}
+                            <div class="col-sm-1">
+                                <img src="{{ok_info.me.photo50}}"/>
+                                <div class="caption">
+                                   <a href="{{api.ok.auth.unauth_url}}">Выйти</a>
+                                </div>                        
+                            </div>
+                            {% endif %}
+                        </div>                   
+                    </div>
+            {% else %}
+                <h2>Войти на сайт</h2>
+                <div class="row">
+                    <div class="col-sm-6">
+                        <p>Некоторая информация о ныне живущих людях доступна только зарегистрированным пользователям. Чтобы увидеть ее необходимо войти на сайт.</p>
+                    </div>
+            {% endif %}
+        
+            <div class="col-sm-6">
+                <ul class="list-unstyled">
+                {% if not vk_info %}
+                   <li>
+                   <i class="fa fa-fw fa-vk fa-colored"></i> <a href="{{api.vk.auth.auth_dialog_url}}">Войти через Вконтакте</a>
+                   </li>
+                {% endif %}
+                {% if not ok_info %}
+                    <li>
+                    <i class="fa fa-fw fa-odnoklassniki fa-colored"></i> <a href="{{api.ok.auth.auth_dialog_url}}">Войти через Одноклассники</a>
+                    </li>    
+                {% endif %}
+                </ul>
+            </div>
+          </div>
+
+          {% if user and user.is_authenticated() %}         
+          <div class="row">
+              <div class="col-sm-6">
+                  <h3>Обо мне:</h3>
+                  {% if not owned %}
+                     <p>К сожалению нам пока ничего о вас не известно.</p>
+                     
+                  {% else %}
+                     <ul class="list-unstyled">
+                     {% for person in owned %}
+                        <li><a href="/person/{{person.uid}}">{{person.name|default("...", true)}}</a></li>
+                     {% endfor %}
+                     </ul>
+                  {% endif %}
+              
+              
+                  {% if relatives %}
+          
+                      <h3>О моих ближайших родственниках:</h3>
+                      <div class="collapse collapse-more-less" id="relatives_block">
+                          <ul class="list-unstyled">
+                          {% for person in relatives %}
+                              <li><a href="/person/{{person.uid}}">{{person.name|default("...", true)}}</a></li>
+                          {% endfor %}
+                          </ul>
+                      </div>    
+                
+                      <a href="#relatives_block" data-toggle="collapse" class="collapsed">
+                            <span class="text-danger readMore">Все</span>
+                            <span class="text-danger readLess">Свернуть</span>
+                      </a>
+  
+              {% endif %}
+            </div>
+
+            <div class="col-sm-6">
+                <h3>Вопрос - ответ:</h3>
+                {% if owned %}
+                    <div class="alert alert-info" role="alert">
+                        <p>
+                        <b>Q: Кто видит информацию обо мне?</b></br>
+                        <b>A: </b>
+                        Дополнительная информация видна только вам и вашим ближайшим родственникам, если они вошли на сайт  их профиль в социальной сети привязан к их страничке в дереве.
+                        </p>
+                    
+                        <p>
+                        Чтобы увидеть, как видят вашу страницу незарегистрированные пользователи - откройте ее в режиме инкогнито или просто нажмите "Выйти" под иконкой вашего профиля вверху страницы.                          
+                        </p>
+                    </div>
+                    <div class="alert alert-info" role="alert alert-info">
+                        <p>
+                        <b>Q: В моей биографии есть ошибка. Что делать?</b></br>
+                        <b>A: </b>
+                        Просто сообщите об этом автору сайта. Мы будем очень рады вашей помощи и исправим или дополним вашу биографию как можно скорее.                          
+                        </p>
+                    </div>
+                {% else %}
+                    <div class="alert alert-info" role="alert">
+                        <p>
+                        <b>Q: Я есть в дереве. Почему я вижу, что "обо мне ничего не известно"?</b></br>
+                        <b>A: </b>
+                        Дополнительная информация видна только если ваш профиль в социальной сети привязан к вашей страничке в дереве (на страничке должна быть ссылка на ваш профиль в соц.сети). Чтобы привязать профиль - обратитесь к автору сайта.
+                        </p>
+                    </div>
+                    
+                    <div class="alert alert-info" role="alert">
+                        <p>
+                        <b>Q: Меня нет в дереве, но я нашел своих родственников. Как мне присоединиться к проекту?</b></br>
+                        <b>A: </b>
+                        Просто напишите автору сайта. Мы всегда рады новым знакомствам!
+                        </p>
+                    </div>
+
+                {% endif %} 
+
+                   <div class="alert alert-info" role="alert">
+                       <p>
+                        <b>Q: Как связаться с автором сайта?</b></br>
+                        <b>A: </b>
+                        Вы можете легко найти меня в социальных сетях:                          
+                        </p>
+                        <p><ul class="list-unstyled">
+                                <li><i class="fa fa-fw fa-odnoklassniki fa-colored"></i><a href="https://ok.ru/ksenia.zhagorina"> https://ok.ru/ksenia.zhagorina</a></li>
+                                <li><i class="fa fa-fw fa-vk fa-colored"></i><a href="https://vk.com/kzhagorina"> https://vk.com/kzhagorina</a></li>
+                                <li><i class="fa fa-fw fa-telegram fa-colored"></i> <a title="Telegram" href="tg://resolve?domain=KseniaZhagorina">KseniaZhagorina</a></li>
+                            </ul>
+                            </p>
+                        </p>
+                    </div>    
+               
+            </div>             
+          </div>
+          {% endif %}         
+       </div>         
     </body>
 </html>    

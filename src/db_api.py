@@ -177,7 +177,7 @@ class UserAccessManager:
         if person:
             # прямые предки и потомки персоны, а также ближайшие кровные родственники (до троюродных братьев)
             for relative_uid, relation in person.relatives.items():
-                if all(c.islower() for c in relation) or all(c.isupper() for c in relation) or len(relation) <=6:
+                if all(c.islower() for c in relation) or all(c.isupper() for c in relation) or len(relation) <=4:
                     yield relative_uid
             # родители и кровные дети жены/мужа
             for family in person.families:

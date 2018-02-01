@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import traceback
-from app_utils import get_tree, get_tree_map, get_person_snippets, get_person_owners, get_files_dict, random_string
+from app_utils import get_tree, get_tree_map, get_person_snippets, get_person_owners, get_files_dict, random_string, first_or_default
 from gedcom import GedcomReader
 from upload import load_package, select_tree_img_files
 from privacy import Privacy, PrivacyMode
@@ -168,7 +168,7 @@ def biography(person_uid, user):
     if person_uid in data.persons_snippets:
         person_snippet = data.persons_snippets[person_uid]
         person_context = Context(data, user=user).person_context(person_uid)
-        return render_template('biography.html', person=person_snippet, context=person_context)
+        return render_template('biography.html', user=user, person=person_snippet, context=person_context)
     return 'Персона \'{0}\' не найдена...'.format(person_uid)
 
 @app.route('/admin/load/<archive>')
@@ -180,7 +180,14 @@ def load(archive):
 @app.route('/lk')
 @get_user
 def user_profile(user):
-    return render_template('user_profile.html', api=OAuth(), user=user, context=Context(data, user=user))
+    context = Context(data, user=user)
+    owned = [data.persons_snippets[uid] for uid in context.access.roles.get('OWNER', []) if uid in data.persons_snippets]
+    first_owned = first_or_default(owned)
+    relatives = list(sorted(context.access.access.keys(), key=lambda uid: len(first_owned.relatives.get(uid, 'nnn'))))
+    relatives = [data.persons_snippets[uid] for uid in relatives if uid in data.persons_snippets]
+    return render_template('user_profile.html', 
+                           api=OAuth(), user=user, context=Context(data, user=user),
+                           owned=owned, relatives=relatives)
     
 @app.route('/login/auth/<service>')
 @get_user

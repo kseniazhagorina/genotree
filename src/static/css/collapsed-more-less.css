@@ -1,0 +1,15 @@
+a .readMore {
+    display: none;
+}
+
+a .readLess {
+    display: inline;
+}
+
+a.collapsed .readMore {
+    display: inline;
+}
+
+a.collapsed .readLess {
+    display: none;
+}
