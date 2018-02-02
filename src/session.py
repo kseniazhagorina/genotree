@@ -44,11 +44,13 @@ class Session(dobj):
             return any(v.closed is None for v in self.auth.values())
         return service in self.auth and self.auth[service].closed is None
         
-    def auth_info(self, service, only_opened=True):
-        s = self.auth.get(service, None)
-        if only_opened and s is not None and s.closed:
-            return None
-        return s
+    def auth_info(self, service=None, only_opened=True):
+        candidates = [service] if service is not None else self.auth.keys()    
+        for service in candidates:
+            s = self.auth.get(service, None)
+            if only_opened and s is not None and s.closed:
+                return None
+            return s
     
     def all_logins(self):
         logins = []

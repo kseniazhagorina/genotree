@@ -153,7 +153,7 @@ def get_user(func):
 def tree(tree_name, user):
     tree_name = tree_name or data.default_tree_name
     if tree_name in data.trees:
-        return render_template('tree.html', context=Context(data, user=user, requested_tree=tree_name))
+        return render_template('tree.html', user=user, context=Context(data, user=user, requested_tree=tree_name))
     return 'Дерево \'{0}\' не найдено...'.format(tree_name)
           
 
@@ -201,7 +201,7 @@ def auth(service, user):
         user = session_manager.open()
     user.login(service, token=token, me=me)
     session['suid'] = (user.id, user.ts)
-    return redirect(url_for('user_profile'), code=302)
+    return render_template('js_redirect.html', target=url_for('user_profile'), goals=['authentication'])
 
 @app.route('/login/unauth/<service>')
 @get_user

@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        {% import 'yandex_metrika.html' as metrika %}
+        
+        {{ metrika.common_counter() }}
+        {{ metrika.goals() }}
+    </head>
+    <body>
+        <script type="text/javascript">
+           window.onload = function(){
+               {% for goal in goals %}
+               window.yaGoals.{{goal}}();
+               {% endfor %}
+               window.location.replace('{{target}}'); 
+            };   
+        </script>
+    </body>
+</html>

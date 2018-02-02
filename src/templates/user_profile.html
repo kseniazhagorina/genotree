@@ -33,8 +33,7 @@
         <div class="container">
             
             {% if user and user.is_authenticated() %}
-                {% set auth_info = vk_info or ok_info %}
-                <h2>Добро пожаловать, {{auth_info.me.first_name}}!</h2>
+                <h2>Добро пожаловать, {{user.auth_info().me.first_name}}!</h2>
                 <div class="row">
                     <div class="col-sm-6">
                         <div class="row">
