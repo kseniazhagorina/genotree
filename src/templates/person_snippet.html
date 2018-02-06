@@ -138,7 +138,26 @@
 	</div>
 {% endmacro %}
 
+{% macro draw_short_description(person, privacy) -%}
+    (род. {% if person.birth -%}
+        {{person.birth.date|default("??.??.????", true)}}{% if person.birth.place %}, {{privacy.address(person.birth.place)}} {% endif %}
+    {%- else -%}
+        ??.??.????        
+    {%- endif -%}
+    {%- if not person.is_alive() %} &mdash; ум. {% if person.death -%}
+            {{person.death.date|default("??.??.????", true)}}{% if person.death.place %}, {{privacy.address(person.death.place)}} {% endif %}{% if person.age() %} в возрасте {{person.age()}} {% if person.age()%10 == 1 %}года{% else %}лет{% endif %}{% endif %}
+        {%- else -%}
+            ??.??.????
+        {%- endif -%}
+    {%- elif person.age() -%}
+        , {{person.age()}} {% if person.age()%10==1%}год{% elif person.age()%10 <= 3 and person.age()%10 > 0 %}года{% else %}лет{% endif %}
+    {%- endif -%}    
+    )    
+    {%- if person.main_occupation %} {{person.main_occupation }} {%- endif -%}
+{%- endmacro %}
+
 {% macro draw_person_opengraph(person, context) %}
+    {% set privacy = context.privacy %}
     <meta property="og:type" content="profile"/>
     
     <meta property="og:image" content="
@@ -147,6 +166,12 @@
     {%- else -%}
         /static/{{person.choose_by_sex('BlankMale.jpg', 'BlankFemale.jpg')}}
     {%- endif -%}
-    ">
-    <meta property="og:title" content="{{person.name|default('...')}}">
+    "/>
+    <meta property="og:title" content="{{person.name|default('...')}}"/>
+    <meta property="og:description" content="{{draw_short_description(person, privacy)}}"/>
 {% endmacro %}
+
+{% macro draw_person_meta(person, context) %}
+    {% set privacy = context.privacy %}
+    <meta name="description" content="{{person.name|default('...')}} {{draw_short_description(person, privacy)}}"/>
+{% endmacro %}    

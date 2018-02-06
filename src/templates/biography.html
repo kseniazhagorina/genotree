@@ -37,6 +37,8 @@
         {% import 'yandex_metrika.html' as metrika %}
         
         {{ ps.draw_person_opengraph(person, context) }}
+        
+        {{ ps.draw_person_meta(person, context) }}
  
         {{ metrika.common_counter() }}
         {{ metrika.goals() }}
