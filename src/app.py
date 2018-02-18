@@ -62,7 +62,7 @@ class Data:
             if archive is not None:
                 load_package(archive, 'src/static/tree', 'data/tree')
             
-            self.files_dir = '/static/tree/files'
+            self.files_dir = 'tree/files'
             self.files = get_files_dict('data/tree/files.tsv')
             
             self.gedcom = GedcomReader().read_gedcom('data/tree/tree.ged')
@@ -88,6 +88,8 @@ class Data:
 
 data = Data()        
 data.load()
+if data.load_error:
+    raise Exception(data.load_error)
 
 db = create_db('data/db/tree.db')
 access_manager = UserAccessManager(db, data)

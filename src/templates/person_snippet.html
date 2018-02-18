@@ -14,16 +14,16 @@
     <a href="#" data-toggle="modal" data-target="#carousel-for-{{person.uid}}">
         <img class="img-fluid img-rounded img-person"
             {% if lazy %}
-            src="/static/{{person.choose_by_sex('BlankMale.jpg', 'BlankFemale.jpg')}}"
-            lazy-src="{{context.files_dir}}/{{person.photo.path}}"
+            src="{{url_for('static', filename=person.choose_by_sex('BlankMale.jpg', 'BlankFemale.jpg'))}}"
+            lazy-src="{{url_for('static', filename=context.files_dir+'/'+person.photo.path)}}"
             {% else %}
-            src="{{context.files_dir}}/{{person.photo.path}}"
+            src="{{url_for('static', filename=context.files_dir+'/'+person.photo.path)}}"
             {% endif %}
             />
     </a>
     {% else %}
         <img 
-            src="/static/{{person.choose_by_sex('BlankMale.jpg', 'BlankFemale.jpg')}}"
+            src="{{url_for('static', filename=person.choose_by_sex('BlankMale.jpg', 'BlankFemale.jpg'))}}"
             class="img-fluid img-rounded img-person"/>
              
     {% endif %}
@@ -162,11 +162,12 @@
     
     <meta property="og:image" content="
     {%- if person.photo -%}
-        {{context.files_dir}}/{{person.photo.path}}
+        {{url_for('static', _external=True, filename=context.files_dir+'/'+person.photo.path)}}
     {%- else -%}
-        /static/{{person.choose_by_sex('BlankMale.jpg', 'BlankFemale.jpg')}}
+        {{url_for('static', _external=True, filename=person.choose_by_sex('BlankMale.jpg', 'BlankFemale.jpg'))}}
     {%- endif -%}
     "/>
+    <meta property="og:url" content="{{url_for('biography', person_uid=person.uid, _external=True)}}"/>
     <meta property="og:title" content="{{person.name|default('...')}}"/>
     <meta property="og:description" content="{{draw_short_description(person, privacy)}}"/>
 {% endmacro %}

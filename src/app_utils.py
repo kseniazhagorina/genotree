@@ -30,9 +30,15 @@ def first_or_default(arr, predicate=None, default=None):
     return default
     
 def random_string(length):
-   return ''.join(random.choice(string.ascii_lowercase) for i in range(length))    
+    return ''.join(random.choice(string.ascii_lowercase) for i in range(length))    
 
-
+def normalize_path(path):
+    if path is None:
+        return None
+    if '156aDVYsQ2' in path:
+        print ('normalize_path({}) = {}'.format(path, '/'.join(path.split('\\'))))    
+    return '/'.join(path.split('\\'))
+   
 class dobj(dict):
     '''все что может быть сериализовано - в dict остальное в __dict__'''           
     @staticmethod
@@ -205,7 +211,7 @@ class PersonSnippet:
 
 class Document:
     def __init__(self, path, title=None):
-        self.path = path
+        self.path = normalize_path(path)
         self.title = title
 
 def get_documents(documents, files):
@@ -232,7 +238,7 @@ class Source:
         self.name = name
         self.page = page
         self.quote = quote
-        self.document_path = document_path # путь до сохраненного документа-источника
+        self.document_path = normalize_path(document_path) # путь до сохраненного документа-источника
 
     @staticmethod
     def create_from_source(source, source_link):
@@ -246,7 +252,7 @@ class Source:
         ext = os.path.splitext(document.path)[-1].lower()
         name = document.title
         if ext == '.txt':
-            quote = Note.parse(opendet('src/static/tree/files/'+document.path.replace('\\', '/')).read())
+            quote = Note.parse(opendet('src/static/tree/files/'+normalize_path(document.path)).read())
             return Source(name, None, quote, None)
         return Source(name, None, None, document.path)
 

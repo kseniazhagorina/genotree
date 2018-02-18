@@ -13,7 +13,8 @@
         <meta name="description" content="Родословное древо Жагориных, Черепановых, Мотыревых, Фаренюков..."/>
         
         <meta property="og:type" content="website" />
-        <meta property="og:image" content="/static/preview.tree.png"/>
+        <meta property="og:image" content="{{url_for('static', filename='preview.tree.png', _external=True)}}"/>
+        <meta property="og:image" content="{{url_for('tree', tree_name=context.tree.uid, _external=True)}}"/>
         <meta property="og:title" content="Мое родословие"/>
         <meta property="og:description" content="Родословное древо Жагориных, Черепановых, Мотыревых, Фаренюков..."/>
         

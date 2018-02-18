@@ -106,7 +106,7 @@
                             {% set event_carousel_id = 'carousel-for-event-' ~ loop.index %}
                             <p>
                                 <a href="#" data-toggle="modal" data-target="#carousel-for-event-{{loop.index}}">
-                                    <img src="{{context.files_dir}}/{{e.photo.path}}" style="width:100%;" class="img-rounded img-fluid"/>
+                                    <img src="{{url_for('static', filename=context.files_dir+'/'+e.photo.path)}}" style="width:100%;" class="img-rounded img-fluid"/>
                                 </a>    
                             </p>
                                 

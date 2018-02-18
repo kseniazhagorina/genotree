@@ -2,7 +2,7 @@
     <span>
     <a href="#source_{{index}}">[{{index}}]</a> {{source.name}} {{source.page|default('', true)|urlize(40)}} 
     {% if source.document_path %}
-        <a href="{{context.files_dir}}/{{source.document_path}}">
+        <a href="{{url_for('static', filename=context.files_dir+'/'+source.document_path)}}">
            <span class="glyphicon glyphicon-file"/>
         </a>
     {% endif %}
@@ -15,7 +15,7 @@
         <h5><a id="source_{{index}}"></a><strong>
         <span style="display: inline-block; width: 30px;">[{{index}}]</span>{{source.name}} {{source.page|default('', true)|urlize(40)}}
         {% if source.document_path %}
-        <a href="{{context.files_dir}}/{{source.document_path}}">
+        <a href="{{url_for('static', filename=context.files_dir+'/'+source.document_path)}}">
            <span class="glyphicon glyphicon-file"/>
         </a>
         {% endif %}
