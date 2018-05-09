@@ -156,7 +156,7 @@ class Ok:
             return token
 
     class Session:
-        __FIELDS = 'user.relationship,relationship.*,ACCESSIBLE,AGE,ALLOWS_ANONYM_ACCESS,ALLOWS_MESSAGING_ONLY_FOR_FRIENDS,BECOME_VIP_ALLOWED,BIRTHDAY,BLOCKED,BLOCKS,CAN_VCALL,CAN_VMAIL,CITY_OF_BIRTH,COMMON_FRIENDS_COUNT,CURRENT_LOCATION,CURRENT_STATUS,CURRENT_STATUS_DATE,CURRENT_STATUS_DATE_MS,CURRENT_STATUS_ID,CURRENT_STATUS_MOOD,CURRENT_STATUS_TRACK_ID,EMAIL,FIRST_NAME,FRIEND,FRIEND_INVITATION,FRIEND_INVITE_ALLOWED,GENDER,GROUP_INVITE_ALLOWED,HAS_EMAIL,HAS_PHONE,HAS_SERVICE_INVISIBLE,INTERNAL_PIC_ALLOW_EMPTY,INVITED_BY_FRIEND,IS_ACTIVATED,LAST_NAME,LAST_ONLINE,LAST_ONLINE_MS,LOCALE,LOCATION,LOCATION_OF_BIRTH,MODIFIED_MS,NAME,ODKL_BLOCK_REASON,ODKL_EMAIL,ODKL_LOGIN,ODKL_MOBILE,ODKL_MOBILE_STATUS,ODKL_USER_OPTIONS,ODKL_USER_STATUS,ODKL_VOTING,ONLINE,PHOTO_ID,PIC1024X768,PIC128MAX,PIC128X128,PIC180MIN,PIC190X190,PIC224X224,PIC240MIN,PIC288X288,PIC320MIN,PIC50X50,PIC600X600,PIC640X480,PIC_1,PIC_2,PIC_3,PIC_4,PIC_5,PIC_BASE,PIC_FULL,PIC_MAX,PREMIUM,PRESENTS,PRIVATE,PYMK_PIC224X224,PYMK_PIC288X288,PYMK_PIC600X600,PYMK_PIC_FULL,REF,REGISTERED_DATE,REGISTERED_DATE_MS,RELATIONS,RELATIONSHIP,SEND_MESSAGE_ALLOWED,SHOW_LOCK,STATUS,UID,URL_CHAT,URL_CHAT_MOBILE,URL_PROFILE,URL_PROFILE_MOBILE,VIP'
+        __FIELDS = 'user.relationship,relationship.*,ACCESSIBLE,AGE,ALLOWS_ANONYM_ACCESS,ALLOWS_MESSAGING_ONLY_FOR_FRIENDS,BECOME_VIP_ALLOWED,BIRTHDAY,BLOCKED,BLOCKS,CAN_USE_REFERRAL_INVITE,CAN_VCALL,CAN_VMAIL,CITY_OF_BIRTH,COMMON_FRIENDS_COUNT,CURRENT_LOCATION,CURRENT_STATUS,CURRENT_STATUS_DATE,CURRENT_STATUS_DATE_MS,CURRENT_STATUS_ID,CURRENT_STATUS_MOOD,CURRENT_STATUS_TRACK_ID,EMAIL,FIRST_NAME,FORBIDS_MENTIONING,FRIEND,FRIEND_INVITATION,FRIEND_INVITE_ALLOWED,GENDER,GROUP_INVITE_ALLOWED,HAS_EMAIL,HAS_PHONE,HAS_SERVICE_INVISIBLE,INTERNAL_PIC_ALLOW_EMPTY,INVITED_BY_FRIEND,LAST_NAME,LAST_ONLINE,LAST_ONLINE_MS,LOCALE,LOCATION,LOCATION_OF_BIRTH,MODIFIED_MS,NAME,ODKL_BLOCK_REASON,ODKL_EMAIL,ODKL_LOGIN,ODKL_MOBILE,ODKL_MOBILE_STATUS,ODKL_USER_OPTIONS,ODKL_USER_STATUS,ODKL_VOTING,ONLINE,PHOTO_ID,PIC1024X768,PIC128MAX,PIC128X128,PIC180MIN,PIC190X190,PIC224X224,PIC240MIN,PIC288X288,PIC320MIN,PIC50X50,PIC600X600,PIC640X480,PIC_1,PIC_2,PIC_3,PIC_4,PIC_5,PIC_BASE,PIC_FULL,PIC_MAX,PREMIUM,PRESENTS,PRIVATE,PYMK_PIC224X224,PYMK_PIC288X288,PYMK_PIC600X600,PYMK_PIC_FULL,REF,REGISTERED_DATE,REGISTERED_DATE_MS,RELATIONS,RELATIONSHIP,SEND_MESSAGE_ALLOWED,SHOW_LOCK,STATUS,UID,URL_CHAT,URL_CHAT_MOBILE,URL_PROFILE,URL_PROFILE_MOBILE,VIP'
         def __init__(self, token, app):
             self.app = app
             self.token = token
@@ -180,21 +180,15 @@ class Ok:
             query = urlparse.urlparse(url).query
             params = list(sorted(query.split('&'), key=lambda p: p.split('=', 1)[0]))
 
-            print('url: {}'.format(url))
             if with_access_token:
-
                 sk = self.access_token + self.app.private_key
-                print('sk: {}'.format(sk))
                 secret_key = hashlib.md5(sk.encode()).hexdigest()
-                print('secret_key: {}'.format(secret_key))
                 url += '&access_token={}'.format(self.access_token)
             else:
                 secret_key = self.app.private_key
 
             s = ''.join(params)+secret_key
-            print('s: {}'.format(s))
             sig = hashlib.md5(s.encode()).hexdigest().lower()
-            print('sig: {}'.format(sig))
 
             url = url + '&sig={}'.format(sig)
             return url
@@ -206,8 +200,9 @@ class Ok:
                 url = self.__sig(url)
                 user = json.loads(requests.get(url).text)
                 if 'error' in user:
-                    print('Api.Ok error: {} respond {}'.format(url, user))
-                    return None
+                    raise Exception('Api.Ok error: {} respond {}'.format(url, user))
+                if 'uid' not in user:
+                    raise Exception('Api.Ok error: {} respond {}'.format(url, user))
                 user['login'] = self.__get_login(user['uid'])
                 self.__user = Ok.User(user)
             return self.__user
@@ -234,13 +229,18 @@ class Ok:
             return Ok.User(response['user'])
 
         def __get_login(self, uid):
+            '''адреса в одноклассниках
+               https://ok.ru/profile/329919392375
+               https://ok.ru/ksenia.zhagorina
+               чтобы по числовому номеру узнать логин надо зайти на страницу пользователя
+            '''   
             url = 'https://ok.ru/profile/{}'.format(uid)
             response = requests.get(url).text
             m = re.search('<a itemprop="url" href="https://ok.ru/([\w+\.-]+)', response)
             if m:
                 login = m.group(1)
                 if login != uid:
-                    return login
+                    return login		
             return None
 
     class User(UserInfo):

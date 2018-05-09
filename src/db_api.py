@@ -304,6 +304,8 @@ class UserSessionManager:
             if s is None or s.closed:
                 return None
             session = Session.from_json(s.data, self)
+            if not session.is_valid():
+                return None
             self.cached[session.id] = session
             return session
         return self.cached[session_id]

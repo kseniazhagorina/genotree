@@ -488,7 +488,7 @@ def get_person_snippets(gedcom, files):
 def get_person_owners(persons_snippets):
     '''Находим ссылки на страницы в соц.сетях в комментариях к персонам и в источниках'''
     vk = re.compile(r'https?://(vk\.com|vkontakte\.ru)/(?P<id>[\w\.]+)')
-    ok = re.compile(r'https?://(ok|odnoklassniki)\.ru/profile/(?P<id>[\w\.]+)')
+    ok = re.compile(r'https?://(ok|odnoklassniki)\.ru/(?:profile/)?(?P<id>[\w\.]+)')
     owners = set() # (service, login, person_uid)
     for uid, person in persons_snippets.items():
         text = str(person.comment) if person.comment else ''

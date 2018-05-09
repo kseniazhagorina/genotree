@@ -25,7 +25,13 @@ class Session(dobj):
         #        'me': ...,
         #        'opened': timestamp
         #        'closed': timestamp or None  
-        # }        
+        # }
+
+    def is_valid(self):
+        for service in self.auth:
+            if self.auth[service].me is None:
+                return False
+        return True    
     
     def login(self, service, **kwargs):
         self.auth[service] = dobj.convert(kwargs)
@@ -34,9 +40,16 @@ class Session(dobj):
         self.auth[service].closed = None
         self.manager.update(self)
 
-    def logout(self, service):
-        if service in self.auth:
-            self.auth[service].closed = time.time()
+    def logout(self, service=None):
+        candidates = [service] if service is not None else self.auth.keys()
+        close_time = time.time()
+        updated = False
+        for service in candidates:
+            s = self.auth.get(service, None)
+            if s is not None and not s.closed:
+                s.closed = close_time
+                updated = True
+        if updated:
             self.manager.update(self)
         
     def is_authenticated(self, service=None):
@@ -45,12 +58,13 @@ class Session(dobj):
         return service in self.auth and self.auth[service].closed is None
         
     def auth_info(self, service=None, only_opened=True):
-        candidates = [service] if service is not None else self.auth.keys()    
+        candidates = [service] if service is not None else self.auth.keys()
         for service in candidates:
             s = self.auth.get(service, None)
             if only_opened and s is not None and s.closed:
-                return None
+                continue
             return s
+        return None
     
     def all_logins(self):
         logins = []
