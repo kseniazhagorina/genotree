@@ -203,7 +203,7 @@ def auth(service, user):
         user = session_manager.open()
     user.login(service, token=token, me=me)
     session['suid'] = (user.id, user.ts)
-    return render_template('js_redirect.html', target=url_for('user_profile'), goals=['authentication'])
+    return render_template('js_redirect.html', target=url_for('user_profile'), goals=['authentication'], user=user)
 
 @app.route('/login/unauth/<service>')
 @get_user

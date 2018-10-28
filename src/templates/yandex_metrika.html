@@ -1,10 +1,14 @@
-{% macro common_counter() %}
+{% macro common_counter(user) %}
     <!-- Yandex.Metrika counter -->
     <script type="text/javascript">
+    window.yaCounter41928029Params = {
+        is_authenticated: {% if user and user.is_authenticated() %} true {% else %} false {% endif %} 
+    };
+    
     (function (d, w, c) {
         (w[c] = w[c] || []).push(function() {
             try {
-                w.yaCounter41928029 = new Ya.Metrika({ id:41928029, clickmap:true, trackLinks:true, accurateTrackBounce:true, webvisor:true, trackHash:true });
+                w.yaCounter41928029 = new Ya.Metrika({ id:41928029, clickmap:true, trackLinks:true, accurateTrackBounce:true, webvisor:true, trackHash:true, params:window.yaCounter41928029Params });
             } catch(e) { } });
         var n = d.getElementsByTagName("script")[0], s = d.createElement("script"), f = function () {
             n.parentNode.insertBefore(s, n); };
