@@ -26,6 +26,29 @@
       background: linear-gradient(to right,rgba(0,0,0,.0001) 0, rgba(0,0,0,.7) 20%, rgba(0,0,0,.7) 20%, rgba(0,0,0,0.0001) 100%);
   }
   
+.carousel.full-screen > .carousel-extra-controls  {
+    position: absolute;
+    top: 0px;
+    right: 0px;
+}
+
+.carousel.full-screen > .carousel-extra-controls > a {
+    width: 30px;
+    height: 30px;
+    font-size: 30px;
+    font-style: normal;
+    font-weight: 400;
+    color: #fff;
+    text-align: center;
+    text-shadow: 0 1px 2px rgba(0,0,0,.6);
+    margin: 10px;
+    opacity: 0.5;
+}
+
+.carousel.full-screen > .carousel-extra-controls  > a:hover  {
+    opacity: 0.9;
+}
+  
 .carousel.full-screen .item img:hover + .carousel-caption,
 .carousel.full-screen .carousel-caption:hover  {
     display:block;

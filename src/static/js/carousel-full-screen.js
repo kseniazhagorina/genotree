@@ -15,12 +15,7 @@ function initCarouselFullScreen() {
         $('.modal.carousel.full-screen').on('shown.bs.modal', function() {
             loadLazyContent($(this));
             yaGoals.open_photo_gallery();
+            $('.carousel').carousel('cycle');
         })
-
-        // запуск карусельки
-        //$('.carousel').carousel({
-        //  interval: 5000,
-        //  pause: "true"
-        //});
     });
 }    
