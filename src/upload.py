@@ -8,7 +8,7 @@ import os.path
 import codecs
 import hashlib
 import re
-from app_utils import first_or_default
+from common_utils import first_or_default
 from geddate import GedDate
 
 # Загрузка базы данных и дерева единым пакетом

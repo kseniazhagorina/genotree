@@ -1,10 +1,8 @@
 #!usr/bin/env
 # -*- coding: utf-8 -*-
 
-import traceback
-from app_utils import get_tree, get_tree_map, get_person_snippets, get_person_owners, get_files_dict, random_string, first_or_default
+from app_utils import Data, first_or_default
 from gedcom import GedcomReader
-from upload import load_package, select_tree_img_files
 from privacy import Privacy, PrivacyMode
 from session import Session
 from db_api import create_db, UserAccessManager, UserSessionManager
@@ -24,69 +22,9 @@ def OAuth():
         oauth.API = oauth.Api(url_for, config)
     return oauth.API
 
-DEFAULT_TREE = ''
-TREE_NAMES = {
-    DEFAULT_TREE: 'Общее',
-    'zhagoriny': 'Жагорины',
-    'motyrevy': 'Мотыревы',
-    'cherepanovy': 'Черепановы',
-    'farenuyk': 'Фаренюки'
-}
 
-# pythonanywhere не поддерживает threading
-def async(f):
-    def wrapper(*args, **kwargs):
-        thr = threading.Thread(target = f, args = args, kwargs = kwargs)
-        thr.start()
-    return wrapper
 
-class Data:
-    '''статические данные о персонах/загруженных деревьях не зависящие
-       от текущего пользователя, запрошенной страницы, отображаемой персоны'''
-    class Tree:
-        def __init__(self, uid, img, map):
-            self.uid = uid
-            self.name = TREE_NAMES.get(uid) or uid
-            self.img = img
-            self.map = map
-            
-    def __init__(self):
-        self.load_error = 'Data is unloaded.'
-    
-    def is_valid(self):
-        return self.load_error is None
-        
-    def load(self, archive=None):
-        try:
-            self.load_error = 'Данные сайта обновляются прямо сейчас'          
-            if archive is not None:
-                load_package(archive, 'src/static/tree', 'data/tree')
-            
-            self.files_dir = 'tree/files'
-            self.files = get_files_dict('data/tree/files.tsv')
-            
-            self.gedcom = GedcomReader().read_gedcom('data/tree/tree.ged')
-            self.persons_snippets = get_person_snippets(self.gedcom, self.files)
-            self.persons_owners = get_person_owners(self.persons_snippets)
-            
-            # Загружаем деревья - 
-            tree_uids, pngs, xmls = select_tree_img_files('src/static/tree')
-            if len(tree_uids) == 0:
-                raise Exception('No files *_tree_img.png in /static/tree directory')
-            self.trees = {}
-            for tree_uid, png, xml in zip(tree_uids, pngs, xmls):
-                tree_uid = tree_uid or DEFAULT_TREE
-                self.trees[tree_uid] = Data.Tree(tree_uid, '/static/tree/'+png, get_tree_map('data/tree/'+xml))
-            self.default_tree_name = DEFAULT_TREE if DEFAULT_TREE in self.trees else tree_uids[0]  
-            self.load_error = None
-        except:
-            self.load_error = traceback.format_exc()
-    
-    @async
-    def async_load(self, archive=None):        
-        self.load(archive)
-
-data = Data()        
+data = Data('src/static/tree', 'data/tree')        
 data.load()
 if data.load_error:
     raise Exception(data.load_error)

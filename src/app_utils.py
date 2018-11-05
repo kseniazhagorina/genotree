@@ -5,6 +5,7 @@ import os.path
 import xml.etree.ElementTree
 import codecs
 import chardet
+import traceback
 import re
 import random, string
 from copy import copy
@@ -15,68 +16,8 @@ from geddate import GedDate
 from genery_note import Note
 from relatives import get_blood_relatives
 from privacy import PrivacyMode, Privacy
-
-
-
-def opendet(filename):
-    with open(filename, 'rb') as f:
-        enc = chardet.detect(f.read())
-    return codecs.open(filename, 'r', encoding=enc['encoding'])
-
-def first_or_default(arr, predicate=None, default=None):
-    for item in arr:
-        if predicate is None or predicate(item):
-            return item
-    return default
-    
-def random_string(length):
-    return ''.join(random.choice(string.ascii_lowercase) for i in range(length))    
-
-def normalize_path(path):
-    if path is None:
-        return None
-    if '156aDVYsQ2' in path:
-        print ('normalize_path({}) = {}'.format(path, '/'.join(path.split('\\'))))    
-    return '/'.join(path.split('\\'))
-   
-class dobj(dict):
-    '''все что может быть сериализовано - в dict остальное в __dict__'''           
-    @staticmethod
-    def convert(value):
-        if isinstance(value, (list, tuple)):
-            converted_value = [dobj.convert(x) for x in value]
-            return tuple(converted_value) if isinstance(value, tuple) else converted_value
-        if isinstance(value, dict) and not isinstance(value, dobj):
-            return dobj(dict((k, dobj.convert(v)) for k,v in value.items()))       
-        return value
-        
-    @staticmethod
-    def is_json(value):
-        return value is None or isinstance(value, (str, int, float, bool, list, dict, tuple))
-
-    def __init__(self, d=None):
-        d = d or {}
-        for key, value in d.items():
-            self.__setattr__(key, value)
-
-    def __getattr__(self, name):
-        return self[name] if name in self else self.__dict__[name]
-        
-    def __setattr__(self, name, value):
-        converted = dobj.convert(value)
-        self.__delattr__(name)
-        if dobj.is_json(value):
-            self[name] = converted
-        else:
-            self.__dict__[name] = value
-            
-    def __delattr__(self, name):
-        if name in self:
-            del self[name]
-        elif name in self.__dict__:
-            del self.__dict__[name]
-        
-        
+from common_utils import *
+from upload import load_package, select_tree_img_files
 
 
 class TreeMap:
@@ -142,13 +83,6 @@ class GedName:
             return GedName(name=name, patronymic=patronymic, surname=surname, surname_at_birth=surname_at_birth)
         return GedName(unparsed=s.strip())
 
-def choose_by_sex(sex, male, female, unknown=None):
-    if sex == 'M':
-        return male
-    if sex == 'F':
-        return female
-    return unknown if unknown is not None else male
-
 class RelPerson:
     '''человек+отношение'''
     def __init__(self, role, person=None):
@@ -208,10 +142,10 @@ class PersonSnippet:
             return None
 
 
-
 class Document:
-    def __init__(self, path, title=None):
+    def __init__(self, path, sys_path, title=None):
         self.path = normalize_path(path)
+        self.sys_path = normalize_path(sys_path)
         self.title = title
 
 def get_documents(documents, files):
@@ -219,12 +153,12 @@ def get_documents(documents, files):
     photos = []
     docs = []
     for document in sorted(documents, key = lambda d: d.get('DFLT') == 'T', reverse=True): # сначала DFLT документ
-        file = files.get(document.get('FILE', ''))
+        file_path = files.get(document.get('FILE', ''))
 
-        if file:
-            ext = os.path.splitext(file)[-1].lower()
+        if file_path:
+            ext = os.path.splitext(file_path)[-1].lower()
             title = document.get('TITL', '')
-            document = Document(path=file, title=title)
+            document = Document(path=file_path, sys_path=os.path.join(files.directory, file_path), title=title)
             if ext in ['.jpg', '.jpeg', '.png', '.tiff', '.gif']:
                 photos.append(document)
             else:
@@ -252,7 +186,7 @@ class Source:
         ext = os.path.splitext(document.path)[-1].lower()
         name = document.title
         if ext == '.txt':
-            quote = Note.parse(opendet('src/static/tree/files/'+normalize_path(document.path)).read())
+            quote = Note.parse(opendet(os.path.join(normalize_path(document.sys_path))).read())
             return Source(name, None, quote, None)
         return Source(name, None, None, document.path)
 
@@ -500,13 +434,77 @@ def get_person_owners(persons_snippets):
             owners.add(('ok', id, uid))
     return owners    
 
-def get_files_dict(filename):
-    dict = {}
+class FilesDict(dict):
+    pass
+
+def get_files_dict(filename, files_path):
+    files = FilesDict()
+    files.directory = files_path
     with codecs.open(filename, 'r', 'utf-8') as input:
         for line in input:
             k, v = line.strip().split('\t')
-            dict[k] = v
-    return dict
+            files[k] = v
+    return files
+
+DEFAULT_TREE = ''
+TREE_NAMES = {
+    DEFAULT_TREE: 'Общее',
+    'zhagoriny': 'Жагорины',
+    'motyrevy': 'Мотыревы',
+    'cherepanovy': 'Черепановы',
+    'farenuyk': 'Фаренюки'
+}
+
+class Data:
+    '''статические данные о персонах/загруженных деревьях не зависящие
+       от текущего пользователя, запрошенной страницы, отображаемой персоны'''
+    class Tree:
+        def __init__(self, uid, img, map):
+            self.uid = uid
+            self.name = TREE_NAMES.get(uid) or uid
+            self.img = img
+            self.map = map
+            
+    def __init__(self, static_path, data_path):
+        '''static_path - path to src/static/tree
+           data_path - path to data/tree
+        '''
+        self.load_error = 'Data is unloaded.'
+        self.static_path = static_path
+        self.data_path = data_path
+    
+    def is_valid(self):
+        return self.load_error is None
+        
+    def load(self, archive=None):
+        try:
+            self.load_error = 'Данные сайта обновляются прямо сейчас'          
+            if archive is not None:
+                load_package(archive, self.static_path, self.data_path)
+            
+            self.files_dir = 'tree/files'
+            self.files = get_files_dict(os.path.join(self.data_path, 'files.tsv'), os.path.join(self.static_path, 'files'))
+            
+            self.gedcom = GedcomReader().read_gedcom(os.path.join(self.data_path, 'tree.ged'))
+            self.persons_snippets = get_person_snippets(self.gedcom, self.files)
+            self.persons_owners = get_person_owners(self.persons_snippets)
+            
+            # Загружаем деревья - 
+            tree_uids, pngs, xmls = select_tree_img_files(self.static_path)
+            if len(tree_uids) == 0:
+                raise Exception('No files *_tree_img.png in {} directory'.format(self.static_path))
+            self.trees = {}
+            for tree_uid, png, xml in zip(tree_uids, pngs, xmls):
+                tree_uid = tree_uid or DEFAULT_TREE
+                self.trees[tree_uid] = Data.Tree(tree_uid, '/static/tree/'+png, get_tree_map(os.path.join(self.data_path, xml)))
+            self.default_tree_name = DEFAULT_TREE if DEFAULT_TREE in self.trees else tree_uids[0]  
+            self.load_error = None
+        except:
+            self.load_error = traceback.format_exc()
+    
+    @async
+    def async_load(self, archive=None):        
+        self.load(archive)
 
 
 
