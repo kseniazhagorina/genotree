@@ -36,19 +36,20 @@
               <span class="glyphicon glyphicon-chevron-right" aria-hidden="true"></span>
               <span class="sr-only">Next</span>
             </a>
-            
-            <!-- Close and zoom controls -->
-            <div class="carousel-extra-controls">
-                <a href="#" class="close" data-dismiss="modal" aria-hidden="true">
-                    <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
-                    <span class="sr-only">Close</span>
-                </a>
-                
-                <a href="#" class ="close" aria-hidden="true" onclick="window.open($(this).closest('.carousel').find('.item.active').find('img')[0].src);">
-                    <span class="glyphicon glyphicon-zoom-in" aria-hidden="true"></span>
-                    <span class="sr-only">Zoom</span>
-                </a>                 
-            </div>
         {% endif %}    
+            
+        <!-- Close and zoom controls -->
+        <div class="carousel-extra-controls">
+            <a href="#" class="close" data-dismiss="modal" aria-hidden="true">
+                <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
+                <span class="sr-only">Close</span>
+            </a>
+            
+            <a href="#" class ="close" aria-hidden="true" onclick="window.open($(this).closest('.carousel').find('.item.active').find('img')[0].src);">
+                <span class="glyphicon glyphicon-zoom-in" aria-hidden="true"></span>
+                <span class="sr-only">Zoom</span>
+            </a>                 
+        </div>
+            
     </div>
 {% endmacro %}
