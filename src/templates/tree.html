@@ -144,7 +144,7 @@
             {% set persons_snippets = context.data.persons_snippets %}
             
             <div id="tree-container" class="dragscroll">
-                <img id="tree-img" src="{{tree.img}}" usemap="#tree_nodes_map"></img>
+                <img id="tree-img" src="{{url_for('static', filename='1x1_white.png')}}" lazy-src="{{tree.img}}" width="{{tree.map.width}}" height="{{tree.map.height}}" usemap="#tree_nodes_map"></img>
                 <div class='hilighted-person'></div>
                 <!-- поисковые теги - невидимые надписи под картой - используются для ctrl+F -->
                 {% for person_uid, node in tree.map.nodes.items() %}
@@ -229,7 +229,15 @@
             </script>    
   
             <script>
+            
+                // Загружаем реальную картинку дерева вместо заглушки
+                $(document).ready(function(){
+                    var tree_container = $('#tree-container').first();
+                    loadLazyContent(tree_container);
+                });
+                
                 // Эмулируем клик на персону, если в якоре урла передан person_uid
+                // Это проскроллит экран до персоны, выделит ее и откроет сниппет с информацией
                 $(document).ready(function(){
                     selected_uid = window.location.hash.substring(1);
                     if (selected_uid) {
