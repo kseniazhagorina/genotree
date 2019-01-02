@@ -2,7 +2,7 @@
 
     {{rel.role}}: 
     {% if rel.person %}
-    <a class="select-person-{{rel.person.uid}}">{{rel.person.name|default("...", true)}}</a>
+    <a class="select-person" person-uid="{{rel.person.uid}}">{{rel.person.name|default("...", true)}}</a>
     {% else %}
     Нет данных
     {% endif %}

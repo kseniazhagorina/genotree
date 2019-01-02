@@ -183,14 +183,11 @@
         </script>
         
         <script>
-            // Выставляем ссылки на select-person-person_uid
+            // Выставляем ссылки на select-person
             $(document).ready(function(){
-                $('a[class^="select-person-"]').each(function(i, a){
-                    m = /\bselect-person-([a-zA-Z0-9]+)\b/.exec(a.className);
-                    if (m.length == 2) {
-                        person_uid = m[1];
-                        a.href = '/person/'+person_uid;
-                    }
+                $('a.select-person').each(function(i, a){
+                    var person_uid = $(a).attr('person-uid');
+                    a.href = '/person/'+person_uid;
                 });    
             });
         </script>        

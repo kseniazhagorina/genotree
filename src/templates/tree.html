@@ -90,7 +90,7 @@
 
             // фокусируется на выбранной персоне в дереве и подсвечивает ее
 			function hilightPersonArea(person_uid) {
-			    var person_area = $('#tree-map .select-person-'+person_uid);
+			    var person_area = $('#tree-map area.select-person[person-uid='+person_uid+']');
                 if (!person_area.length) {
                     return; // некоторые персоны могут не присутствовать в дереве
                 }
@@ -130,6 +130,13 @@
                 tree.scrollLeft(left+width/2-wWidth/2);
                 tree.scrollTop(top+height/2-(wHeight-navHeight)/2);
             }
+            
+            function selectPerson(link) {
+                var person_uid = link.attr('person-uid');
+                viewPersonSnippet(person_uid);
+				hilightPersonArea(person_uid);
+                window.location.hash = person_uid;
+            }
 
 		</script>
 		{% import 'person_snippet.html' as ps %}
@@ -157,7 +164,7 @@
 
                 <map id="tree-map" name='tree_nodes_map'>
                     {% for person_uid, node in tree.map.nodes.items() %}
-                    <area class="select-person-{{person_uid}}" coords="{{node.rect}}" shape="rect" href="#">
+                    <area class="select-person" person-uid="{{person_uid}}" coords="{{node.rect}}" shape="rect" href="#">
                     {% endfor %}
                 </map>
 
@@ -201,20 +208,17 @@
 					<div id="snippet-for-{{person_uid}}">
 						{{ ps.draw_person_snippet(person_snippet, context.person_context(person_uid)) }}
 					</div>
-
-					<script>
-						$(document).ready(function(){
-						    items = $(".select-person-{{person_uid}}");
-							$(".select-person-{{person_uid}}").click(function(e) {
-								e.preventDefault();
-								viewPersonSnippet('{{person_uid}}');
-								hilightPersonArea('{{person_uid}}');
-                                window.location.hash = "{{person_uid}}";
-							});
-						});
-					</script>
 				{% endfor %}
 			</div>
+            
+            <script>
+                $(document).ready(function(){
+                    $(".select-person").click(function(e) {
+                        e.preventDefault();
+                        selectPerson($(this));
+                    });
+                });
+            </script>
             
             <div id="carousels">
                 {% for person_uid, person_snippet in persons_snippets.items() %}
@@ -240,7 +244,7 @@
                 $(window).load(function(){
                     selected_uid = window.location.hash.substring(1);
                     if (selected_uid) {
-                        $(".select-person-"+selected_uid).first().click();
+                        $(".select-person[person-uid='"+selected_uid+"']").first().click();
                     }
                 });
             </script>
