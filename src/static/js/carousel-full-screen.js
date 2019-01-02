@@ -13,6 +13,7 @@ function initCarouselFullScreen() {
         
         // загрузка ленивого контента в модальных окнах
         $('.modal.carousel.full-screen').on('shown.bs.modal', function() {
+            $(this).css('background-image', 'url(/static/carousel_background.jpg)');
             loadLazyContent($(this));
             yaGoals.open_photo_gallery();
             $('.carousel').carousel('cycle');
