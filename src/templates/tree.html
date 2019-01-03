@@ -241,7 +241,7 @@
                 
                 // Эмулируем клик на персону, если в якоре урла передан person_uid
                 // Это проскроллит экран до персоны, выделит ее и откроет сниппет с информацией
-                $(window).load(function(){
+                $(document).ready(function(){
                     selected_uid = window.location.hash.substring(1);
                     if (selected_uid) {
                         $(".select-person[person-uid='"+selected_uid+"']").first().click();
