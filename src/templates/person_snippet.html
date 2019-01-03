@@ -115,24 +115,24 @@
 		
 		<div class="panel-body panel-collapse collapse in" id="snippet-body-{{person.uid}}">
 			<div class="row">
-				<div class="col-sm-6 media">
+                <div class="col-sm-1 col-sm-push-11">
+                    <div class="btn-group btn-group-vertical pull-right" style="z-index:1;">
+                        {{ draw_tree_button(person, context) }}
+                        <a  type="button" class="btn btn-default pull-right" href="/person/{{person.uid}}" target="blank">Биография</a>
+                    </div>                    
+                </div>
+				<div class="col-sm-6 col-sm-pull-1">
 					<div class="media-left">
                         {{ draw_person_photo(person, context) }}       
 					</div>	
-						
 					<div class="media-body">
 						{{ draw_short_person_info(person, privacy) }}
 					</div>		
 				</div>	
-				<div class="col-sm-5">
+				<div class="col-sm-5 col-sm-pull-1">
 					{{ draw_person_family(person) }}
 				</div>
-                <div class="col-sm-1">
-                    <div class="btn-group btn-group-vertical pull-right">
-                        {{ draw_tree_button(person, context) }}
-                        <a  type="button" class="btn btn-default pull-right" href="/person/{{person.uid}}" target="blank">Биография</a>
-                    </div>                    
-                </div>                
+                                
 			</div>
 		</div>
 	</div>
