@@ -72,10 +72,6 @@
                 cursor: -webkit-grab;
                 padding-bottom: 220px;
             }
-            
-            .navbar-fixed-top {
-                margin-right: 30px;
-            }
 		</style>
   
 		<script>
@@ -174,13 +170,20 @@
 			<nav id="person-snippet-container" class="navbar navbar-default navbar-fixed-bottom">
 			</nav>
             
-    <nav class="navbar navbar-fixed-top">
-        <ul class="nav navbar-nav navbar-right">
-          <li><a href="#" data-toggle="modal" data-target="#contacts"><span class="glyphicon glyphicon-envelope"></span> Написать автору</a></li>
-        
-          <li><a href="/lk" target='_blank'><span class="glyphicon glyphicon-user"></span> 
-          {% if user and user.is_authenticated() %} {{user.auth_info().me.first_name}} {% else %} Войти {% endif %}</a></li>
-        </ul>
+    <nav class="navbar">
+        <div class="navbar-header">
+          <!-- Кнопка «Гамбургер» отображается только в мобильном виде (предназначена для открытия основного содержимого Navbar) -->
+          <a href="#" type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar-main">
+            <span class="glyphicon glyphicon-menu-hamburger" aria-hidden="true"></span>
+          </a>
+        </div>
+        <div class="collapse navbar-collapse" id="navbar-main">
+            <ul class="nav navbar-nav navbar-right pull-right">
+              <li><a href="#" data-toggle="modal" data-target="#contacts"><span class="glyphicon glyphicon-envelope"></span> Написать автору</a></li>
+              <li><a href="/lk" target='_blank'><span class="glyphicon glyphicon-user"></span> 
+              {% if user and user.is_authenticated() %} {{user.auth_info().me.first_name}} {% else %} Войти {% endif %}</a></li>
+            </ul>
+        </div>
     </nav>
 
     <!--Author contacts-->
