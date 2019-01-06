@@ -10,7 +10,7 @@ import oauth_api as oauth
 import json
 import threading
 
-from flask import Flask, render_template, request, url_for, redirect, session
+from flask import Flask, render_template, request, url_for, redirect, abort, session
 app = Flask(__name__)
 app.debug = True
 app.secret_key = open('data/config/app.secret.txt').read().strip()
@@ -67,7 +67,7 @@ class Context:
 def check_data_is_valid(func):
     def wrapper(*args, **kwargs):
         if not data.is_valid():
-            return 'Что-то пошло не так... Попробуйте зайти на сайт позже.\n\n'+data.load_error
+            return 'Что-то пошло не так... Попробуйте зайти на сайт позже.\n\n'+data.load_error, 500
         return func(*args, **kwargs)
     wrapper.__name__ = func.__name__    
     return wrapper
@@ -92,9 +92,9 @@ def get_user(func):
 @get_user
 def tree(tree_name, user):
     tree_name = tree_name or data.default_tree_name
-    if tree_name in data.trees:
-        return render_template('tree.html', user=user, context=Context(data, user=user, requested_tree=tree_name))
-    return 'Дерево \'{0}\' не найдено...'.format(tree_name)
+    if tree_name not in data.trees:
+        abort(404)
+    return render_template('tree.html', user=user, context=Context(data, user=user, requested_tree=tree_name))
           
 
 @app.route('/')
@@ -105,11 +105,11 @@ def default_tree():
 @check_data_is_valid
 @get_user
 def biography(person_uid, user):
-    if person_uid in data.persons_snippets:
-        person_snippet = data.persons_snippets[person_uid]
-        person_context = Context(data, user=user).person_context(person_uid)
-        return render_template('biography.html', user=user, person=person_snippet, context=person_context)
-    return 'Персона \'{0}\' не найдена...'.format(person_uid)
+    if person_uid not in data.persons_snippets:
+        abort(404)
+    person_snippet = data.persons_snippets[person_uid]
+    person_context = Context(data, user=user).person_context(person_uid)
+    return render_template('biography.html', user=user, person=person_snippet, context=person_context)
 
 @app.route('/admin/load/<archive>')
 def load(archive):
@@ -152,6 +152,12 @@ def unauth(service, user):
             session_manager.close(user)
             del session['suid']     
     return redirect(url_for('user_profile'), code=302)
+
+@app.errorhandler(404)
+@check_data_is_valid
+@get_user
+def page_not_found(e, user):
+    return render_template('error404.html', context=Context(data, user=user)), 404
         
     
 if __name__ == "__main__":
