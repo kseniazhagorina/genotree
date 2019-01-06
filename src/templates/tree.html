@@ -28,29 +28,29 @@
         <script type="text/javascript" src="/static/js/lazy-content.js"></script>
 
 		<style>
-			#person-snippet-container {
+			.person-snippet {
 				margin-bottom: 18px;
 			}
-            #person-snippet-container .panel {
+            .person-snippet .panel {
                 margin-bottom: 0px;
             }
-			#person-snippet-container .panel-body {
+			.person-snippet .panel-body {
 				padding: 10px 15px 0px 15px;
 				max-height: 180px;
 				min-height: 180px;
 				overflow-y: auto;
 			}
 
-			#person-snippet-container .panel-heading {
+			.person-snippet .panel-heading {
 				padding: 5px 15px 5px 15px;
 			}
             
-            #person-snippet-container .img-person {
+            .person-snippet .img-person {
                 max-width: 160px;
                 max-height: 160px;
             }  
             
-			.hilighted-person {
+			#hilighted-person {
 			    position: absolute;
 			    box-shadow: 0px 0px 50px #0000ff;
                 border-radius: 10px;
@@ -75,14 +75,23 @@
 		</style>
   
 		<script>
+        
+            function closeCurrentPersonSnippet() {
+                var active = $('#snippets').find('.active');
+                active.removeClass('active');
+                active.hide();
+            }
+            
 		    // отображает информацию о персоне в блоке внизу страницы
 			function viewPersonSnippet(person_uid) {
 			    var snippet = $('#snippets').find('#snippet-for-'+person_uid).first();
+                snippet.addClass('active');
                 loadLazyContent(snippet);
-                snippet = snippet.clone(withDataAndEvents=true);
-				var container = $('#person-snippet-container');
-                container.empty();
-                container.append(snippet);
+                snippet.show();
+                //snippet = snippet.clone(withDataAndEvents=true);
+				//var container = $('#person-snippet-container');
+                //container.empty();
+                //container.append(snippet);
 			}
 
             // фокусируется на выбранной персоне в дереве и подсвечивает ее
@@ -102,9 +111,15 @@
 
                 scrollTreeIfNeed(left, top, width, height);
 
-				h = $('.hilighted-person');
+				var h = $('#hilighted-person');
 				h.css({'left': left+'px', 'top': top+'px', 'width': width+'px', 'height': height+'px'});
 			}
+            
+            // убирает подсветку персоны в дереве
+            function removeHilightPersonArea() {
+                var h = $('#hilighted-person');
+				h.css({'left': '0px', 'top': '0px', 'width': '0px', 'height': '0px'});
+            }
 
             // скроллит дерево (если нужно) для того чтобы выбранный участок оказался на экране
             function scrollTreeIfNeed(left, top, width, height) {
@@ -130,6 +145,7 @@
             
             function selectPerson(link) {
                 var person_uid = link.attr('person-uid');
+                closeCurrentPersonSnippet();
                 viewPersonSnippet(person_uid);
 				hilightPersonArea(person_uid);
                 window.location.hash = person_uid;
@@ -149,7 +165,7 @@
             
             <div id="tree-container" class="dragscroll">
                 <img id="tree-img" src="{{url_for('static', filename='1x1_white.png')}}" lazy-src="{{tree.img}}" width="{{tree.map.width}}" height="{{tree.map.height}}" usemap="#tree_nodes_map"></img>
-                <div class='hilighted-person'></div>
+                <div id='hilighted-person'></div>
                 <!-- поисковые теги - невидимые надписи под картой - используются для ctrl+F -->
                 {% for person_uid, node in tree.map.nodes.items() %}
                     {% if person_uid in persons_snippets %}
@@ -167,7 +183,7 @@
 
                 
             </div>
-			<nav id="person-snippet-container" class="navbar navbar-default navbar-fixed-bottom">
+			<nav id="person-snippet-container" >
 			</nav>
             
     <nav class="navbar">
@@ -207,22 +223,13 @@
     </div>
 
 <!--noindex-->            
-			<div id="snippets" style="display:none;">
+			<div id="snippets">
 				{% for person_uid, person_snippet in persons_snippets.items() %}
-					<div id="snippet-for-{{person_uid}}">
+					<nav id="snippet-for-{{person_uid}}" class="navbar navbar-default navbar-fixed-bottom person-snippet" style="display:none;">
 						{{ ps.draw_person_snippet(person_snippet, context.person_context(person_uid)) }}
-					</div>
+					</nav>
 				{% endfor %}
 			</div>
-            
-            <script>
-                $(document).ready(function(){
-                    $(".select-person").click(function(e) {
-                        e.preventDefault();
-                        selectPerson($(this));
-                    });
-                });
-            </script>
             
             <div id="carousels">
                 {% for person_uid, person_snippet in persons_snippets.items() %}
@@ -246,6 +253,18 @@
                 // Эмулируем клик на персону, если в якоре урла передан person_uid
                 // Это проскроллит экран до персоны, выделит ее и откроет сниппет с информацией
                 $(document).ready(function(){
+                
+                    $(".select-person").click(function(e) {
+                        e.preventDefault();
+                        selectPerson($(this));
+                    });
+                    
+                    $(".person-snippet").find('a.close').click(function(e) {
+                        e.preventDefault();
+                        closeCurrentPersonSnippet();
+                        removeHilightPersonArea();
+                    });
+                    
                     selected_uid = window.location.hash.substring(1);
                     if (selected_uid) {
                         $(".select-person[person-uid='"+selected_uid+"']").first().click();

@@ -109,11 +109,14 @@
 
     {% set privacy = context.privacy %}
 	<div class="panel {{person.choose_by_sex('panel-info', 'panel-danger', 'panel-default')}}">
-		<div class="panel-heading" data-toggle="collapse" data-target="#snippet-body-{{person.uid}}">
+		<div class="panel-heading">
+            <a data-toggle="collapse" href="#" class="close">&times;</a>
 			<h3 class="panel-title">{{person.name|default('...')}}</h3>
+            
+            
 		</div>
 		
-		<div class="panel-body panel-collapse collapse in" id="snippet-body-{{person.uid}}">
+		<div class="panel-body">
 			<div class="row">
                 <div class="col-sm-1 col-sm-push-11">
                     <div class="btn-group btn-group-vertical pull-right" style="z-index:1;">
