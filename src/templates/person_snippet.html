@@ -19,12 +19,17 @@
             {% else %}
             src="{{url_for('static', filename=context.files_dir+'/'+person.photo.path)}}"
             {% endif %}
+
+            alt="{{person.name|default('')}}"
             />
     </a>
     {% else %}
         <img 
             src="{{url_for('static', filename=person.choose_by_sex('BlankMale.jpg', 'BlankFemale.jpg'))}}"
-            class="img-fluid img-rounded img-person"/>
+            class="img-fluid img-rounded img-person"
+            alt="no photo"
+            title="no photo"
+        />
              
     {% endif %}
 {% endmacro %}
