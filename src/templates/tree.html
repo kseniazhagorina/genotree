@@ -3,24 +3,30 @@
 <html>
 	<head>
         <title>{{context.tree.name}}</title>
-        
+
 		<script src="/static/js/jquery.min.js"></script>
 		<script type="text/javascript" src="/static/js/dragscroll.js"></script>
 		<link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
 		<script src="/static/js/bootstrap.min.js"></script>
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
-        
+
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="description" content="Родословное древо Жагориных, Черепановых, Мотыревых, Фаренюков..."/>
-        
+
         <meta property="og:type" content="website" />
         <meta property="og:image" content="{{url_for('static', filename='preview.tree.png', _external=True)}}"/>
         <meta property="og:image" content="{{url_for('tree', tree_name=context.tree.uid, _external=True)}}"/>
         <meta property="og:title" content="Мое родословие"/>
         <meta property="og:description" content="Родословное древо Жагориных, Черепановых, Мотыревых, Фаренюков..."/>
-        
+
+        <!-- for kzhagorina.pythonanywhere.com -->
         <meta name="yandex-verification" content="d3a78397fee01474" />
-        
+        <meta name="google-site-verification" content="_fxusGo2JDiaXDqMBG42ynY03ztFcFGlxpD3B6ekO9U" />
+
+        <!-- for me-in-history.ru -->
+        <meta name="yandex-verification" content="9ba16f31001dbf60" />
+        <meta name="google-site-verification" content="iDCdSooX0ZTWF3yiT83810LrlhCQzJV_kOWf-X2Rkwk" />
+
         <link rel="icon" href="/static/favicon.png">
         <link rel="stylesheet" type="text/css" href="/static/css/carousel-full-screen.css">
         <link rel="stylesheet" type="text/css" href="/static/css/fa-colored.css">
@@ -44,12 +50,12 @@
 			.person-snippet .panel-heading {
 				padding: 5px 15px 5px 15px;
 			}
-            
+
             .person-snippet .img-person {
                 max-width: 160px;
                 max-height: 160px;
-            }  
-            
+            }
+
 			#hilighted-person {
 			    position: absolute;
 			    box-shadow: 0px 0px 50px #0000ff;
@@ -73,15 +79,15 @@
                 padding-bottom: 220px;
             }
 		</style>
-  
+
 		<script>
-        
+
             function closeCurrentPersonSnippet() {
                 var active = $('#snippets').find('.active');
                 active.removeClass('active');
                 active.hide();
             }
-            
+
 		    // отображает информацию о персоне в блоке внизу страницы
 			function viewPersonSnippet(person_uid) {
 			    var snippet = $('#snippets').find('#snippet-for-'+person_uid).first();
@@ -114,7 +120,7 @@
 				var h = $('#hilighted-person');
 				h.css({'left': left+'px', 'top': top+'px', 'width': width+'px', 'height': height+'px'});
 			}
-            
+
             // убирает подсветку персоны в дереве
             function removeHilightPersonArea() {
                 var h = $('#hilighted-person');
@@ -142,7 +148,7 @@
                 tree.scrollLeft(left+width/2-wWidth/2);
                 tree.scrollTop(top+height/2-(wHeight-navHeight)/2);
             }
-            
+
             function selectPerson(link) {
                 var person_uid = link.attr('person-uid');
                 closeCurrentPersonSnippet();
@@ -155,14 +161,14 @@
 		{% import 'person_snippet.html' as ps %}
         {% import 'photo_carousel.html' as pc %}
         {% import 'yandex_metrika.html' as metrika %}
-        
+
         {{ metrika.common_counter(user) }}
         {{ metrika.goals() }}
     </head>
 	<body>
             {% set tree = context.tree %}
             {% set persons_snippets = context.data.persons_snippets %}
-            
+
             <div id="tree-container" class="dragscroll">
                 <img id="tree-img" src="{{url_for('static', filename='1x1_white.png')}}" lazy-src="{{tree.img}}" width="{{tree.map.width}}" height="{{tree.map.height}}" usemap="#tree_nodes_map"></img>
                 <div id='hilighted-person'></div>
@@ -181,11 +187,11 @@
                     {% endfor %}
                 </map>
 
-                
+
             </div>
 			<nav id="person-snippet-container" >
 			</nav>
-            
+
     <nav class="navbar">
         <div class="navbar-header">
           <!-- Кнопка «Гамбургер» отображается только в мобильном виде (предназначена для открытия основного содержимого Navbar) -->
@@ -196,7 +202,7 @@
         <div class="collapse navbar-collapse" id="navbar-main">
             <ul class="nav navbar-nav navbar-right pull-right">
               <li><a href="#" data-toggle="modal" data-target="#contacts"><span class="glyphicon glyphicon-envelope"></span> Написать автору</a></li>
-              <li><a href="/lk" target='_blank'><span class="glyphicon glyphicon-user"></span> 
+              <li><a href="/lk" target='_blank'><span class="glyphicon glyphicon-user"></span>
               {% if user and user.is_authenticated() %} {{user.auth_info().me.first_name}} {% else %} Войти {% endif %}</a></li>
             </ul>
         </div>
@@ -222,7 +228,7 @@
       </div>
     </div>
 
-<!--noindex-->            
+<!--noindex-->
 			<div id="snippets">
 				{% for person_uid, person_snippet in persons_snippets.items() %}
 					<nav id="snippet-for-{{person_uid}}" class="navbar navbar-default navbar-fixed-bottom person-snippet" style="display:none;">
@@ -230,41 +236,41 @@
 					</nav>
 				{% endfor %}
 			</div>
-            
+
             <div id="carousels">
                 {% for person_uid, person_snippet in persons_snippets.items() %}
                     {% if person_snippet.photos %}
                         {{ pc.draw_photo_carousel('carousel-for-'+person_uid, person_snippet.photos) }}
-                    {% endif %}    
+                    {% endif %}
                 {% endfor %}
             </div>
 
             <script>
                 initCarouselFullScreen();
-            </script>    
-  
+            </script>
+
             <script>
                 // Загружаем реальную картинку дерева вместо заглушки
                 $(window).load(function(){
                     var tree_container = $('#tree-container').first();
                     loadLazyContent(tree_container);
                 });
-                
+
                 // Эмулируем клик на персону, если в якоре урла передан person_uid
                 // Это проскроллит экран до персоны, выделит ее и откроет сниппет с информацией
                 $(document).ready(function(){
-                
+
                     $(".select-person").click(function(e) {
                         e.preventDefault();
                         selectPerson($(this));
                     });
-                    
+
                     $(".person-snippet").find('a.close').click(function(e) {
                         e.preventDefault();
                         closeCurrentPersonSnippet();
                         removeHilightPersonArea();
                     });
-                    
+
                     selected_uid = window.location.hash.substring(1);
                     if (selected_uid) {
                         $(".select-person[person-uid='"+selected_uid+"']").first().click();
