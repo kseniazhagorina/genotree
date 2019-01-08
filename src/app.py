@@ -86,7 +86,11 @@ def get_user(func):
         return func(*args, **kwargs)
     wrapper.__name__ = func.__name__
     return wrapper    
-        
+
+@app.route('/sources')
+def sources():
+    return render_template('sources.html')
+    
 @app.route('/<tree_name>')
 @check_data_is_valid
 @get_user
