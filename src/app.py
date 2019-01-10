@@ -5,7 +5,7 @@ from app_utils import Data, first_or_default
 from gedcom import GedcomReader
 from privacy import Privacy, PrivacyMode
 from session import Session
-from db_api import create_db, UserAccessManager, UserSessionManager
+from db_api import create_db, UserAccessManager, UserSessionManager, UserSessionTable
 import oauth_api as oauth
 import json
 import threading
@@ -70,8 +70,8 @@ def check_data_is_valid(func):
             return 'Что-то пошло не так... Попробуйте зайти на сайт позже.\n\n'+data.load_error, 500
         return func(*args, **kwargs)
     wrapper.__name__ = func.__name__    
-    return wrapper
-    
+    return wrapper 
+     
 def get_user(func):
     def wrapper(*args, **kwargs):
         user = None
@@ -87,6 +87,21 @@ def get_user(func):
     wrapper.__name__ = func.__name__
     return wrapper    
 
+ADMIN = [('vk', 'kzhagorina')]    
+def only_for_admin(func):
+    
+    def wrapper(*args, **kwargs):
+        if 'suid' in session:
+            session_id, ts = session.get('suid')
+            user = session_manager.get(session_id, ts)
+            if user is not None:
+                if any(login in ADMIN for login in user.all_logins()):
+                    return func(*args, **kwargs)
+        raise(403)
+    wrapper.__name__ = func.__name__
+    return wrapper
+
+    
 @app.route('/sources')
 def sources():
     return render_template('sources.html')
@@ -116,10 +131,23 @@ def biography(person_uid, user):
     return render_template('biography.html', user=user, person=person_snippet, context=person_context)
 
 @app.route('/admin/load/<archive>')
+@only_for_admin
 def load(archive):
     archive = 'upload/{0}.zip'.format(archive)
     data.async_load(archive)
     return 'Loading data from {} started!'.format(archive)
+    
+@app.route('/admin/users')
+@only_for_admin
+def view_users():
+    users = []
+    with db.connection() as conn:
+        us = UserSessionTable(conn.cursor())
+        for s in us.get_all():
+            user_session = Session.from_json(s.data, session_manager)
+            users.append((user_session, s.opened, s.closed))
+    return render_template('view_users.html', users=users)        
+                
 
 @app.route('/lk')
 @get_user

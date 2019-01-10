@@ -44,19 +44,15 @@ class UserAccessTable:
     '''Protected-доступ отдельных пользователей к отдельным персонам в древе'''
     class Role(str):
         OWNER = 'OWNER'
-        RELATIVE = 'RELATIVE'
         SUPER_USER = 'SUPER_USER'
         
     class Status(str):
         ACCEPTED = 'ACCEPTED'
         FORBIDDEN = 'FORBIDDEN'
-        MODERATION = 'MODERATION'
         
     class How(str):
         IMPORTED = 'IMPORTED'
         MODERATED = 'MODERATED'
-        AUTOMATIC = 'AUTOMATIC'
-        INHERITED = 'INHERITED' # роль унаследованная пользователем, потому что он имеет какую-то другую роль
         
     ANY_PERSON = '*'    
             
@@ -110,8 +106,8 @@ class UserAccessTable:
         self.c.execute('''
             DELETE FROM user_access WHERE rowid IN
                 (SELECT rowid FROM user_access
-                WHERE how=? or how=?)''',
-            (UserAccessTable.How.IMPORTED, UserAccessTable.How.INHERITED))                
+                WHERE how=?)''',
+            (UserAccessTable.How.IMPORTED,))                
             
     def insert(self, service, login, person_uid, role, status, how):
         self.c.execute('''
@@ -125,12 +121,6 @@ class UserAccessTable:
     def forbid(self, service, login, person_uid, role, how):
         self.delete(service, login, person_uid)
         self.insert(service, login, person_uid, role, UserAccessTable.Status.FORBIDDEN, how)
-        
-    def send_on_moderation(self, service, login, role, person_uid):
-        exist_row = self.get(service, login, person_uid)
-        if exist_row is not None:
-            return False
-        self.insert(service, login, person_uid, role, UserAccessTable.Status.MODERATION, UserAccessTable.How.AUTOMATIC)
         
 
 class UserAccessManager:
@@ -270,6 +260,10 @@ class UserSessionTable:
             VALUES (?, ?, ?, CURRENT_TIMESTAMP)''',
             (session_id, session.data, session.opened))
         return True
+        
+    def get_all(self):
+        self.c.execute('''SELECT * FROM user_session''')
+        return self.c.fetchall()
 
 class UserSessionManager:
     '''пришел без куки (регистрация)

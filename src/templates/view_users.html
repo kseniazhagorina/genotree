@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+
+<html>
+	<head>
+        <title>Пользователи сервиса</title>
+
+		<script src="/static/js/jquery.min.js"></script>
+		<script type="text/javascript" src="/static/js/dragscroll.js"></script>
+		<link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+		<script src="/static/js/bootstrap.min.js"></script>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    </head>
+    <body>
+        <div class="container">
+            {% for user, opened, closed in users %}
+                {% set vk_info = user.auth_info('vk', only_opened=False) %}
+                {% set ok_info = user.auth_info('ok', only_opened=False) %}
+                {% set auth_info = user.auth_info(only_opened=False) %}
+                <div class="row">
+                  <div class="col-sm-6">
+                    <div class="row">
+                        {% if vk_info %}
+                        <div class="col-sm-1">
+                            <a href="http://vk.com/{{vk_info.me.login}}" target="_blank">
+                                <img src="{{vk_info.me.photo50}}"/>
+                            </a>                        
+                        </div>
+                        {% endif %} 
+
+                        {% if ok_info %}
+                        <div class="col-sm-1">
+                            <a href="http://ok.ru/{{ok_info.me.login}}" target="_blank">
+                                <img src="{{ok_info.me.photo50}}"/>
+                            </a>                        
+                        </div>
+                        {% endif %}
+                        
+                        <div class="col-sm-4">
+                            <p>{{auth_info.me.first_name}} {{auth_info.me.last_name}}</p>                       
+                        </div>
+                    </div>
+                  </div>
+                </div>                     
+            {% endfor %}
+            
+            
+        </div>
+    </body>
+</html>    
