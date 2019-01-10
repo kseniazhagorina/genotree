@@ -97,7 +97,7 @@ def only_for_admin(func):
             if user is not None:
                 if any(login in ADMIN for login in user.all_logins()):
                     return func(*args, **kwargs)
-        raise(403)
+        abort(403)
     wrapper.__name__ = func.__name__
     return wrapper
 
