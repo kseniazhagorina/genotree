@@ -10,7 +10,7 @@ import oauth_api as oauth
 import json
 import threading
 
-from flask import Flask, render_template, request, url_for, redirect, abort, session
+from flask import Flask, render_template, send_from_directory, request, url_for, redirect, abort, session
 app = Flask(__name__)
 app.debug = True
 app.secret_key = open('data/config/app.secret.txt').read().strip()
@@ -105,6 +105,10 @@ def only_for_admin(func):
 @app.route('/sources')
 def sources():
     return render_template('sources.html')
+    
+@app.route('/robots.txt')
+def static_from_root():
+    return send_from_directory(app.static_folder, request.path[1:])    
     
 @app.route('/<tree_name>')
 @check_data_is_valid
