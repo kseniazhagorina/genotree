@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>http://localhost:5000/sources</loc>
+    <loc>http://me-in-history.ru/sources</loc>
   </url>
   <url>
-    <loc>http://localhost:5000/lk</loc>
+    <loc>http://me-in-history.ru/lk</loc>
   </url>
 </urlset>
