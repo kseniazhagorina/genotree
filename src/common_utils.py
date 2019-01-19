@@ -7,13 +7,17 @@ import chardet
 import random, string
 from copy import copy
 
-
-
-
 def opendet(filename):
     with open(filename, 'rb') as f:
         enc = chardet.detect(f.read())
     return codecs.open(filename, 'r', encoding=enc['encoding'])
+    
+def convert_to_utf8(filename):
+    with opendet(filename) as input:
+        data = input.read()
+    with codecs.open(filename, 'w', 'utf-8') as output:
+        output.write(data)
+        
 
 
 def first_or_default(arr, predicate=None, default=None):

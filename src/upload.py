@@ -8,7 +8,7 @@ import os.path
 import codecs
 import hashlib
 import re
-from common_utils import first_or_default
+from common_utils import first_or_default, convert_to_utf8
 from geddate import GedDate
 
 # Загрузка базы данных и дерева единым пакетом
@@ -107,8 +107,10 @@ def create_package(export_dir, archive_name):
         create_folder(tmp_dir, empty=True)
         _, png_files, xml_files = select_tree_img_files(export_dir)
         copy(export_dir, tmp_dir, ['tree.ged', 'tree.xml'] + png_files + xml_files)
+        convert_to_utf8(os.path.join(tmp_dir, 'tree.ged'))
+        convert_to_utf8(os.path.join(tmp_dir, 'tree.xml'))
         files_dir = os.path.join(tmp_dir, 'files')
-        files = copy_documents(os.path.join(export_dir, 'tree.ged'), files_dir)
+        files = copy_documents(os.path.join(tmp_dir, 'tree.ged'), files_dir)
         with codecs.open(os.path.join(tmp_dir, 'files.tsv'), 'w+', 'utf-8') as files_out:
             for path, copied in files.items():
                 files_out.write('{0}\t{1}\n'.format(path, copied))        
@@ -122,6 +124,7 @@ def create_package(export_dir, archive_name):
 
 from gedcom import GedcomReader, GedcomWriter, Gedcom
 import xml.etree.ElementTree
+from datetime import date
 
 def set_default_documents_for_persons(gedcom, treexml):
     '''для каждого документа персоны находим "основной" и проставляем ему тег default (DFLT)'''
@@ -244,7 +247,7 @@ def validate_gedcom_with_xml(gedcom, treexml):
                 comment = divorce.find('comment')
                 if comment is not None:
                     divorce_event['NOTE'] = comment
-                family.events.append(divorce_event)
+                family.events.append(divorce_event)                
 
 def set_documents_to_marriage(gedcom):
     '''документы указанные как документы семьи на самом деле относятся к событию свадьба'''
@@ -252,9 +255,30 @@ def set_documents_to_marriage(gedcom):
         marr = first_or_default(family.events, lambda event: event.event_type=='MARR')
         if marr:
             marr.documents = family.documents
-            family.documents = [] 
+            family.documents = []
+            
+def generage_sitemap(site, trees, gedcom):
+    root = xml.etree.ElementTree.Element('urlset')
+    root.attrib['xmlns'] = "http://www.sitemaps.org/schemas/sitemap/0.9"
+    
+    urls = []
+    for tree_name in trees:
+        urls.append(site + '/' + tree_name)
+    for person in gedcom.persons:
+        person_uid = person.get('_UID')
+        if person_uid:
+            urls.append(site + '/person/' + person_uid)
+    
+    for page in urls:
+        url = xml.etree.ElementTree.SubElement(root, 'url')
+        loc = xml.etree.ElementTree.SubElement(url, 'loc')
+        loc.text = page
+        lastmod = xml.etree.ElementTree.SubElement(url, 'lastmod')
+        lastmod.text = date.today().strftime('%Y-%m-%d')
+        
+    return '<?xml version="1.0" encoding="UTF-8"?>\n' + xml.etree.ElementTree.tostring(root, encoding='utf-8').decode('utf-8') + '\n'
                 
-def load_package(archive, static_dir, data_dir):
+def load_package(archive, site, static_dir, data_dir):
     '''распаковывает архив базы данных
        static_dir - папка для картинок/документов
        data_dir - папка для данных
@@ -270,14 +294,19 @@ def load_package(archive, static_dir, data_dir):
         # обработка gedcom файла
         gedcom = GedcomReader().read_gedcom(os.path.join(tmp_dir, 'tree.ged'))
         treexml = xml.etree.ElementTree.fromstring(codecs.open(os.path.join(tmp_dir, 'tree.xml'), 'r', 'utf-8').read())
+        
         set_default_documents_for_persons(gedcom, treexml)
         set_documents_to_marriage(gedcom)
         validate_gedcom_with_xml(gedcom, treexml)
         GedcomWriter().write_gedcom(gedcom, os.path.join(data_dir, 'tree.ged'))
+        
         # копирование документов
-        _, png_files, xml_files = select_tree_img_files(tmp_dir)
+        trees, png_files, xml_files = select_tree_img_files(tmp_dir)
         copy(tmp_dir, static_dir, png_files)
         copy(tmp_dir, data_dir, ['files.tsv'] + xml_files)
+        
+        with codecs.open(os.path.join(static_dir, 'sitemap.xml'), 'w', 'utf-8') as sitemap:
+            sitemap.write(generage_sitemap(site, trees, gedcom))
 
         files_dir = os.path.join(static_dir, 'files')
         if os.path.exists(files_dir):

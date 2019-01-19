@@ -24,7 +24,7 @@ def OAuth():
 
 
 
-data = Data('src/static/tree', 'data/tree')        
+data = Data('http://me-in-history.ru', 'src/static/tree', 'data/tree')        
 data.load()
 if data.load_error:
     raise Exception(data.load_error)
@@ -107,6 +107,7 @@ def sources():
     return render_template('sources.html')
     
 @app.route('/robots.txt')
+@app.route('/sitemap.xml')
 def static_from_root():
     return send_from_directory(app.static_folder, request.path[1:])    
     
