@@ -28,6 +28,9 @@ def load_to_develop():
 def load_to_production():
     '''load package at pythonanywhere server'''
     archive = '../upload/data.zip'
-    upload.load_package(archive, 'static/tree', '../data/tree')
+    upload.load_package(archive,
+                        'http://me-in-history.ru',
+                        'static/tree',
+                        '../data/tree')
     
     
