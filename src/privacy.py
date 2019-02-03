@@ -72,3 +72,9 @@ class Privacy:
         if person.birth and person.birth.date and relativedelta(date.today(), person.birth.date.to_date()).years < 70:
             return True
         return False
+    
+    @staticmethod    
+    def person_privacy(person):
+        if person.comment:
+            return person.comment.privacy('person')
+        return PrivacyMode.PUBLIC

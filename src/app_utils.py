@@ -15,7 +15,6 @@ from gedcom import GedcomReader
 from geddate import GedDate
 from genery_note import Note
 from relatives import get_blood_relatives
-from privacy import PrivacyMode, Privacy
 from common_utils import *
 from upload import load_package, select_tree_img_files
 

@@ -43,16 +43,17 @@ class Context:
         self.tree = data.trees.get(requested_tree) #may be None
         self.user = user
         self.access = access_manager.get(self.user.all_logins() if user else [])
+        self.__persons_contexts = {}
         
     class PersonContext:
         '''контекст отображения персоны в дереве'''
         def __init__(self, person_uid, context):
             self.files_dir = context.data.files_dir
             self.person_uid = person_uid
-            # все персоны публичны, события публичны только для живых, 
+            # все персоны публичны, если не указано иного, события публичны только для живых, 
             # пользователи имеют доступ public или protected в зависимости от выданных прав
             person = context.data.persons_snippets[person_uid]
-            self.privacy = Privacy(privacy=PrivacyMode.PUBLIC,
+            self.privacy = Privacy(privacy=Privacy.person_privacy(person),
                                    events_privacy=Privacy.is_events_protected(person),
                                    access=context.access.get(person_uid))
             # в каких деревьях за исключением текущего присутствует данная персона
@@ -61,7 +62,11 @@ class Context:
             self.trees = [tree for tree in context.data.trees.values() if person_uid in tree.map.nodes and tree.uid != curr_tree_uid]
             
     def person_context(self, person_uid):
-        return Context.PersonContext(person_uid, self)         
+        if person_uid not in self.data.persons_snippets:
+            return None
+        if person_uid not in self.__persons_contexts:
+            self.__persons_contexts[person_uid] = Context.PersonContext(person_uid, self)
+        return self.__persons_contexts[person_uid]     
 
 
 def check_data_is_valid(func):
@@ -133,6 +138,8 @@ def biography(person_uid, user):
         abort(404)
     person_snippet = data.persons_snippets[person_uid]
     person_context = Context(data, user=user).person_context(person_uid)
+    if person_context.privacy.is_access_denied():
+        abort(403)
     return render_template('biography.html', user=user, person=person_snippet, context=person_context)
 
 @app.route('/admin/load/<archive>')
@@ -190,11 +197,17 @@ def unauth(service, user):
             del session['suid']     
     return redirect(url_for('user_profile'), code=302)
 
+@app.errorhandler(403)
+@check_data_is_valid
+@get_user
+def page_not_found(e, user):
+    return render_template('error403.html', context=Context(data, user=user)), 403
+    
 @app.errorhandler(404)
 @check_data_is_valid
 @get_user
 def page_not_found(e, user):
-    return render_template('error404.html', context=Context(data, user=user)), 404
+    return render_template('error404.html', context=Context(data, user=user)), 404    
         
     
 if __name__ == "__main__":

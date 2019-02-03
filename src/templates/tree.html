@@ -174,8 +174,9 @@
                 <div id='hilighted-person'></div>
                 <!-- поисковые теги - невидимые надписи под картой - используются для ctrl+F -->
                 {% for person_uid, node in tree.map.nodes.items() %}
-                    {% if person_uid in persons_snippets %}
-                        {% set person = persons_snippets[person_uid] %}
+                    {% set person = context.data.persons_snippets.get(person_uid) %}
+                    {% set person_ctx = context.person_context(person_uid) %}
+                    {% if person_ctx and not person_ctx.privacy.is_access_denied() %}
                         <div class="map-search-tag" style="top: {{node.y1}}px; left: {{node.x1}}px;">{{person.name}}</div>
                     {% endif %}
                 {% endfor %}
@@ -231,15 +232,21 @@
 <!--noindex-->
 			<div id="snippets">
 				{% for person_uid, person_snippet in persons_snippets.items() %}
+                    {% set person_ctx = context.person_context(person_uid) %}
 					<nav id="snippet-for-{{person_uid}}" class="navbar navbar-default navbar-fixed-bottom person-snippet" style="display:none;">
-						{{ ps.draw_person_snippet(person_snippet, context.person_context(person_uid)) }}
+						{% if person_ctx.privacy.is_access_denied() %}
+                            {{ ps.draw_private_person_snippet(user) }}
+                        {% else %}
+                            {{ ps.draw_person_snippet(person_snippet, person_ctx) }}
+                        {% endif %}    
 					</nav>
 				{% endfor %}
 			</div>
 
             <div id="carousels">
                 {% for person_uid, person_snippet in persons_snippets.items() %}
-                    {% if person_snippet.photos %}
+                    {% set person_ctx = context.person_context(person_uid) %}
+                    {% if not person_ctx.privacy.is_access_denied() and person_snippet.photos %}
                         {{ pc.draw_photo_carousel('carousel-for-'+person_uid, person_snippet.photos) }}
                     {% endif %}
                 {% endfor %}

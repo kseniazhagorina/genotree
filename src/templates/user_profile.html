@@ -66,7 +66,7 @@
                 <h2>Войти на сайт</h2>
                 <div class="row">
                     <div class="col-sm-6">
-                        <p>Некоторая информация о ныне живущих людях доступна только зарегистрированным пользователям. Чтобы увидеть ее необходимо войти на сайт.</p>
+                        <p>Некоторая информация о ныне живущих людях доступна только для их близких родствеников. Чтобы увидеть ее необходимо войти на сайт.</p>
                     </div>
             {% endif %}
         
@@ -86,9 +86,10 @@
             </div>
           </div>
 
-          {% if user and user.is_authenticated() %}         
+          
           <div class="row">
               <div class="col-sm-6">
+               {% if user and user.is_authenticated() %}
                   <h3>Обо мне:</h3>
                   {% if not owned %}
                      <p>К сожалению нам пока ничего о вас не известно.</p>
@@ -118,11 +119,13 @@
                             <span class="text-danger readLess">Свернуть</span>
                       </a>
   
-              {% endif %}
+                  {% endif %}
+               {% endif %}   
             </div>
 
             <div class="col-sm-6">
                 <h3>Вопрос - ответ:</h3>
+                {% if user and user.is_authenticated() %}
                 {% if owned %}
                     <div class="alert alert-info" role="alert">
                         <p>
@@ -159,7 +162,8 @@
                         </p>
                     </div>
 
-                {% endif %} 
+                {% endif %}
+                {% endif %}                
 
                    <div class="alert alert-info" role="alert">
                        <p>
@@ -177,8 +181,7 @@
                     </div>    
                
             </div>             
-          </div>
-          {% endif %}         
+          </div>         
        </div>         
     </body>
 </html>    

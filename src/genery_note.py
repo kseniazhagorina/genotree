@@ -33,14 +33,14 @@ class Note:
         text = '\n'.join([s.text for s in self.sections])
         return text
     
-    def privacy(self, item=None):
+    def privacy(self, item=None, default=PrivacyMode.PUBLIC):
         '''определяет приватность по тегам private_<item>, protected_<item>, public_<item>'''
         suff = '_'+item if item else ''
         if self.has_tag('private'+suff):
             return PrivacyMode.PRIVATE
         if self.has_tag('protected'+suff):
             return PrivacyMode.PROTECTED
-        return PrivacyMode.PUBLIC
+        return default
         
     def filter(self, access=PrivacyMode.PUBLIC, text=True, key_values=True, tags=True):
         sections = []

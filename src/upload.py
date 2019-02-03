@@ -300,6 +300,7 @@ def load_package(archive, site, static_dir, data_dir):
         validate_gedcom_with_xml(gedcom, treexml)
         GedcomWriter().write_gedcom(gedcom, os.path.join(data_dir, 'tree.ged'))
         
+        
         # копирование документов
         trees, png_files, xml_files = select_tree_img_files(tmp_dir)
         copy(tmp_dir, static_dir, png_files)
