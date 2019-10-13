@@ -70,17 +70,6 @@ class TreeImg:
             self.files = img + '.files'
         else:
             self.valid = False
-            
-    def copy(self, src_dir, img_dir, data_dir, save_in_utf8=False):
-        if not self.valid:
-            return
-        copy(src_dir, img_dir, [self.img])
-        if self.xml:
-            copy(src_dir, data_dir, [self.xml])
-        if self.xml and save_in_utf8:
-            convert_to_utf8(os.path.join(data_dir, self.xml))
-        if self.files:
-            copy(src_dir, img_dir, [self.files])
 
         
         
@@ -100,6 +89,27 @@ def select_tree_img_files(folder):
 ###################################################################################
 ##### CLIENT SIDE #################################################################
 ###################################################################################
+
+def drop_tree_prefix_from_uid(gedcom):
+    '''
+    В ДЖ5 UID персоны выглядит как TREEID123_456 где TREEID123 один и тот же для всех персон
+    '''
+    outlines = []
+    with codecs.open(gedcom, 'r', 'utf-8') as input:
+        for line in input:
+            if line.startswith('1 _UID'):
+                uid = line[len('1 _UID'):].strip()
+                uid = uid.split('_', maxsplit=1)
+                if len(uid) <= 1:
+                    return # tree prefix already dropped
+                outlines.append('1 _UID {}\n'.format(uid[1]))
+            else:
+                outlines.append(line)
+                
+    with codecs.open(gedcom, 'w+', 'utf-8') as output:
+        for line in outlines:
+            output.write(line)
+                
         
 def copy_documents(gedcom, folder):
     '''
@@ -112,11 +122,11 @@ def copy_documents(gedcom, folder):
         uid = None
         for line in input:
             if line.startswith('1 _UID'):
-                uid = line[len('1 _UID'):].strip()
+                uid = 'p' + line[len('1 _UID'):].strip()
                 continue
             m = re.search('0 @F(?P<family>\d+)@ FAM', line)
             if m is not None:
-                uid = m.group('family')
+                uid = 'f' + m.group('family')
                 continue
             if uid is None:
                 continue
@@ -138,8 +148,16 @@ def copy_documents(gedcom, folder):
                 files[file_path] = os.path.join(uid, new_filename)
     return files               
 
-    
-            
+def copy_tree_img(tree, src_dir, dst_dir):
+    if not tree.valid:
+        return
+    copy(src_dir, dst_dir, [tree.img])
+    if tree.xml:
+        copy(src_dir, dst_dir, [tree.xml])
+        convert_to_utf8(os.path.join(dst_dir, tree.xml))
+    if tree.files:
+        copy(src_dir, dst_dir, [tree.files])
+
             
 def create_package(export_dir, archive_name):
     '''export_dir - папка с экспортированными из genery данными
@@ -150,14 +168,16 @@ def create_package(export_dir, archive_name):
         create_folder(tmp_dir, empty=True)
         trees = select_tree_img_files(export_dir)
         copy(export_dir, tmp_dir, ['tree.ged'])
-        convert_to_utf8(os.path.join(tmp_dir, 'tree.ged'))
+        gedcom = os.path.join(tmp_dir, 'tree.ged')
+        convert_to_utf8(gedcom)
+        drop_tree_prefix_from_uid(gedcom)
         if os.path.exists(os.path.join(export_dir, 'tree.xml')):
             copy(export_dir, tmp_dir, ['tree.xml'])
             convert_to_utf8(os.path.join(tmp_dir, 'tree.xml'))
         for tree in trees:
-            tree.copy(export_dir, tmp_dir, tmp_dir, save_in_utf8=True)
+            copy_tree_img(tree, export_dir, tmp_dir)
         files_dir = os.path.join(tmp_dir, 'files')    
-        files = copy_documents(os.path.join(tmp_dir, 'tree.ged'), files_dir)
+        files = copy_documents(gedcom, files_dir)
         with codecs.open(os.path.join(tmp_dir, 'files.tsv'), 'w+', 'utf-8') as files_out:
             for path, copied in files.items():
                 files_out.write('{0}\t{1}\n'.format(path, copied))        
@@ -250,7 +270,24 @@ def validate_marriage(marriage, marriage_event):
     if not valid:
         marriage_event.documents = []
         marriage_event.sources = []
-    return valid        
+    return valid
+
+def convert_svg(svg_file):
+    '''преобразует svg файл так, чтобы ссылки на картинки вели в static/tree/preview/xxx.jpg
+       у нужных блоков был бы прописан класс 'select-person' и атрибут 'person-uid'
+    '''
+    print('convert svg-file {}'.format(svg_file))
+    files_dir_name = os.path.split(svg_file)[1] + '.files'
+    print('current image has path {}/idxxxx.jpg'.format(files_dir_name))
+    svg = None
+    with codecs.open(svg_file, 'r', 'utf-8') as f:
+        svg = f.read()
+    svg = re.sub(r'\sat:id="(\d+)"', r' class="select-person" person-uid="\1"', svg)
+    svg = svg.replace(files_dir_name, '/static/tree/files/preview')
+    svg = svg.replace('xlink:href=', 'href="/static/1x1_white.png" lazy-href=')      
+    with codecs.open(svg_file, 'w+', 'utf-8') as f:
+        f.write(svg)
+        
         
 def validate_gedcom_with_xml(gedcom, treexml):
     '''для ДЖ3: устанавниваем событие развод для семьи (оно есть в treexml, но отсутствует в gedcom)'''
@@ -326,6 +363,18 @@ def generage_sitemap(site, trees, gedcom):
         
     return '<?xml version="1.0" encoding="UTF-8"?>\n' + xml.etree.ElementTree.tostring(root, encoding='utf-8').decode('utf-8') + '\n'
 
+def load_tree_img(tree, src_dir, static_dir, data_dir):
+    if not tree.valid:
+        return
+    copy(src_dir, static_dir, [tree.img])
+    if tree.vector:
+        convert_svg(os.path.join(static_dir, tree.img))
+    if tree.xml:
+        copy(src_dir, data_dir, [tree.xml])
+    if tree.files:
+        files = list(os.listdir(os.path.join(src_dir, tree.files)))
+        copy(os.path.join(src_dir, tree.files), os.path.join(static_dir, 'files', 'preview'), files)
+    
 def is_gedcom_drevo_v3(gedcom):
     if gedcom.meta and gedcom.meta.sources:
         source = gedcom.meta.souces[0]
@@ -344,8 +393,8 @@ def load_package(archive, site, static_dir, data_dir):
         create_folder(tmp_dir, empty=True)
         shutil.unpack_archive(archive, tmp_dir)
         
-        create_folder(static_dir)
-        create_folder(data_dir)
+        create_folder(static_dir, empty=True)
+        create_folder(data_dir, empty=True)
         
         # обработка gedcom файла
         gedcom = GedcomReader().read_gedcom(os.path.join(tmp_dir, 'tree.ged'))
@@ -356,12 +405,13 @@ def load_package(archive, site, static_dir, data_dir):
             validate_gedcom_with_xml(gedcom, treexml)
         GedcomWriter().write_gedcom(gedcom, os.path.join(data_dir, 'tree.ged'))
         
+        copy(tmp_dir, data_dir, ['files.tsv'])
+        copy(tmp_dir, static_dir, ['files'])
         
         # копирование документов
         trees = select_tree_img_files(tmp_dir)
         for tree in trees:
-            tree.copy(tmp_dir, static_dir, data_dir)
-        copy(tmp_dir, data_dir, ['files.tsv', 'files'])
+            load_tree_img(tree, tmp_dir, static_dir, data_dir)
         
         with codecs.open(os.path.join(static_dir, 'sitemap.xml'), 'w', 'utf-8') as sitemap:
             sitemap.write(generage_sitemap(site, [tree.name for tree in trees], gedcom))

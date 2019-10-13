@@ -170,23 +170,27 @@
             {% set persons_snippets = context.data.persons_snippets %}
 
             <div id="tree-container" class="dragscroll">
-                <img id="tree-img" src="{{url_for('static', filename='1x1_white.png')}}" lazy-src="{{tree.img}}" width="{{tree.map.width}}" height="{{tree.map.height}}" usemap="#tree_nodes_map"></img>
-                <div id='hilighted-person'></div>
-                <!-- поисковые теги - невидимые надписи под картой - используются для ctrl+F -->
-                {% for person_uid, node in tree.map.nodes.items() %}
-                    {% set person = context.data.persons_snippets.get(person_uid) %}
-                    {% set person_ctx = context.person_context(person_uid) %}
-                    {% if person_ctx and not person_ctx.privacy.is_access_denied() %}
-                        <div class="map-search-tag" style="top: {{node.y1}}px; left: {{node.x1}}px;">{{person.name}}</div>
-                    {% endif %}
-                {% endfor %}
-
-
-                <map id="tree-map" name='tree_nodes_map'>
+                {% if tree.img.endswith('.svg') %}
+                    {{tree.map.svg_content | safe }}
+                {% else %}    
+                    <img id="tree-img" src="{{url_for('static', filename='1x1_white.png')}}" lazy-src="{{tree.img}}" width="{{tree.map.width}}" height="{{tree.map.height}}" usemap="#tree_nodes_map"></img>
+                    <div id='hilighted-person'></div>
+                    <!-- поисковые теги - невидимые надписи под картой - используются для ctrl+F -->
                     {% for person_uid, node in tree.map.nodes.items() %}
-                    <area class="select-person" person-uid="{{person_uid}}" coords="{{node.rect}}" shape="rect" href="#">
+                        {% set person = context.data.persons_snippets.get(person_uid) %}
+                        {% set person_ctx = context.person_context(person_uid) %}
+                        {% if person_ctx and not person_ctx.privacy.is_access_denied() %}
+                            <div class="map-search-tag" style="top: {{node.y1}}px; left: {{node.x1}}px;">{{person.name}}</div>
+                        {% endif %}
                     {% endfor %}
-                </map>
+
+
+                    <map id="tree-map" name='tree_nodes_map'>
+                        {% for person_uid, node in tree.map.nodes.items() %}
+                        <area class="select-person" person-uid="{{person_uid}}" coords="{{node.rect}}" shape="rect" href="#">
+                        {% endfor %}
+                    </map>
+                {% endif %}
 
 
             </div>
@@ -261,12 +265,12 @@
                 $(window).load(function(){
                     var tree_container = $('#tree-container').first();
                     loadLazyContent(tree_container);
+                    loadLazyContentSvg(tree_container);
                 });
 
                 // Эмулируем клик на персону, если в якоре урла передан person_uid
                 // Это проскроллит экран до персоны, выделит ее и откроет сниппет с информацией
                 $(document).ready(function(){
-
                     $(".select-person").click(function(e) {
                         e.preventDefault();
                         selectPerson($(this));

@@ -6,3 +6,11 @@ function loadLazyContent(container) {
         img.removeAttr("lazy-src");
     });
 }
+
+function loadLazyContentSvg(container) {
+    container.find('image[lazy-href]').each(function(){
+        var img = $(this);
+        img.attr("href", img.attr("lazy-href"));
+        img.removeAttr("lazy-href");
+    });
+}

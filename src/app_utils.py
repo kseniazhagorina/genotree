@@ -19,7 +19,7 @@ from common_utils import *
 from upload import load_package, select_tree_img_files
 
 
-class TreeMap:
+class TreeMapXml:
     class Node:
         def __init__(self, node):
             self.uid = node.attrib['id']
@@ -35,13 +35,28 @@ class TreeMap:
         self.width = root.attrib['width']
         self.nodes = dict()
         for xml_node in root.iter('n'):
-            tree_node = TreeMap.Node(xml_node)
+            tree_node = TreeMapXml.Node(xml_node)
             self.nodes[tree_node.uid] = tree_node
+            
+class TreeMapSvg:
+    class Node:
+        def __init__(self, id):
+            self.id = id
+            
+    def __init__(self, content):
+        self.nodes = {}
+        self.svg_content = content[content.find('<svg'):]
+        for m in re.finditer(r'person-uid="(?P<uid>\d+)"', content):
+            uid = m.group('uid')
+            self.nodes[uid] = TreeMapSvg.Node(uid)
 
 def get_tree_map(filename):
-    root = xml.etree.ElementTree.parse(filename).getroot()
-    tree_map = TreeMap(root)
-    return tree_map
+    if filename.endswith('.xml'):
+        root = xml.etree.ElementTree.parse(filename).getroot()
+        return TreeMapXml(root)
+    else:
+        with codecs.open(filename, 'r', 'utf-8') as svg:
+            return TreeMapSvg(svg.read())
 
 def get_tree(gedcom_filename):
     return GedcomReader().read_gedcom(gedcom_filename)
@@ -151,7 +166,7 @@ def get_documents(documents, files):
     '''документы персоны или события распределить на фотографии и документы-источники'''
     photos = []
     docs = []
-    for document in sorted(documents, key = lambda d: d.get('DFLT') == 'T' || d.get('_PRIM') == 'Y', reverse=True): # сначала дефолтный документ
+    for document in sorted(documents, key = lambda d: d.get('DFLT') == 'T' or d.get('_PRIM') == 'Y', reverse=True): # сначала дефолтный документ
         file_path = files.get(document.get('FILE', ''))
 
         if file_path:
@@ -464,6 +479,7 @@ class Data:
             self.img = img
             self.map = map
             
+            
     def __init__(self, site, static_path, data_path):
         '''
            site - url 'http://host.ru'
@@ -495,10 +511,17 @@ class Data:
             trees = select_tree_img_files(self.static_path)
             self.trees = {}
             for tree in trees:
-                if tree.vector or tree.xml is None:
-                    continue # векторный формат пока не поддерживается
                 tree_uid = tree.name or DEFAULT_TREE
-                self.trees[tree_uid] = Data.Tree(tree_uid, '/static/tree/'+tree.img, get_tree_map(os.path.join(self.data_path, tree.xml)))
+                if tree.vector:
+                    self.trees[tree_uid] = Data.Tree(tree_uid,
+                                                     '/static/tree/'+tree.img,
+                                                     get_tree_map(os.path.join(self.static_path, tree.img)))
+                else:
+                    if tree.xml is None:
+                        continue # векторный формат пока не поддерживается
+                    self.trees[tree_uid] = Data.Tree(tree_uid,
+                                                     '/static/tree/'+tree.img,
+                                                     get_tree_map(os.path.join(self.data_path, tree.xml)))
             
             if len(self.trees) == 0:
                 raise Exception('No files *_tree_img.png in {} directory'.format(self.static_path))
