@@ -15,7 +15,8 @@ from geddate import GedDate
 # Внутри: 
 # tree.ged - выгрузка в формате gedcom
 # tree.xml - выгрузка в фортмате xml
-# tree_img.png - картинка с деревом
+# tree_img.png - картинка с деревом или tree_img.svg
+# tree_img.svg.files - портреты людей для загрузки в дереве
 # tree_img.xml - карта узлов в дереве
 # files.tsv - соответствие исходных имен файлов в tree.ged и относительных путей в папке files (tsv)
 # files - папка с картинками
@@ -29,7 +30,22 @@ def create_folder(folder, empty=False):
     if empty and os.path.exists(folder):
         shutil.rmtree(folder)
     if not os.path.exists(folder):
-        os.makedirs(folder)    
+        os.makedirs(folder)
+
+def copy(src_dir, dst_dir, filenames):
+    create_folder(dst_dir)    
+    for file in filenames:
+        src_path = os.path.join(src_dir, file)
+        dst_path = os.path.join(dst_dir, file)
+        if not os.path.exists(src_path):
+            raise Exception('File {0} does not exists'.format(src_path))
+        if os.path.isfile(src_path):
+            shutil.copy(src_path, dst_path)
+        else:
+            if os.path.exists(dst_path):
+                shutil.rmtree(dst_path)
+            shutil.copytree(src=src_path, dst=dst_path)
+        
 
 def md5(fname):
     hash_md5 = hashlib.md5()
@@ -37,13 +53,47 @@ def md5(fname):
         for chunk in iter(lambda: f.read(4096), b""):
             hash_md5.update(chunk)
     return hash_md5.hexdigest()
-    
+
+class TreeImg:
+    def __init__(self, img):
+        self.img = img
+        self.valid = True
+        if img == 'tree_img.png' or img.endswith('_tree_img.png'):
+            self.name = "" if img == 'tree_img.png' else strip_end(img, '_tree_img.png')
+            self.vector = False
+            self.xml = strip_end(img, '.png') + '.xml'
+            self.files = None
+        elif img == 'tree_img.svg' or img.endswith('_tree_img.svg'):
+            self.name = "" if img == 'tree_img.svg' else strip_end(img, '_tree_img.svg')
+            self.vector = True
+            self.xml = None
+            self.files = img + '.files'
+        else:
+            self.valid = False
+            
+    def copy(self, src_dir, img_dir, data_dir, save_in_utf8=False):
+        if not self.valid:
+            return
+        copy(src_dir, img_dir, [self.img])
+        if self.xml:
+            copy(src_dir, data_dir, [self.xml])
+        if self.xml and save_in_utf8:
+            convert_to_utf8(os.path.join(data_dir, self.xml))
+        if self.files:
+            copy(src_dir, img_dir, [self.files])
+
+        
+        
 def select_tree_img_files(folder):
-    """Ищет *_tree_img.png файлы, составляет список требуемых *_tree_img.xml файлов"""
-    png_files = [f for f in os.listdir(folder) if os.path.isfile(os.path.join(folder, f)) and (f == 'tree_img.png' or f.endswith('_tree_img.png'))]
-    xml_files = [strip_end(f, '.png')+'.xml' for f in png_files]
-    names = ["" if f == 'tree_img.png' else strip_end(f, '_tree_img.png') for f in png_files]
-    return names, png_files, xml_files
+    """Ищет *_tree_img.png или *_tree_img.svg файлы, составляет список требуемых *_tree_img.xml файлов"""
+    files = [f for f in os.listdir(folder) if os.path.isfile(os.path.join(folder, f))]
+    imgs = []
+    for f in os.listdir(folder):
+        if os.path.isfile(os.path.join(folder, f)):
+            img = TreeImg(f)
+            if img.valid:
+                imgs.append(img)
+    return imgs
                
     
     
@@ -88,14 +138,7 @@ def copy_documents(gedcom, folder):
                 files[file_path] = os.path.join(uid, new_filename)
     return files               
 
-def copy(src_dir, dst_dir, filenames):
-    create_folder(dst_dir)
-    for file in filenames:
-        src_path = os.path.join(src_dir, file)
-        dst_path = os.path.join(dst_dir, file)
-        if not os.path.exists(src_path):
-            raise Exception('File {0} does not exists'.format(src_path))
-        shutil.copy(src_path, dst_path)    
+    
             
             
 def create_package(export_dir, archive_name):
@@ -105,11 +148,15 @@ def create_package(export_dir, archive_name):
     tmp_dir = os.path.join(export_dir, 'data')
     try:
         create_folder(tmp_dir, empty=True)
-        _, png_files, xml_files = select_tree_img_files(export_dir)
-        copy(export_dir, tmp_dir, ['tree.ged', 'tree.xml'] + png_files + xml_files)
+        trees = select_tree_img_files(export_dir)
+        copy(export_dir, tmp_dir, ['tree.ged'])
         convert_to_utf8(os.path.join(tmp_dir, 'tree.ged'))
-        convert_to_utf8(os.path.join(tmp_dir, 'tree.xml'))
-        files_dir = os.path.join(tmp_dir, 'files')
+        if os.path.exists(os.path.join(export_dir, 'tree.xml')):
+            copy(export_dir, tmp_dir, ['tree.xml'])
+            convert_to_utf8(os.path.join(tmp_dir, 'tree.xml'))
+        for tree in trees:
+            tree.copy(export_dir, tmp_dir, tmp_dir, save_in_utf8=True)
+        files_dir = os.path.join(tmp_dir, 'files')    
         files = copy_documents(os.path.join(tmp_dir, 'tree.ged'), files_dir)
         with codecs.open(os.path.join(tmp_dir, 'files.tsv'), 'w+', 'utf-8') as files_out:
             for path, copied in files.items():
@@ -127,7 +174,8 @@ import xml.etree.ElementTree
 from datetime import date
 
 def set_default_documents_for_persons(gedcom, treexml):
-    '''для каждого документа персоны находим "основной" и проставляем ему тег default (DFLT)'''
+    '''для ДЖ3: для каждого документа персоны находим "основной" и проставляем ему тег default (DFLT)
+    '''
     # составляем словарь uid персоны -> title основного документа
     default_documents = dict()
     for person in treexml.iter('r'):
@@ -159,8 +207,8 @@ def set_default_documents_for_persons(gedcom, treexml):
 
 
 def validate_marriage(marriage, marriage_event):
-    '''проверяем данные о бракосочетании
-      (повторные браки плохо выгружаются в gedcom и данные с xml могут не совпадать)
+    '''для ДЖ3: проверяем данные о бракосочетании
+      (повторные браки плохо выгружаются в gedcom ДЖ3 и данные с xml могут не совпадать)
     '''
     valid = True
     date = marriage.find('date')
@@ -205,7 +253,7 @@ def validate_marriage(marriage, marriage_event):
     return valid        
         
 def validate_gedcom_with_xml(gedcom, treexml):
-    '''Устанавниваем событие развод для семьи (оно есть в treexml, но отсутствует в gedcom)'''
+    '''для ДЖ3: устанавниваем событие развод для семьи (оно есть в treexml, но отсутствует в gedcom)'''
     # по gedcom составляем список (uid-супруга1, uid-супруга2) -> family
     person_id_to_uid = dict()
     for person in gedcom.persons:
@@ -250,7 +298,7 @@ def validate_gedcom_with_xml(gedcom, treexml):
                 family.events.append(divorce_event)                
 
 def set_documents_to_marriage(gedcom):
-    '''документы указанные как документы семьи на самом деле относятся к событию свадьба'''
+    '''для ДЖ3: документы указанные как документы семьи на самом деле относятся к событию свадьба'''
     for family in gedcom.families:
         marr = first_or_default(family.events, lambda event: event.event_type=='MARR')
         if marr:
@@ -277,7 +325,15 @@ def generage_sitemap(site, trees, gedcom):
         lastmod.text = date.today().strftime('%Y-%m-%d')
         
     return '<?xml version="1.0" encoding="UTF-8"?>\n' + xml.etree.ElementTree.tostring(root, encoding='utf-8').decode('utf-8') + '\n'
-                
+
+def is_gedcom_drevo_v3(gedcom):
+    if gedcom.meta and gedcom.meta.sources:
+        source = gedcom.meta.souces[0]
+        if source.get('NAME') == 'Древо Жизни' and source.get('VERS', '').startswith('3.'):
+            return True
+    return False
+
+
 def load_package(archive, site, static_dir, data_dir):
     '''распаковывает архив базы данных
        static_dir - папка для картинок/документов
@@ -293,26 +349,23 @@ def load_package(archive, site, static_dir, data_dir):
         
         # обработка gedcom файла
         gedcom = GedcomReader().read_gedcom(os.path.join(tmp_dir, 'tree.ged'))
-        treexml = xml.etree.ElementTree.fromstring(codecs.open(os.path.join(tmp_dir, 'tree.xml'), 'r', 'utf-8').read())
-        
-        set_default_documents_for_persons(gedcom, treexml)
-        set_documents_to_marriage(gedcom)
-        validate_gedcom_with_xml(gedcom, treexml)
+        if is_gedcom_drevo_v3(gedcom):
+            treexml = xml.etree.ElementTree.fromstring(codecs.open(os.path.join(tmp_dir, 'tree.xml'), 'r', 'utf-8').read())
+            set_default_documents_for_persons(gedcom, treexml)
+            set_documents_to_marriage(gedcom)
+            validate_gedcom_with_xml(gedcom, treexml)
         GedcomWriter().write_gedcom(gedcom, os.path.join(data_dir, 'tree.ged'))
         
         
         # копирование документов
-        trees, png_files, xml_files = select_tree_img_files(tmp_dir)
-        copy(tmp_dir, static_dir, png_files)
-        copy(tmp_dir, data_dir, ['files.tsv'] + xml_files)
+        trees = select_tree_img_files(tmp_dir)
+        for tree in trees:
+            tree.copy(tmp_dir, static_dir, data_dir)
+        copy(tmp_dir, data_dir, ['files.tsv', 'files'])
         
         with codecs.open(os.path.join(static_dir, 'sitemap.xml'), 'w', 'utf-8') as sitemap:
-            sitemap.write(generage_sitemap(site, trees, gedcom))
+            sitemap.write(generage_sitemap(site, [tree.name for tree in trees], gedcom))
 
-        files_dir = os.path.join(static_dir, 'files')
-        if os.path.exists(files_dir):
-            shutil.rmtree(files_dir)
-        shutil.copytree(src=os.path.join(tmp_dir, 'files'), dst=files_dir)
     finally:
         shutil.rmtree(tmp_dir)
  

@@ -151,7 +151,7 @@ def get_documents(documents, files):
     '''документы персоны или события распределить на фотографии и документы-источники'''
     photos = []
     docs = []
-    for document in sorted(documents, key = lambda d: d.get('DFLT') == 'T', reverse=True): # сначала DFLT документ
+    for document in sorted(documents, key = lambda d: d.get('DFLT') == 'T' || d.get('_PRIM') == 'Y', reverse=True): # сначала дефолтный документ
         file_path = files.get(document.get('FILE', ''))
 
         if file_path:
@@ -492,13 +492,17 @@ class Data:
             self.persons_owners = get_person_owners(self.persons_snippets)
             
             # Загружаем деревья - 
-            tree_uids, pngs, xmls = select_tree_img_files(self.static_path)
-            if len(tree_uids) == 0:
-                raise Exception('No files *_tree_img.png in {} directory'.format(self.static_path))
+            trees = select_tree_img_files(self.static_path)
             self.trees = {}
-            for tree_uid, png, xml in zip(tree_uids, pngs, xmls):
-                tree_uid = tree_uid or DEFAULT_TREE
-                self.trees[tree_uid] = Data.Tree(tree_uid, '/static/tree/'+png, get_tree_map(os.path.join(self.data_path, xml)))
+            for tree in trees:
+                if tree.vector or tree.xml is None:
+                    continue # векторный формат пока не поддерживается
+                tree_uid = tree.name or DEFAULT_TREE
+                self.trees[tree_uid] = Data.Tree(tree_uid, '/static/tree/'+tree.img, get_tree_map(os.path.join(self.data_path, tree.xml)))
+            
+            if len(self.trees) == 0:
+                raise Exception('No files *_tree_img.png in {} directory'.format(self.static_path))
+
             self.default_tree_name = DEFAULT_TREE if DEFAULT_TREE in self.trees else tree_uids[0]  
             self.load_error = None
         except:

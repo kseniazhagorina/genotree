@@ -6,12 +6,29 @@
 import codecs
 
 class Gedcom:
-    events = ['RESI', 'BIRT', 'DEAT', 'EDUC', 'OCCU', '__2', 'RETI', 'MARR', 'DIV']
-    multi_attrs = ['CHIL', 'FAMS']
+    events = ['RESI',   # проживание
+              'BIRT',   # рождение
+              'DEAT',   # смерть
+              'EDUC',   # обучение
+              'OCCU',   # устройство на работу
+              '__2',    # служба в армии (v3)
+              'RETI',   # выход на пенсию
+              'EVEN',   # пользовательское событие
+              'MARR',   # свадьба
+              'DIV'     # развод
+             ]
+    multi_attrs = ['CHIL', 'FAMS']  # поля которые могут встречаться несколько раз
+    ignore_inner = ['NAME'] # игнорировать все вложенные данны в объект NAME (GIVN)
+    
     def __init__(self):
+        self.meta = None
         self.families = []
         self.persons = []
         self.sources = []
+    
+    class MetaData(dict):
+        def __init__(self):
+            self.sources = []
             
     class Family(dict):
         def __init__(self, family_id):
@@ -50,6 +67,8 @@ class GedcomReader:
         gedcom = Gedcom()
         for head,block_lines in blocks:
             head = head.strip()
+            if head.endswith('HEAD'):
+                gedcom.meta = self.read_meta(head, block_lines)
             if head.endswith('INDI'):
                 person = self.read_person(head, block_lines)
                 gedcom.persons.append(person)
@@ -59,6 +78,7 @@ class GedcomReader:
             if head.endswith('SOUR'):
                 source = self.read_source(head, block_lines)
                 gedcom.sources.append(source)
+                
         return gedcom
     
     def read_block(self, lines, at):
@@ -91,13 +111,15 @@ class GedcomReader:
         if head.startswith('NOTE') or head.startswith('TEXT'):
             key, text = self.read_note(head, lines)
             obj[key] = text
+        elif head.startswith('DATA'):
+            self.add_all_info(obj, lines)
         elif 'sources' in obj.__dict__ and head.startswith('SOUR') :
             obj.sources.append(self.read_source_ref(head, lines))
-        elif 'events' in obj.__dict__ and head.strip() in Gedcom.events:
+        elif 'events' in obj.__dict__ and any(head.startswith(s) for s in Gedcom.events):
             obj.events.append(self.read_event(head, lines))
         elif 'documents' in obj.__dict__ and head.startswith('OBJE') :
             obj.documents.append(self.read_document(head, lines))   
-        elif len(lines) == 0:
+        elif len(lines) == 0 or any(head.startswith(s) for s in Gedcom.ignore_inner):
             key, value = self.read_simple(head)
             if key in Gedcom.multi_attrs:
                 if key not in obj:
@@ -119,6 +141,9 @@ class GedcomReader:
         self.add_all_info(family, lines)
         return family
     
+    def read_meta(self, head, lines):
+        '''блок HEAD - метаданные о дереве'''
+        
     def read_person(self, head, lines):
         '''блок INDI - персональные данные'''
         person_id = head.split(maxsplit=1)[0].strip()
@@ -134,7 +159,8 @@ class GedcomReader:
         return source
 
     def read_event(self, head, lines):
-        event = Gedcom.Event(event_type=head.strip())
+        event_type=head.split(maxsplit=1)[0].strip()
+        event = Gedcom.Event(event_type)
         self.add_all_info(event, lines)
         return event
     
