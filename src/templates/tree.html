@@ -94,31 +94,42 @@
                 snippet.addClass('active');
                 loadLazyContent(snippet);
                 snippet.show();
-                //snippet = snippet.clone(withDataAndEvents=true);
-				//var container = $('#person-snippet-container');
-                //container.empty();
-                //container.append(snippet);
 			}
+            
+            // возвращает позицию блока персоны на изображении и его размер 
+            function getPersonAreaPosition(person_uid) {
+                var person_area = $('#tree-container .select-person[person-uid='+person_uid+']');
+                var zero = $('#tree-img');
+                if (!person_area.length) {
+                    return null; // некоторые персоны могут не присутствовать в дереве
+                }
+                
+                var left = person_area.position().left - zero.position().left;
+				var top = person_area.position().top - zero.position().top;
+                var width = person_area.width();
+                var height = person_area.height();
+                if (person_area[0].nodeName == 'g') {
+                    var box = person_area[0].getBBox();
+                    width = box.width;
+                    height = box.height;
+                }
+                
+                return {'left': left, 'top':top, 'width':width, 'height':height};
+            }
+                
+                
 
             // фокусируется на выбранной персоне в дереве и подсвечивает ее
 			function hilightPersonArea(person_uid) {
-			    var person_area = $('#tree-map area.select-person[person-uid='+person_uid+']');
-                if (!person_area.length) {
-                    return; // некоторые персоны могут не присутствовать в дереве
+                var p = getPersonAreaPosition(person_uid);
+                if (!p) {
+                    return;
                 }
-			    coords = person_area.attr('coords').split(',').map(function(item) {
-					return parseInt(item, 10);
-				});
 
-				var left = coords[0];
-				var top = coords[1];
-				var width = coords[2] - left;
-				var height = coords[3] - top;
-
-                scrollTreeIfNeed(left, top, width, height);
+                scrollTreeIfNeed(p.left, p.top, p.width, p.height);
 
 				var h = $('#hilighted-person');
-				h.css({'left': left+'px', 'top': top+'px', 'width': width+'px', 'height': height+'px'});
+				h.css({'left': p.left+'px', 'top': p.top+'px', 'width': p.width+'px', 'height': p.height+'px'});
 			}
 
             // убирает подсветку персоны в дереве
@@ -171,10 +182,10 @@
 
             <div id="tree-container" class="dragscroll">
                 {% if tree.img.endswith('.svg') %}
-                    {{tree.map.svg_content | safe }}
+                    <div id="tree-img">{{tree.map.svg_content | safe }}</div>
                 {% else %}    
                     <img id="tree-img" src="{{url_for('static', filename='1x1_white.png')}}" lazy-src="{{tree.img}}" width="{{tree.map.width}}" height="{{tree.map.height}}" usemap="#tree_nodes_map"></img>
-                    <div id='hilighted-person'></div>
+                    
                     <!-- поисковые теги - невидимые надписи под картой - используются для ctrl+F -->
                     {% for person_uid, node in tree.map.nodes.items() %}
                         {% set person = context.data.persons_snippets.get(person_uid) %}
@@ -191,6 +202,8 @@
                         {% endfor %}
                     </map>
                 {% endif %}
+                
+                <div id='hilighted-person'></div>
 
 
             </div>
