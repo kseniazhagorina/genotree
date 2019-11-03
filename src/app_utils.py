@@ -460,7 +460,7 @@ def get_files_dict(filename, files_path):
             files[k] = v
     return files
 
-DEFAULT_TREE = ''
+DEFAULT_TREE = 'default'
 TREE_NAMES = {
     DEFAULT_TREE: 'Общее',
     'zhagoriny': 'Жагорины',

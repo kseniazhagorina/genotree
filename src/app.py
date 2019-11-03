@@ -120,7 +120,6 @@ def static_from_root():
 @check_data_is_valid
 @get_user
 def tree(tree_name, user):
-    tree_name = tree_name or data.default_tree_name
     if tree_name not in data.trees:
         abort(404)
     return render_template('tree.html', user=user, context=Context(data, user=user, requested_tree=tree_name))
@@ -128,7 +127,7 @@ def tree(tree_name, user):
 
 @app.route('/')
 def default_tree():
-    return tree(None)
+    return redirect(url_for('tree', tree_name=data.default_tree_name), code=301)
     
 @app.route('/ajax/person_snippet/<tree_name>/<person_uid>')
 @check_data_is_valid
