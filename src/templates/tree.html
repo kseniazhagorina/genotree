@@ -198,107 +198,106 @@
         {{ metrika.goals() }}
     </head>
 	<body>
-            {% set tree = context.tree %}
-            {% set persons_snippets = context.data.persons_snippets %}
+    
+        {% set tree = context.tree %}
+        {% set persons_snippets = context.data.persons_snippets %}
 
-            <div id="tree-container" class="dragscroll">
-                {% if tree.img.endswith('.svg') %}
-                    <div id="tree-img">{{tree.map.svg_content | safe }}</div>
-                {% else %}    
-                    <p>Невозможно отобразить дерево</p>
+        <div id="tree-container" class="dragscroll">
+            {% if tree.img.endswith('.svg') %}
+                <div id="tree-img">{{tree.map.svg_content | safe }}</div>
+            {% else %}    
+                <p>Невозможно отобразить дерево</p>
+            {% endif %}
+            
+            <div id='hilighted-person'></div>
+
+
+        </div>
+        <nav id="person-snippet-container" >
+        </nav>
+
+        <nav class="navbar">
+            <div class="navbar-header">
+              <!-- Кнопка «Гамбургер» отображается только в мобильном виде (предназначена для открытия основного содержимого Navbar) -->
+              <a href="#" type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar-main">
+                <span class="glyphicon glyphicon-menu-hamburger" aria-hidden="true"></span>
+              </a>
+            </div>
+            <div class="collapse navbar-collapse" id="navbar-main">
+                <ul class="nav navbar-nav navbar-right pull-right">
+                  <li><a href="#" data-toggle="modal" data-target="#contacts"><span class="glyphicon glyphicon-envelope"></span> Написать автору</a></li>
+                  <li><a href="/lk" target='_blank'><span class="glyphicon glyphicon-user"></span>
+                  {% if user and user.is_authenticated() %} {{user.auth_info().me.first_name}} {% else %} Войти {% endif %}</a></li>
+                </ul>
+            </div>
+        </nav>
+
+        <!--Author contacts-->
+        <div id="contacts" class="modal fade" role="dialog">
+          <div class="modal-dialog">
+            <div class="modal-content">
+              <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+                <h4 class="modal-title">Автор: <a href="/person/hmBLFFLwiQ">Жагорина Ксения Андреевна</a></h4>
+              </div>
+              <div class="modal-body">
+                <p><ul class="list-unstyled">
+                    <li><i class="fa fa-fw fa-odnoklassniki fa-colored"></i><a href="https://ok.ru/ksenia.zhagorina"> https://ok.ru/ksenia.zhagorina</a></li>
+                    <li><i class="fa fa-fw fa-vk fa-colored"></i><a href="https://vk.com/kzhagorina"> https://vk.com/kzhagorina</a></li>
+                    <li><i class="fa fa-fw fa-telegram fa-colored"></i> <a title="Telegram" href="tg://resolve?domain=KseniaZhagorina">KseniaZhagorina</a></li>
+                </ul></p>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <div id="snippets">
+            <!--сюда будут загружаться сниппеты через ajax-->
+        </div>
+        
+        <div id="carousels">
+            <!--сюда будут загружаться карусельки из сниппетов через ajax-->
+        </div>
+        
+        <div id="links">
+            <!--ссылки на страницы персон-->
+            {% for person_uid, node in tree.map.nodes.items() %}
+                {% set person = context.data.persons_snippets.get(person_uid) %}
+                {% set person_ctx = context.person_context(person_uid) %}
+                {% if person_ctx and not person_ctx.privacy.is_access_denied() %}
+                    <div class="map-search-tag" style="top: 0px; left: px;"><a href="/person/{{person.uid}}" title="{{person.name}}"></a></div>
                 {% endif %}
-                
-                <div id='hilighted-person'></div>
-
-
-            </div>
-			<nav id="person-snippet-container" >
-			</nav>
-
-    <nav class="navbar">
-        <div class="navbar-header">
-          <!-- Кнопка «Гамбургер» отображается только в мобильном виде (предназначена для открытия основного содержимого Navbar) -->
-          <a href="#" type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar-main">
-            <span class="glyphicon glyphicon-menu-hamburger" aria-hidden="true"></span>
-          </a>
-        </div>
-        <div class="collapse navbar-collapse" id="navbar-main">
-            <ul class="nav navbar-nav navbar-right pull-right">
-              <li><a href="#" data-toggle="modal" data-target="#contacts"><span class="glyphicon glyphicon-envelope"></span> Написать автору</a></li>
-              <li><a href="/lk" target='_blank'><span class="glyphicon glyphicon-user"></span>
-              {% if user and user.is_authenticated() %} {{user.auth_info().me.first_name}} {% else %} Войти {% endif %}</a></li>
-            </ul>
-        </div>
-    </nav>
-
-    <!--Author contacts-->
-    <div id="contacts" class="modal fade" role="dialog">
-      <div class="modal-dialog">
-        <div class="modal-content">
-          <div class="modal-header">
-            <button type="button" class="close" data-dismiss="modal">&times;</button>
-            <h4 class="modal-title">Автор: <a href="/person/hmBLFFLwiQ">Жагорина Ксения Андреевна</a></h4>
-          </div>
-          <div class="modal-body">
-            <p><ul class="list-unstyled">
-                <li><i class="fa fa-fw fa-odnoklassniki fa-colored"></i><a href="https://ok.ru/ksenia.zhagorina"> https://ok.ru/ksenia.zhagorina</a></li>
-                <li><i class="fa fa-fw fa-vk fa-colored"></i><a href="https://vk.com/kzhagorina"> https://vk.com/kzhagorina</a></li>
-                <li><i class="fa fa-fw fa-telegram fa-colored"></i> <a title="Telegram" href="tg://resolve?domain=KseniaZhagorina">KseniaZhagorina</a></li>
-            </ul></p>
-          </div>
+            {% endfor %}
         </div>
 
-      </div>
-    </div>
+        <script>
+            // Загружаем реальную картинку дерева вместо заглушки
+            $(window).load(function(){
+                var tree_container = $('#tree-container').first();
+                loadLazyContent(tree_container);
+                loadLazyContentSvg(tree_container);
+            });
 
-<!--noindex-->
-			<div id="snippets">
-			    <!--сюда будут загружаться сниппеты через ajax-->
-			</div>
-            
-            <div id="carousels">
-                <!--сюда будут загружаться карусельки из сниппетов через ajax-->
-            </div>
-            
-            <div id="links">
-                <!--ссылки на страницы персон-->
-                {% for person_uid, node in tree.map.nodes.items() %}
-                    {% set person = context.data.persons_snippets.get(person_uid) %}
-                    {% set person_ctx = context.person_context(person_uid) %}
-                    {% if person_ctx and not person_ctx.privacy.is_access_denied() %}
-                        <div class="map-search-tag" style="top: 0px; left: px;"><a href="/person/{{person.uid}}" title="{{person.name}}"></a></div>
-                    {% endif %}
-                {% endfor %}
-            </div>
-
-            <script>
-                // Загружаем реальную картинку дерева вместо заглушки
-                $(window).load(function(){
-                    var tree_container = $('#tree-container').first();
-                    loadLazyContent(tree_container);
-                    loadLazyContentSvg(tree_container);
+            // Эмулируем клик на персону, если в якоре урла передан person_uid
+            // Это проскроллит экран до персоны, выделит ее и откроет сниппет с информацией
+            $(document).ready(function(){
+                $(".select-person").click(function(e) {
+                    e.preventDefault();
+                    selectPerson($(this));
                 });
 
-                // Эмулируем клик на персону, если в якоре урла передан person_uid
-                // Это проскроллит экран до персоны, выделит ее и откроет сниппет с информацией
-                $(document).ready(function(){
-                    $(".select-person").click(function(e) {
-                        e.preventDefault();
-                        selectPerson($(this));
-                    });
-
-                    $(".person-snippet").find('a.close').click(function(e) {
-                        e.preventDefault();
-                        closeCurrentPersonSnippet();
-                        removeHilightPersonArea();
-                    });
-
-                    selected_uid = window.location.hash.substring(1);
-                    if (selected_uid) {
-                        $(".select-person[person-uid='"+selected_uid+"']").first().click();
-                    }
+                $(".person-snippet").find('a.close').click(function(e) {
+                    e.preventDefault();
+                    closeCurrentPersonSnippet();
+                    removeHilightPersonArea();
                 });
-            </script>
-<!--/noindex-->
+
+                selected_uid = window.location.hash.substring(1);
+                if (selected_uid) {
+                    $(".select-person[person-uid='"+selected_uid+"']").first().click();
+                }
+            });
+        </script>
 	</body>
 </html>
