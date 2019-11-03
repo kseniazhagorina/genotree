@@ -87,6 +87,26 @@
                 active.removeClass('active');
                 active.hide();
             }
+            
+            // загружает информацию о персоне если она еще не загружена
+            function loadPersonSnippet(person_uid) {
+                
+                if (!$('#snippets').find('#snippet-for-'+person_uid).length) {
+                    $.ajax({url: 'ajax/person_snippet/{{context.tree.uid}}/'+person_uid,
+                            success: function(content){
+                                var snippet = $(content);
+                                $('#snippets').append(snippet);
+                                initCarouselFullScreenIn(snippet);
+                                var carousel = snippet.find('.carousel');
+                                $('#carousels').first().append(carousel);
+                                snippet.find(".select-person").click(function(e) {
+                                    e.preventDefault();
+                                    selectPerson($(this));
+                                });
+                            },
+                            async: false});
+                }
+            }
 
 		    // отображает информацию о персоне в блоке внизу страницы
 			function viewPersonSnippet(person_uid) {
@@ -163,6 +183,7 @@
             function selectPerson(link) {
                 var person_uid = link.attr('person-uid');
                 closeCurrentPersonSnippet();
+                loadPersonSnippet(person_uid);
                 viewPersonSnippet(person_uid);
 				hilightPersonArea(person_uid);
                 window.location.hash = person_uid;
@@ -248,30 +269,12 @@
 
 <!--noindex-->
 			<div id="snippets">
-				{% for person_uid, person_snippet in persons_snippets.items() %}
-                    {% set person_ctx = context.person_context(person_uid) %}
-					<nav id="snippet-for-{{person_uid}}" class="navbar navbar-default navbar-fixed-bottom person-snippet" style="display:none;">
-						{% if person_ctx.privacy.is_access_denied() %}
-                            {{ ps.draw_private_person_snippet(user) }}
-                        {% else %}
-                            {{ ps.draw_person_snippet(person_snippet, person_ctx) }}
-                        {% endif %}    
-					</nav>
-				{% endfor %}
+			    <!--сюда будут загружаться сниппеты через ajax-->
 			</div>
-
+            
             <div id="carousels">
-                {% for person_uid, person_snippet in persons_snippets.items() %}
-                    {% set person_ctx = context.person_context(person_uid) %}
-                    {% if not person_ctx.privacy.is_access_denied() and person_snippet.photos %}
-                        {{ pc.draw_photo_carousel('carousel-for-'+person_uid, person_snippet.photos) }}
-                    {% endif %}
-                {% endfor %}
+                <!--сюда будут загружаться карусельки из сниппетов через ajax-->
             </div>
-
-            <script>
-                initCarouselFullScreen();
-            </script>
 
             <script>
                 // Загружаем реальную картинку дерева вместо заглушки

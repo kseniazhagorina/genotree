@@ -276,9 +276,7 @@ def convert_svg(svg_file):
     '''преобразует svg файл так, чтобы ссылки на картинки вели в static/tree/preview/xxx.jpg
        у нужных блоков был бы прописан класс 'select-person' и атрибут 'person-uid'
     '''
-    print('convert svg-file {}'.format(svg_file))
     files_dir_name = os.path.split(svg_file)[1] + '.files'
-    print('current image has path {}/idxxxx.jpg'.format(files_dir_name))
     svg = None
     with codecs.open(svg_file, 'r', 'utf-8') as f:
         svg = f.read()

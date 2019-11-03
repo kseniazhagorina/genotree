@@ -130,6 +130,19 @@ def tree(tree_name, user):
 def default_tree():
     return tree(None)
     
+@app.route('/ajax/person_snippet/<tree_name>/<person_uid>')
+@check_data_is_valid
+@get_user
+def person_snippet(tree_name, person_uid, user):
+    tree_name = tree_name or data.default_tree_name
+    if tree_name not in data.trees:
+        abort(404)
+    if person_uid not in data.persons_snippets:
+        abort(404)
+    person_snippet = data.persons_snippets[person_uid]
+    person_context = Context(data, user=user, requested_tree=tree_name).person_context(person_uid)
+    return render_template('tree_person_snippet.html', user=user, person=person_snippet, context=person_context)
+    
 @app.route('/person/<person_uid>')
 @check_data_is_valid
 @get_user
