@@ -9,7 +9,7 @@ def create_package(version):
     archive = upload.create_package(r'D:\site\{}'.format(version), 'data')
     print(archive)
     
-# scp data.zip kzhagorina@ssh.pythonanywhere.com:~/genotree/upload/data.zip
+# scp data.zip kzhagorina@ssh.pythonanywhere.com:~/me-in-history/upload/data.zip
 
 
 def load_to_develop(version):

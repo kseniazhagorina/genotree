@@ -22,7 +22,7 @@ class TagSection(KeyValueSection):
         self.tags = set([tag for tag in [part.strip() for part in value.split(',')] if tag != ""])
 
 class Note:
-    possible_keys = ['Причина смерти', 'Внешность','Примеч.', 'Tags']
+    possible_keys = ['Причина смерти', 'Внешность','Примеч.', 'Tags', 'c'] # c = координаты
     key_value_regex = re.compile(r'^(?P<key>{0}):\s*(?P<value>.*)'.format('|'.join(possible_keys)))
     privacy_mode_regex = re.compile(r'^(?P<mode>public|protected|private):$')
     def __init__(self, sections=[]):
