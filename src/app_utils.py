@@ -19,25 +19,6 @@ from common_utils import *
 from upload import load_package, select_tree_img_files
 
 
-class TreeMapXml:
-    class Node:
-        def __init__(self, node):
-            self.uid = node.attrib['id']
-            self.x1 = node.attrib['x1']
-            self.y1 = node.attrib['y1']
-            self.x2 = node.attrib['x2']
-            self.y2 = node.attrib['y2']
-            self.rect = ','.join([self.x1, self.y1, self.x2, self.y2])
-
-    def __init__(self, root):
-        self.date = root.attrib['date']
-        self.height = root.attrib['height']
-        self.width = root.attrib['width']
-        self.nodes = dict()
-        for xml_node in root.iter('n'):
-            tree_node = TreeMapXml.Node(xml_node)
-            self.nodes[tree_node.uid] = tree_node
-            
 class TreeMapSvg:
     class Node:
         def __init__(self, id):
@@ -51,12 +32,10 @@ class TreeMapSvg:
             self.nodes[uid] = TreeMapSvg.Node(uid)
 
 def get_tree_map(filename):
-    if filename.endswith('.xml'):
-        root = xml.etree.ElementTree.parse(filename).getroot()
-        return TreeMapXml(root)
-    else:
+    if filename.endswith('.svg'):
         with codecs.open(filename, 'r', 'utf-8') as svg:
             return TreeMapSvg(svg.read())
+    raise Exception('not supported for tree map file type: {}'.format(filename))
 
 def get_tree(gedcom_filename):
     return GedcomReader().read_gedcom(gedcom_filename)
@@ -166,7 +145,7 @@ def get_documents(documents, files):
     '''документы персоны или события распределить на фотографии и документы-источники'''
     photos = []
     docs = []
-    for document in sorted(documents, key = lambda d: d.get('DFLT') == 'T' or d.get('_PRIM') == 'Y', reverse=True): # сначала дефолтный документ
+    for document in sorted(documents, key = lambda d: d.get('_PRIM') == 'Y', reverse=True): # сначала дефолтный документ
         file_path = files.get(document.get('FILE', ''))
 
         if file_path:
@@ -512,16 +491,9 @@ class Data:
             self.trees = {}
             for tree in trees:
                 tree_uid = tree.name or DEFAULT_TREE
-                if tree.vector:
-                    self.trees[tree_uid] = Data.Tree(tree_uid,
-                                                     '/static/tree/'+tree.img,
-                                                     get_tree_map(os.path.join(self.static_path, tree.img)))
-                else:
-                    if tree.xml is None:
-                        continue # векторный формат пока не поддерживается
-                    self.trees[tree_uid] = Data.Tree(tree_uid,
-                                                     '/static/tree/'+tree.img,
-                                                     get_tree_map(os.path.join(self.data_path, tree.xml)))
+                self.trees[tree_uid] = Data.Tree(tree_uid,
+                                                 '/static/tree/'+tree.img,
+                                                 get_tree_map(os.path.join(self.static_path, tree.img)))
             
             if len(self.trees) == 0:
                 raise Exception('No files *_tree_img.png in {} directory'.format(self.static_path))
