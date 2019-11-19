@@ -1,5 +1,5 @@
 {% macro draw_photo_carousel(carousel_id, images) %}
-    <div class="modal carousel full-screen" id="{{carousel_id}}" tabindex="-1" role="dialog" data-pause='false'
+    <div class="modal carousel full-screen" id="{{carousel_id}}" tabindex="-1" role="dialog" data-pause='true'
         style="position: absolute; top: 0px; left: 0px; width:100%; height:100%; display: none;">
        
         {% if images|length > 1 %}

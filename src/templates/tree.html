@@ -103,6 +103,11 @@
                                     e.preventDefault();
                                     selectPerson($(this));
                                 });
+                                snippet.find('a.close').click(function(e) {
+                                    e.preventDefault();
+                                    closeCurrentPersonSnippet();
+                                    removeHilightPersonArea();
+                                });
                             },
                             async: false});
                 }
@@ -285,12 +290,6 @@
                 $(".select-person").click(function(e) {
                     e.preventDefault();
                     selectPerson($(this));
-                });
-
-                $(".person-snippet").find('a.close').click(function(e) {
-                    e.preventDefault();
-                    closeCurrentPersonSnippet();
-                    removeHilightPersonArea();
                 });
 
                 selected_uid = window.location.hash.substring(1);

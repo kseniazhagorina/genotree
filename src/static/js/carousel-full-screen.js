@@ -16,6 +16,6 @@ function initCarouselFullScreenIn(container) {
         $(this).css('background-image', 'url(/static/carousel_background.jpg)');
         loadLazyContent($(this));
         yaGoals.open_photo_gallery();
-        $(this).carousel('cycle');
+        $(this).carousel('pause');
     })
 }    
