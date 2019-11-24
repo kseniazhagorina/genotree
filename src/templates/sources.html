@@ -21,125 +21,26 @@
     <body>
         <div class="container">
             <h2>Полезные источники</h2>
-            
-              <div class="panel panel-default">
-                <div class="panel-heading">
-                  <h4 class="panel-title">
-                    <a data-toggle="collapse" href="#collapse1">Первая Мировая Война, 1914–1918 гг.</a>
-                  </h4>
-                </div>
-                <div id="collapse1" class="panel-collapse collapse">
-                  <div class="panel-body">
-                    <ul class="list-unstyled">
-                      <li><a href="https://1914.svrt.ru">https://1914.svrt.ru</a></li>
-                      <li><a href="https://gwar.mil.ru">https://gwar.mil.ru</a></li>
-                    </ul>  
+                    
+              {% for block in content %}
+                  <div class="panel panel-default">
+                    <div class="panel-heading">
+                      <h4 class="panel-title">
+                        <a data-toggle="collapse" href="#collapse{{loop.index}}">{{block.title}}</a>
+                      </h4>
+                    </div>
+                    <div id="collapse{{loop.index}}" class="panel-collapse collapse">
+                      <div class="panel-body">
+                        <ul class="list-unstyled">
+                          {% for line in block.children %}
+                          <li>{{line|urlize()}}</li>
+                          {% endfor %}
+                        </ul>  
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </div>
-              
-              
-              <!-- 2 панель -->
-              <div class="panel panel-default">
-                <div class="panel-heading">
-                  <h4 class="panel-title">
-                    <a data-toggle="collapse" href="#collapse2">Политические репрессии 1937-1939 гг.</a>
-                  </h4>
-                </div>
-                <div id="collapse2" class="panel-collapse collapse">
-                  <div class="panel-body">
-                    <ul class="list-unstyled">
-                      <li><a href="https://www.memo.ru">https://www.memo.ru</a> Мемориал - памяти жертв политических репрессий</li>
-                    </ul>  
-                  </div>
-                </div>
-              </div>
-              
-              
-              <!-- 2 панель -->
-              <div class="panel panel-default">
-                <div class="panel-heading">
-                  <h4 class="panel-title">
-                    <a data-toggle="collapse" data-parent="#accordion" href="#collapse3">Великая Отечественная Война, 1941-1945 гг.</a>
-                  </h4>
-                </div>
-                <div id="collapse3" class="panel-collapse collapse">
-                  <div class="panel-body">
-                    <ul class="list-unstyled">
-                      <li><a href="https://obd-memorial.ru">https://obd-memorial.ru</a> ОБД-Мемориал - погибшие и пропавшие без вести</li>
-                      <li><a href="http://www.podvignaroda.mil.ru">http://www.podvignaroda.mil.ru</a> Подвиг Народа - награжденные</li>
-                      <li><a href="https://www.pobediteli.ru">https://www.pobediteli.ru</a> Победители - ветераны</li>
-                    </ul>  
-                  </div>
-                </div>
-              </div>
-              
-  
-              <div class="panel panel-default">
-                <div class="panel-heading">
-                  <h4 class="panel-title">
-                    <a data-toggle="collapse" data-parent="#accordion" href="#collapse4">Генеалогические сайты</a>
-                  </h4>
-                </div>
-                <div id="collapse4" class="panel-collapse collapse">
-                  <div class="panel-body">
-                    <ul class="list-unstyled">
-                      <li><a href="http://rosgenea.ru/">http://rosgenea.ru/</a> бесплатно и с поиском</li>
-                      <li><a href="http://www.myheritage.com">http://www.myheritage.com</a> платный, но довольно популярный. есть дополнительные материалы</li>
-                      <li><a href="https://www.familyspace.ru/">https://www.familyspace.ru/</a> нужна регистрация и поиск не очень</li>
-                    </ul>  
-                  </div>
-                </div>
-              </div>
-              
-              <div class="panel panel-default">
-                <div class="panel-heading">
-                  <h4 class="panel-title">
-                    <a data-toggle="collapse" data-parent="#accordion" href="#collapse5">Архивы</a>
-                  </h4>
-                </div>
-                <div id="collapse5" class="panel-collapse collapse">
-                  <div class="panel-body">
-                    <ul class="list-unstyled">
-                      <li><a href="https://spbarchives.ru/infres">https://spbarchives.ru</a> Архивы Санктпетербурга. Поиск по описям. Можно получить доступ к оцифрованным документам онлайн</li>
-                      <li><a href="https://pokolenia.permkrai.ru/">https://pokolenia.permkrai.ru</a> Поколения Пермского Края. Оцифрованные метрические книги и ревизские сказки</li>
-                    </ul>  
-                  </div>
-                </div>
-              </div>  
-              
-              <div class="panel panel-default">
-                <div class="panel-heading">
-                  <h4 class="panel-title">
-                    <a data-toggle="collapse" data-parent="#accordion" href="#collapse6">Библиотеки и книжные издания</a>
-                  </h4>
-                </div>
-                <div id="collapse6" class="panel-collapse collapse">
-                  <div class="panel-body">
-                    <ul class="list-unstyled">
-                      <li><a href="http://www.petergen.com/vse-knigi-genealogia.shtml">http://www.petergen.com/vse-knigi-genealogia.shtml</a> Большое количество различных генеалогических изданий. Есть поиск по фамилии, региону</li>
-                      <li><a href="http://chigirin.narod.ru/book.html">http://chigirin.narod.ru/book.html</a> Справочники, паятные книжки и адрес-календари по губерниям</li>
-                    </ul>  
-                  </div>
-                </div>
-              </div>
+            {% endfor %}  
 
-              <div class="panel panel-default">
-                <div class="panel-heading">
-                  <h4 class="panel-title">
-                    <a data-toggle="collapse" data-parent="#accordion" href="#collapse7">Поиск захоронений</a>
-                  </h4>
-                </div>
-                <div id="collapse6" class="panel-collapse collapse">
-                  <div class="panel-body">
-                    <ul class="list-unstyled">
-                      <li><a href="http://сайт-памяти.рф">http://сайт-памяти.рф</a></li>
-                      <li><a href="http://skorbim.com">http://skorbim.com</a></li>
-                      <li><a href="https://archive-ural.ru">https://archive-ural.ru</a> Захоронения г.Екатеринбурга</li>
-                    </ul>  
-                  </div>
-                </div>
-              </div>                  
         </div>    
     </body>
 </html>

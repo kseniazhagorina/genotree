@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from app_utils import Data, first_or_default
+from content_generator import generate_content
 from gedcom import GedcomReader
 from privacy import Privacy, PrivacyMode
 from session import Session
@@ -9,6 +10,7 @@ from db_api import create_db, UserAccessManager, UserSessionManager, UserSession
 import oauth_api as oauth
 import json
 import threading
+import os
 
 from flask import Flask, render_template, send_from_directory, request, url_for, redirect, abort, session
 app = Flask(__name__)
@@ -32,6 +34,7 @@ if data.load_error:
 db = create_db('data/db/tree.db')
 access_manager = UserAccessManager(db, data)
 session_manager = UserSessionManager(db)
+generate_content()
         
 class Context:
     '''Данные о том, какой пользователь запрашивает страницу, его настройки приватности
@@ -107,9 +110,9 @@ def only_for_admin(func):
     return wrapper
 
     
-@app.route('/sources')
-def sources():
-    return render_template('sources.html')
+@app.route('/sources.html')
+def static_from_content():
+    return send_from_directory(os.path.join(app.static_folder, 'content'), request.path[1:])
     
 @app.route('/robots.txt')
 @app.route('/sitemap.xml')
