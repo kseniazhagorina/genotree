@@ -136,26 +136,50 @@ class PersonSnippet:
 
 
 class Document:
-    def __init__(self, path, sys_path, title=None):
+    def __init__(self, path, sys_path, title=None, comment=None, content=None, is_photo=False, is_primary=False):
+        '''comment - Note
+           content - text from .txt files
+        '''
         self.path = normalize_path(path)
         self.sys_path = normalize_path(sys_path)
         self.title = title
+        self.comment = comment
+        self.content = content
+        self.is_photo = is_photo
+        self.is_primary = is_primary
+        
+    @staticmethod
+    def from_gedcom_document(document, files):
+        file_path = files.get(document.get('FILE', ''))
+        if file_path:
+            sys_path = normalize_path(os.path.join(files.directory, file_path))
+            if os.path.exists(sys_path):
+                ext = os.path.splitext(file_path)[-1].lower()
+                title = document.get('TITL', '')
+                comment = Note.parse(document.get('NOTE'))
+                is_photo = ext in ['.jpg', '.jpeg', '.png', '.tiff', '.gif']
+                content = opendet(sys_path).read() if ext == '.txt' else None
+                is_primary = document.get('_PRIM') == 'Y'
+                document = Document(path=file_path, sys_path=sys_path,
+                                    title=title, comment=comment, is_photo=is_photo, is_primary=is_primary)
+                return document
+            else:
+                print('File not found: {}'.format(sys_path))
+        return None
 
 def get_documents(documents, files):
     '''документы персоны или события распределить на фотографии и документы-источники'''
     photos = []
     docs = []
-    for document in sorted(documents, key = lambda d: d.get('_PRIM') == 'Y', reverse=True): # сначала дефолтный документ
-        file_path = files.get(document.get('FILE', ''))
-
-        if file_path:
-            ext = os.path.splitext(file_path)[-1].lower()
-            title = document.get('TITL', '')
-            document = Document(path=file_path, sys_path=os.path.join(files.directory, file_path), title=title)
-            if ext in ['.jpg', '.jpeg', '.png', '.tiff', '.gif']:
-                photos.append(document)
-            else:
-                docs.append(document)
+    for document in documents: 
+        doc = Document.from_gedcom_document(document, files)
+        if doc is None:
+            continue
+        if doc.is_photo:
+            photos.append(doc)
+        else:
+            docs.append(doc)
+    photos = list(sorted(photos, key = lambda d: d.is_primary, reverse=True)) # сначала дефолтный документ
     return photos, docs
 
 
@@ -168,32 +192,40 @@ class Source:
         self.document_path = normalize_path(document_path) # путь до сохраненного документа-источника
 
     @staticmethod
-    def create_from_source(source, source_link):
+    def from_gedcom_source(source, source_link):
         name = source.get('TITL', None)
         page = source_link.get('PAGE')
-        quote = Note((Note.parse(source_link.get('NOTE')) or Note()).sections + (Note.parse(source.get('TEXT')) or Note()).tags_sections)
+        link_note = Note.parse(source_link.get('NOTE')) or Note()
+        source_note = Note.parse(source.get('TEXT')) or Note()
+        quote = Note(link_note.sections + source_note.tags_sections)
+        if len(quote.sections) == 0:
+            quote = None
         return Source(name, page, quote, None)
 
     @staticmethod
-    def create_from_document(document):
+    def from_document(document):
         ext = os.path.splitext(document.path)[-1].lower()
         name = document.title
-        if ext == '.txt':
-            quote = Note.parse(opendet(os.path.join(normalize_path(document.sys_path))).read())
-            return Source(name, None, quote, None)
-        return Source(name, None, None, document.path)
+        comment = document.comment or Note()
+        content = Note.as_text(document.content) or Note()
+        if len(comment.sections):
+            print(comment)
+        quote = Note(comment.sections + content.sections)
+        if len(quote.sections) == 0:
+            quote = None
+        return Source(name, None, quote, document.path)
 
     @staticmethod
-    def create_from_sources(sources, source_links):
+    def from_gedcom_sources(sources, source_links):
         for s_link in source_links:
             source = first_or_default(sources, lambda s: s.id == s_link.id)
             if source:
-                yield Source.create_from_source(source, s_link)
+                yield Source.from_gedcom_source(source, s_link)
 
     @staticmethod
-    def create_from_documents(documents):
+    def from_documents(documents):
         for document in documents:
-            yield Source.create_from_document(document)
+            yield Source.from_document(document)
 
 class Event:
     '''Событие для отображения на странице биографии пользователя'''
@@ -218,7 +250,7 @@ class Event:
         event_comment = Note.parse(event_comment_row)
         event_photos, event_docs = get_documents(event.documents, files)
         event_photo = first_or_default(event_photos)
-        event_sources = list(Source.create_from_sources(gedcom.sources, event.sources)) + list(Source.create_from_documents(event_docs))
+        event_sources = list(Source.from_gedcom_sources(gedcom.sources, event.sources)) + list(Source.from_documents(event_docs))
         event_head = None
 
         if event_type == 'BIRT':
@@ -282,13 +314,13 @@ def get_person_snippets(gedcom, files):
     for person in gedcom.persons:
         person_uid = person['_UID']
         name = GedName.parse(person.get('NAME', ''))
-        sex = person.get('SEX', None)
-        main_occupation = person.get('OCCU', None)
-        comment = Note.parse(person.get('NOTE', None))
+        sex = person.get('SEX')
+        main_occupation = person.get('OCCU')
+        comment = Note.parse(person.get('NOTE'))
         photos, docs = get_documents(person.documents, files)
         photo = first_or_default(photos)
 
-        sources = list(Source.create_from_sources(gedcom.sources, person.sources)) + list(Source.create_from_documents(docs))
+        sources = list(Source.from_gedcom_sources(gedcom.sources, person.sources)) + list(Source.from_documents(docs))
         indi_to_uid[person.id] = person_uid
         snippet = PersonSnippet(person_uid,
                                 name=name,

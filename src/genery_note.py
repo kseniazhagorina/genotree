@@ -32,7 +32,7 @@ class Note:
     def __repr__(self):
         text = '\n'.join([s.text for s in self.sections])
         return text
-    
+
     def privacy(self, item=None, default=PrivacyMode.PUBLIC):
         '''определяет приватность по тегам private_<item>, protected_<item>, public_<item>'''
         suff = '_'+item if item else ''
@@ -108,4 +108,10 @@ class Note:
             return None
         return Note(sections)
 
+    @staticmethod
+    def as_text(text):
+        if text is None or text.strip() == "":
+            return None
+        return Note([NoteSection(text)])
+    
 
