@@ -176,12 +176,12 @@
         
         <div id="carousels">
             {% if person.photos %}
-                {{ pc.draw_photo_carousel('carousel-for-'+person.uid, person.photos) }}
+                {{ pc.draw_photo_carousel('carousel-for-'+person.uid, person.photos, privacy) }}
             {% endif %} 
 
             {% for e in person_events %}
                 {% if e.photos %}
-                    {{ pc.draw_photo_carousel('carousel-for-event-' ~ loop.index, e.photos) }}
+                    {{ pc.draw_photo_carousel('carousel-for-event-' ~ loop.index, e.photos, privacy) }}
                 {% endif %}    
             {% endfor %}
         </div>

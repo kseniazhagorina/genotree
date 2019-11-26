@@ -5,26 +5,25 @@
     background-repeat: no-repeat;
 }
 
-.carousel.full-screen > .carousel-inner > .item > img,
-.carousel.full-screen > .carousel-inner > .item > a > img {
+.carousel.full-screen > .carousel-inner  .item  img {
       margin: 0 auto;
-      max-height: 100%;
+      margin-top: 10%;
+      max-height: 125%;
       max-width: 100%;
       position:relative;
-      top:50%;
-      transform: translateY(-50%);
+      
 }
 
-.carousel.full-screen .carousel-caption {
-      display: none;
-      left: 10%;
-      right: 10%;
-      bottom: 0%;
-      padding-left:20%;
-      padding-right:20%;
-      padding-bottom: 5%;
-      background: linear-gradient(to right,rgba(0,0,0,.0001) 0, rgba(0,0,0,.7) 20%, rgba(0,0,0,.7) 20%, rgba(0,0,0,0.0001) 100%);
-  }
+/* для того чтобы скрыть скроллбар */
+.carousel.full-screen  {
+    overflow: hidden;
+}
+.carousel.full-screen .carousel-inner {
+    overflow: auto;
+    width: 105%;
+    transform: translateX(-50%);
+    left: 50%;
+}
   
 .carousel.full-screen > .carousel-extra-controls  {
     position: absolute;
@@ -48,8 +47,42 @@
 .carousel.full-screen > .carousel-extra-controls  > a:hover  {
     opacity: 0.9;
 }
+
   
-.carousel.full-screen .item img:hover + .carousel-caption,
-.carousel.full-screen .carousel-caption:hover  {
-    display:block;
+.my-img-container {
+    position: relative;
+    width: 100%;
+    height: 80%;
+    
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+}
+        
+.my-img-caption {
+    /*display: none;*/
+    position: relative;
+    width: 100%;
+    min-height: 20%;
+    background: linear-gradient(to right,rgba(0,0,0,.0001) 0, rgba(0,0,0,.7) 20%, rgba(0,0,0,.7) 80%, rgba(0,0,0,0.0001) 100%);
+    
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+}
+        
+.my-img-caption div {
+    color:white;
+    background: none;
+    position: relative;
+    max-width: 60%;
+    text-align: center;
+    margin-bottom: 45px;
+}
+
+.carousel.full-screen .item img:hover + .my-img-caption,
+.carousel.full-screen .my-img-caption:hover  {
+    display:flex;
 }

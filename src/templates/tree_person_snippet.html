@@ -7,7 +7,7 @@
     {% else %}
         {{ ps.draw_person_snippet(person, context) }}
         {% if person.photos %}
-            {{ pc.draw_photo_carousel('carousel-for-'+person.uid, person.photos) }}
+            {{ pc.draw_photo_carousel('carousel-for-'+person.uid, person.photos, context.privacy) }}
         {% endif %}
     {% endif %}
 </nav>
