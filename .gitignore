@@ -8,3 +8,4 @@ __pycache__
 /upload
 
 src/static/content/*
+/src/static/content
