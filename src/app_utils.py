@@ -208,8 +208,6 @@ class Source:
         name = document.title
         comment = document.comment or Note()
         content = Note.as_text(document.content) or Note()
-        if len(comment.sections):
-            print(comment)
         quote = Note(comment.sections + content.sections)
         if len(quote.sections) == 0:
             quote = None
@@ -538,11 +536,3 @@ class Data:
     @async
     def async_load(self, archive=None):        
         self.load(archive)
-
-
-
-
-
-
-
-
