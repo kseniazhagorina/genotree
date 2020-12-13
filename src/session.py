@@ -13,6 +13,14 @@ class Session(dobj):
         data = dobj(json.loads(data))
         s = Session(manager=manager, **data)
         return s
+        
+    @staticmethod    
+    def is_valid_auth_info(auth_info):
+        if auth_info.me is None:
+            return False
+        return True
+    
+    
             
     def __init__(self, id, ts, manager, auth=None):
         self.manager = manager
@@ -26,19 +34,18 @@ class Session(dobj):
         #        'opened': timestamp
         #        'closed': timestamp or None  
         # }
-
-    def is_valid(self):
-        for service in self.auth:
-            if self.auth[service].me is None:
-                return False
-        return True    
     
+
     def login(self, service, **kwargs):
-        self.auth[service] = dobj.convert(kwargs)
-        self.auth[service].service = service
-        self.auth[service].opened = time.time()
-        self.auth[service].closed = None
+        auth_info = dobj.convert(kwargs)
+        auth_info.service = service
+        auth_info.opened = time.time()
+        auth_info.closed = None
+        if not Session.is_valid_auth_info(auth_info):
+            raise Exception('Invalid auth info {}'.format(auth_info))
+        self.auth[service] = auth_info
         self.manager.update(self)
+        return True
 
     def logout(self, service=None):
         candidates = [service] if service is not None else self.auth.keys()
@@ -73,3 +80,9 @@ class Session(dobj):
                 logins.append((service, info.me.login))
                 logins.append((service, info.me.uid))
         return logins
+        
+    def is_valid(self):
+        for service in self.auth:
+            if not Session.is_valid_auth_info(self.auth[service]):
+                return False
+        return True

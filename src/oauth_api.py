@@ -114,7 +114,7 @@ class Vk:
             data['uid'] = 'id'+str(data['id']) if 'id' in data else None
             data['login'] = data.get('domain', None)
             data['photo50'] = data.get('photo_50', None)
-            data['service'] = 'vk' # по идее название сервисаы нужно брать из oauth.config
+            data['service'] = 'vk' # по идее название сервиса нужно брать из oauth.config
             super(UserInfo, self).__init__(data)
 
 class Ok:
@@ -203,7 +203,7 @@ class Ok:
                     raise Exception('Api.Ok error: {} respond {}'.format(url, user))
                 if 'uid' not in user:
                     raise Exception('Api.Ok error: {} respond {}'.format(url, user))
-                user['login'] = self.__get_login(user['uid'])
+                user['login'] = Ok.get_login_by_uid(user['uid'])
                 self.__user = Ok.User(user)
             return self.__user
 
@@ -227,27 +227,28 @@ class Ok:
                 print('Api.Ok error: {} respond {}'.format(url, response))
                 return None
             return Ok.User(response['user'])
-
-        def __get_login(self, uid):
-            '''адреса в одноклассниках
-               https://ok.ru/profile/329919392375
-               https://ok.ru/ksenia.zhagorina
-               чтобы по числовому номеру узнать логин надо зайти на страницу пользователя
-            '''   
-            url = 'https://ok.ru/profile/{}'.format(uid)
-            response = requests.get(url).text
-            m = re.search('<a itemprop="url" href="https://ok.ru/([\w+\.-]+)', response)
-            if m:
-                login = m.group(1)
-                if login != uid:
-                    return login		
-            return None
+            
 
     class User(UserInfo):
         '''конвертирует данные о пользователе в общее представление'''
         def __init__(self, data):
             data['photo50'] = data.get('pic50x50', None)
-            data['service'] = 'ok' # по идее название сервисаы нужно брать из oauth.config
+            data['service'] = 'ok' # по идее название сервиса нужно брать из oauth.config
             super(UserInfo, self).__init__(data)
 
-
+    @staticmethod
+    def get_login_by_uid(uid):
+        '''адреса в одноклассниках
+           https://ok.ru/profile/329919392375
+           https://ok.ru/ksenia.zhagorina
+           чтобы по числовому номеру узнать логин надо зайти на страницу пользователя
+        '''   
+        url = 'https://ok.ru/profile/{}'.format(uid)
+        response = requests.get(url).text
+        m = re.search('<a title="Перейти в профиль" href="(/profile)?/(?P<login>[\w\d\.-]+)" class="profile-user-info_name">', response)
+ 
+        if m:
+            login = m.group('login')
+            if login != uid:
+                return login		
+        return None
