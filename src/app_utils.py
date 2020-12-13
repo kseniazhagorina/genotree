@@ -161,7 +161,7 @@ class Document:
                 content = opendet(sys_path).read() if ext == '.txt' else None
                 is_primary = document.get('_PRIM') == 'Y'
                 document = Document(path=file_path, sys_path=sys_path,
-                                    title=title, comment=comment, is_photo=is_photo, is_primary=is_primary)
+                                    title=title, comment=comment, content=content, is_photo=is_photo, is_primary=is_primary)
                 return document
             else:
                 print('File not found: {}'.format(sys_path))
