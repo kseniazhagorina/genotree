@@ -6,19 +6,19 @@
 import codecs
 
 class Gedcom:
-    events = ['RESI',   # проживание
-              'BIRT',   # рождение
-              'DEAT',   # смерть
-              'EDUC',   # обучение
-              'OCCU',   # устройство на работу
-              '__2',    # служба в армии (v3)
-              'RETI',   # выход на пенсию
-              'EVEN',   # пользовательское событие
-              'MARR',   # свадьба
-              'DIV'     # развод
+    EVENT_TYPES = ['RESI',   # проживание
+                   'BIRT',   # рождение
+                   'DEAT',   # смерть
+                   'EDUC',   # обучение
+                   'OCCU',   # устройство на работу
+                   '__2',    # служба в армии (v3)
+                   'RETI',   # выход на пенсию
+                   'EVEN',   # пользовательское событие
+                   'MARR',   # свадьба
+                   'DIV'     # развод
              ]
-    multi_attrs = ['CHIL', 'FAMS']  # поля которые могут встречаться несколько раз
-    ignore_inner = ['NAME'] # игнорировать все вложенные данны в объект NAME (GIVN)
+    MULTI_ATTRS = ['CHIL', 'FAMS']  # поля которые могут встречаться несколько раз
+    IGNORE_INNER = ['NAME'] # игнорировать все вложенные данные в объект NAME (GIVN)
     
     def __init__(self):
         self.meta = None
@@ -115,13 +115,13 @@ class GedcomReader:
             self.add_all_info(obj, lines)
         elif 'sources' in obj.__dict__ and head.startswith('SOUR') :
             obj.sources.append(self.read_source_ref(head, lines))
-        elif 'events' in obj.__dict__ and any(head.startswith(s) for s in Gedcom.events):
+        elif 'events' in obj.__dict__ and any(head.startswith(s) for s in Gedcom.EVENT_TYPES):
             obj.events.append(self.read_event(head, lines))
         elif 'documents' in obj.__dict__ and head.startswith('OBJE') :
             obj.documents.append(self.read_document(head, lines))   
-        elif len(lines) == 0 or any(head.startswith(s) for s in Gedcom.ignore_inner):
+        elif len(lines) == 0 or any(head.startswith(s) for s in Gedcom.IGNORE_INNER):
             key, value = self.read_simple(head)
-            if key in Gedcom.multi_attrs:
+            if key in Gedcom.MULTI_ATTRS:
                 if key not in obj:
                     obj[key] = []
                 obj[key].append(value)

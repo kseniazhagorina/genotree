@@ -273,6 +273,8 @@ class Event:
             event_head = choose_by_sex(sex, 'Женился', 'Вышла замуж')
         elif event_type == 'DIV':
             event_head = choose_by_sex(sex, 'Развелся', 'Развелась')
+        elif event_type == 'EVEN':
+            event_head = event.get('TYPE', None)
 
         return Event(type=event_type, head=event_head, date=event_date, place=event_place,
                      comment = event_comment, photo = event_photo, photos = event_photos,
