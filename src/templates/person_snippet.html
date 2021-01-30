@@ -34,7 +34,30 @@
     {% endif %}
 {% endmacro %}
 
-{% macro draw_short_person_info(person, privacy) %}
+{% macro draw_person_preview_photo(person, context, lazy=true) %}
+    {% if person.photo %}
+        <img class="img-fluid img-rounded img-person"
+                {% if lazy %}
+                src="{{url_for('static', filename=person.choose_by_sex('BlankMale.jpg', 'BlankFemale.jpg'))}}"
+                lazy-src="{{url_for('static', filename=context.files_dir+'/'+person.photo.path)}}"
+                {% else %}
+                src="{{url_for('static', filename=context.files_dir+'/'+person.photo.path)}}"
+                {% endif %}
+
+                alt="{{person.name|default('')}}"
+        />
+    {% else %}
+        <img 
+            src="{{url_for('static', filename=person.choose_by_sex('BlankMale.jpg', 'BlankFemale.jpg'))}}"
+            class="img-fluid img-rounded img-person"
+            alt="no photo"
+            title="no photo"
+        />
+             
+    {% endif %}
+{% endmacro %}
+
+{% macro draw_short_person_info(person, privacy, show_comment=true) %}
     <ul class="list-unstyled">
         {% if person.birth %}
         <li>Рождение: 
@@ -58,7 +81,8 @@
         {% if person.main_occupation %}
         <li>Основное занятие: {{person.main_occupation}}</li>
         {% endif %}
-    </ul>    
+    </ul>
+    {% if show_comment %}
     {% set comment=privacy.comment(person.comment) %}
     {% if comment %}
     <p>
@@ -67,8 +91,10 @@
         {% endfor %}
     </p>
     {% endif %}
+    {% endif %}
 
 {% endmacro %}
+
 
 {% macro draw_person_family(person) %}
    <ul class="list-unstyled">
@@ -95,13 +121,13 @@
     </ul>
 {% endmacro %}
 
-{% macro draw_tree_button(person, context) %}
+{% macro draw_tree_button(person, context, right=true) %}
     {% if context.trees|length > 0 %}
     
         <div class="btn-group">
             <a type="button" class="dropdown-toggle btn btn-default" data-toggle="dropdown">
             Древо <span class="caret"></span></a>
-            <ul class="dropdown-menu pull-right" role="menu">
+            <ul class="dropdown-menu {% if right %} pull-left {% else %} pull-right {% endif %}" role="menu">
                 {% for tree in context.trees %}
                 <li><a href="/{{tree.uid}}#{{person.uid}}">{{tree.name}}</a></li>
                 {% endfor %}
@@ -170,6 +196,7 @@
 		</div>
 	</div>
 {% endmacro %}
+
 
 {% macro draw_short_description(person, privacy) -%}
     (род. {% if person.birth -%}

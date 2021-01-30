@@ -5,6 +5,7 @@ from app_utils import Data, first_or_default
 from content_generator import generate_content
 from gedcom import GedcomReader
 from privacy import Privacy, PrivacyMode
+from search import SearchEngine
 from session import Session
 from db_api import create_db, UserAccessManager, UserSessionManager, UserSessionTable
 import oauth_api as oauth
@@ -30,7 +31,8 @@ data = Data('http://me-in-history.ru', 'src/static/tree', 'data/tree')
 data.load()
 if data.load_error:
     raise Exception(data.load_error)
-
+    
+search_engine = SearchEngine(data.persons_snippets)
 db = create_db('data/db/tree.db')
 access_manager = UserAccessManager(db, data)
 session_manager = UserSessionManager(db)
@@ -69,8 +71,13 @@ class Context:
             return None
         if person_uid not in self.__persons_contexts:
             self.__persons_contexts[person_uid] = Context.PersonContext(person_uid, self)
-        return self.__persons_contexts[person_uid]     
-
+        return self.__persons_contexts[person_uid]
+        
+    def filter_access_denied(self, person_uids):
+        for person_uid in person_uids:
+            person_context = self.person_context(person_uid)
+            if person_context and not person_context.privacy.is_access_denied():
+                yield person_uid
 
 def check_data_is_valid(func):
     def wrapper(*args, **kwargs):
@@ -131,6 +138,28 @@ def tree(tree_name, user):
 @app.route('/')
 def default_tree():
     return redirect(url_for('tree', tree_name=data.default_tree_name), code=301)
+    
+@app.route('/search')
+@check_data_is_valid
+@get_user
+def search(user):
+    text = request.args.get('text')
+    tree_name = request.args.get('tree_name')
+    on_page = 50
+    context = Context(data, user=user, requested_tree=tree_name)
+    strict = True
+    found = search_engine.search_strict(text)
+    if not found:
+        strict = False
+        found = search_engine.search(text)
+    found = list(context.filter_access_denied(found))
+    
+    pages = max(1, int(len(found)/on_page) + int(len(found)%on_page != 0))
+    page = min(max(int(request.args.get('page', 1)), 1), pages) 
+    
+    show = found[(page-1)*on_page : page*on_page]
+
+    return render_template('search.html', text=text, strict=strict, total=len(found), page=int(page), pages=pages, persons=show, context=context)
     
 @app.route('/ajax/person_snippet/<tree_name>/<person_uid>')
 @check_data_is_valid
