@@ -69,7 +69,10 @@
                 height: 100vh;
                 cursor: -webkit-grab;
                 padding-bottom: 220px;
+                padding-top:50px;
             }
+            
+
 		</style>
 
 		<script>
@@ -213,15 +216,37 @@
         <nav id="person-snippet-container" >
         </nav>
 
-        <nav class="navbar">
+        <nav class="navbar navbar-default" id="tree-top-navbar" style="background-color: #d8ebd1;" >
             <div class="navbar-header">
               <!-- Кнопка «Гамбургер» отображается только в мобильном виде (предназначена для открытия основного содержимого Navbar) -->
-              <a href="#" type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar-main">
+              <a href="#" type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar-other-items">
                 <span class="glyphicon glyphicon-menu-hamburger" aria-hidden="true"></span>
               </a>
+              
+              <div class="navbar-brand">
+                      <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
+                      <span class="glyphicon glyphicon-grain"></span> {{context.tree.name}} <span class="caret"></span></a>
+                      <ul class="dropdown-menu">
+                        {% for tree in context.data.trees.values() %}
+                            <li><a href="/{{tree.uid}}">{{tree.name}}</a></li>
+                        {% endfor %}
+                      </ul>
+              </div>
+              
+              
             </div>
-            <div class="collapse navbar-collapse" id="navbar-main">
+            <div class="collapse navbar-collapse" id="navbar-other-items">
+            
+                
                 <ul class="nav navbar-nav navbar-right pull-right">
+                  <li>
+                      <form class="navbar-form" role="search" action="/search">
+                          <div class="form-group input-group">
+                            <span class="input-group-addon"><span class="glyphicon glyphicon-search"></span></span> 
+                            <input type="text" class="form-control" placeholder="Фамилия Имя Отчество" name="text"/>
+                          </div>
+                      </form>
+                  </li>
                   <li><a href="#" data-toggle="modal" data-target="#contacts"><span class="glyphicon glyphicon-envelope"></span> Написать автору</a></li>
                   <li><a href="/lk" target='_blank'><span class="glyphicon glyphicon-user"></span>
                   {% if user and user.is_authenticated() %} {{user.auth_info().me.first_name}} {% else %} Войти {% endif %}</a></li>
