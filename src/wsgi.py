@@ -1,0 +1,1 @@
+from app_stub import app as application  # noqa
