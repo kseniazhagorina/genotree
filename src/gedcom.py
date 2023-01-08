@@ -209,7 +209,7 @@ class GedcomWriter:
 
     def write_all_info(self, intent, obj):
         for key, value in obj.items():
-            if key in Gedcom.multi_attrs:
+            if key in Gedcom.MULTI_ATTRS:
                 self.write_multi_attribute(intent, key, value)
             else:
                 self.write_attribute(intent, key, value)

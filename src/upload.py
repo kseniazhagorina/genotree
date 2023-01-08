@@ -8,7 +8,7 @@ import os.path
 import codecs
 import hashlib
 import re
-from common_utils import first_or_default, convert_to_utf8
+from common_utils import first_or_default, convert_to_utf8, create_folder
 from geddate import GedDate
 
 # Загрузка базы данных и дерева единым пакетом
@@ -23,12 +23,7 @@ def strip_end(text, suffix):
     if not text.endswith(suffix):
         return text
     return text[:len(text)-len(suffix)]
-    
-def create_folder(folder, empty=False):
-    if empty and os.path.exists(folder):
-        shutil.rmtree(folder)
-    if not os.path.exists(folder):
-        os.makedirs(folder)
+   
 
 def copy(src_dir, dst_dir, filenames):
     create_folder(dst_dir)    
@@ -229,12 +224,11 @@ def load_tree_img(tree, src_dir, static_dir):
         copy(os.path.join(src_dir, tree.files), os.path.join(static_dir, 'files', 'preview'), files)
 
 
-def load_package(archive, site, static_dir, data_dir):
+def load_package(archive, site, static_dir, data_dir, tmp_dir):
     '''распаковывает архив базы данных
        static_dir - папка для картинок/документов
        data_dir - папка для данных
     '''
-    tmp_dir = 'tmp/data'
     try:
         create_folder(tmp_dir, empty=True)
         print('unpack archive')

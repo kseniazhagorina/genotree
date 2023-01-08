@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import os.path
+import shutil
 import codecs
 import chardet
 import random, string
@@ -17,8 +18,12 @@ def convert_to_utf8(filename):
         data = input.read()
     with codecs.open(filename, 'w', 'utf-8') as output:
         output.write(data)
-        
 
+def create_folder(folder, empty=False):
+    if empty and os.path.exists(folder):
+        shutil.rmtree(folder)
+    if not os.path.exists(folder):
+        os.makedirs(folder)
 
 def first_or_default(arr, predicate=None, default=None):
     for item in arr:

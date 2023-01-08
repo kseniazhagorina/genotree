@@ -8,5 +8,9 @@ app = Flask(__name__)
 @app.route('/')
 def hello_world():
     return 'Site me-in-history.ru on reconstruction now.'
+
+
+if __name__ == "__main__":
+    app.run()
         
     

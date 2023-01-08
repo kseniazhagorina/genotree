@@ -14,29 +14,38 @@ import threading
 import os
 
 from flask import Flask, render_template, send_from_directory, request, url_for, redirect, abort, session
-app = Flask(__name__)
+
+config = json.loads(open('config/site.config').read())
+
+app = Flask(
+    __name__,
+    template_folder=config["templates"],
+    static_folder=config["common_static"]
+)
+
 app.debug = True
-app.secret_key = open('data/config/app.secret.txt').read().strip()
+app.secret_key = open('config/app.secret.txt').read().strip()
 
 oauth.API = None
 def OAuth():   
     if oauth.API is None:
-        config = json.loads(open('data/config/oauth.config').read())
-        oauth.API = oauth.Api(url_for, config)
+        oauth_config = json.loads(open('config/oauth.config').read())
+        oauth.API = oauth.Api(url_for, oauth_config)
     return oauth.API
 
 
 
-data = Data('http://me-in-history.ru', 'src/static/tree', 'data/tree')        
+
+data = Data(config["host"], config["tree_static"], config["tree_data"])        
 data.load()
 if data.load_error:
     raise Exception(data.load_error)
     
 search_engine = SearchEngine(data.persons_snippets)
-db = create_db('data/db/tree.db')
+db = create_db(config["db"])
 access_manager = UserAccessManager(db, data)
 session_manager = UserSessionManager(db)
-generate_content()
+generate_content(config)
         
 class Context:
     '''Данные о том, какой пользователь запрашивает страницу, его настройки приватности
@@ -120,6 +129,10 @@ def only_for_admin(func):
 @app.route('/sources.html')
 def static_from_content():
     return send_from_directory(os.path.join(app.static_folder, 'content'), request.path[1:])
+
+@app.route('/static/tree/<path:path>')
+def static_from_tree(path):
+    return send_from_directory(config["tree_static"], path)
     
 @app.route('/robots.txt')
 @app.route('/sitemap.xml')
