@@ -7,24 +7,32 @@
 
 Великая Отечественная Война, 1941-1945 гг.
     https://obd-memorial.ru ОБД-Мемориал - погибшие и пропавшие без вести
-    http://www.podvignaroda.mil.ru Подвиг Народа - награжденные
+    http://www.podvignaroda.ru Подвиг Народа - награжденные
     https://www.pobediteli.ru Победители - ветераны
+    https://pamyat-naroda.ru
     
 Генеалогические сайты
     http://rosgenea.ru бесплатно и с поиском
     http://www.myheritage.com платный, но довольно популярный. есть дополнительные материалы
-    https://www.familyspace.ru нужна регистрация и поиск не очень
+    https://www.familyspace.ru нужна регистрация и vpn, и поиск не очень
     https://geni.com
-    
+    https://vgd.ru
+
+Анализ ДНК
+    https://www.genotek.ru
+    http://www.myheritage.com
+    https://www.23andme.com - не работает в России
+
 Архивы
     https://spbarchives.ru Архивы Санктпетербурга. Поиск по описям. Можно получить доступ к оцифрованным документам онлайн
     https://pokolenia.permkrai.ru Поколения Пермского Края. Оцифрованные метрические книги и ревизские сказки
     http://gaso-ural.ru ГАСО (Государственный архив Свердловской области)
     http://uralarchives.ru/index.php?page=enter Архивы Свердловской области. Есть оцифрованные описи и списки всех муниципальных архивов и описание их фондов
+    https://nashipredki.com/familysearch - Индекс по архивам оцифрованным мормонами
     
 Библиотеки и книжные издания
     http://www.petergen.com/vse-knigi-genealogia.shtml Большое количество различных генеалогических изданий. Есть поиск упоминаний по фамилии, региону
-    http://chigirin.narod.ru/book.html Справочники, паятные книжки и адрес-календари по губерниям
+    http://chigirin.narod.ru/book.html Справочники, памятные книжки и адрес-календари по губерниям
     
 Поиск захоронений
     http://сайт-памяти.рф
