@@ -199,12 +199,6 @@ def biography(person_uid, user):
         abort(403)
     return render_template('biography.html', user=user, person=person_snippet, context=person_context)
 
-@app.route('/admin/load/<archive>')
-@only_for_admin
-def load(archive):
-    archive = 'upload/{0}.zip'.format(archive)
-    data.async_load(archive)
-    return 'Loading data from {} started!'.format(archive)
     
 @app.route('/admin/users')
 @only_for_admin

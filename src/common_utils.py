@@ -86,12 +86,6 @@ def choose_by_sex(sex, male, female, unknown=None):
         return female
     return unknown if unknown is not None else male
 
-# pythonanywhere не поддерживает threading
-def async(f):
-    def wrapper(*args, **kwargs):
-        thr = threading.Thread(target = f, args = args, kwargs = kwargs)
-        thr.start()
-    return wrapper
 
 
 

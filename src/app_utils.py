@@ -534,7 +534,4 @@ class Data:
             self.load_error = None
         except:
             self.load_error = traceback.format_exc()
-    
-    @async
-    def async_load(self, archive=None):        
-        self.load(archive)
+
