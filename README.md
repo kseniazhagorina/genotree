@@ -5,6 +5,7 @@ You can see working beta at http://me-in-history.ru
 ## How to start:
 The site has following structure
 
+```
 me_in_history
 |
 ├── config
@@ -39,4 +40,11 @@ me_in_history
 └── upload
     ├── data.zip // uploaded new version of tree data
     └── tmp_dir
+```
+
+command to start app to local debug
+```
+cd me-in-history
+python3 genotree/src/app.py
+```
  
