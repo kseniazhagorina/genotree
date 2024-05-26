@@ -1,0 +1,4 @@
+python-dateutil
+chardet
+flask
+requests
