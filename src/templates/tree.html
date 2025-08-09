@@ -23,7 +23,7 @@
         <meta name="yandex-verification" content="9ba16f31001dbf60" />
         <meta name="google-site-verification" content="iDCdSooX0ZTWF3yiT83810LrlhCQzJV_kOWf-X2Rkwk" />
 
-        
+
 
 		<style>
 			.person-snippet {
@@ -71,7 +71,7 @@
                 padding-bottom: 220px;
                 padding-top:0px;
             }
-            
+
 
 		</style>
 
@@ -82,10 +82,10 @@
                 active.removeClass('active');
                 active.hide();
             }
-            
+
             // загружает информацию о персоне если она еще не загружена
             function loadPersonSnippet(person_uid) {
-                
+
                 if (!$('#snippets').find('#snippet-for-'+person_uid).length) {
                     $.ajax({url: 'ajax/person_snippet/{{context.tree.uid}}/'+person_uid,
                             success: function(content){
@@ -115,15 +115,15 @@
                 loadLazyContent(snippet);
                 snippet.show();
 			}
-            
-            // возвращает позицию блока персоны на изображении и его размер 
+
+            // возвращает позицию блока персоны на изображении и его размер
             function getPersonAreaPosition(person_uid) {
                 var person_area = $('#tree-container .select-person[person-uid='+person_uid+']');
                 var zero = $('#tree-img');
                 if (!person_area.length) {
                     return null; // некоторые персоны могут не присутствовать в дереве
                 }
-                
+
                 var left = person_area.position().left - zero.position().left;
 				var top = person_area.position().top - zero.position().top;
                 var width = person_area.width();
@@ -133,11 +133,11 @@
                     width = box.width;
                     height = box.height;
                 }
-                
+
                 return {'left': left, 'top':top, 'width':width, 'height':height};
             }
-                
-                
+
+
 
             // фокусируется на выбранной персоне в дереве и подсвечивает ее
 			function hilightPersonArea(person_uid) {
@@ -198,17 +198,17 @@
         {{ metrika.goals() }}
     </head>
 	<body>
-    
+
         {% set tree = context.tree %}
         {% set persons_snippets = context.data.persons_snippets %}
 
         <div id="tree-container" class="dragscroll">
             {% if tree.img.endswith('.svg') %}
                 <div id="tree-img">{{tree.map.svg_content | safe }}</div>
-            {% else %}    
+            {% else %}
                 <p>Невозможно отобразить дерево</p>
             {% endif %}
-            
+
             <div id='hilighted-person'></div>
 
 
@@ -222,7 +222,7 @@
               <a href="#" type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar-other-items">
                 <span class="glyphicon glyphicon-menu-hamburger" aria-hidden="true"></span>
               </a>
-              
+
               <div class="navbar-brand">
                       <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
                       <span class="glyphicon glyphicon-grain"></span> {{context.tree.name}} <span class="caret"></span></a>
@@ -232,17 +232,17 @@
                         {% endfor %}
                       </ul>
               </div>
-              
-              
+
+
             </div>
             <div class="collapse navbar-collapse" id="navbar-other-items">
-            
-                
+
+
                 <ul class="nav navbar-nav navbar-right pull-right">
                   <li>
                       <form class="navbar-form" role="search" action="/search">
                           <div class="form-group input-group">
-                            <span class="input-group-addon"><span class="glyphicon glyphicon-search"></span></span> 
+                            <span class="input-group-addon"><span class="glyphicon glyphicon-search"></span></span>
                             <input type="text" class="form-control" placeholder="Фамилия Имя Отчество" name="text"/>
                           </div>
                       </form>
@@ -278,11 +278,11 @@
         <div id="snippets">
             <!--сюда будут загружаться сниппеты через ajax-->
         </div>
-        
+
         <div id="carousels">
             <!--сюда будут загружаться карусельки из сниппетов через ajax-->
         </div>
-        
+
         <div id="links">
             <!--ссылки на страницы персон-->
             {% for person_uid, node in tree.map.nodes.items() %}

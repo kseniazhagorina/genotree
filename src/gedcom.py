@@ -18,7 +18,7 @@ class Gedcom:
                    'DIV'     # развод
              ]
     MULTI_ATTRS = ['CHIL', 'FAMS']  # поля которые могут встречаться несколько раз
-    IGNORE_INNER = ['NAME'] # игнорировать все вложенные данные в объект NAME (GIVN)
+    IGNORE_INNER = ['NAME', 'FILE', 'PLAC'] # игнорировать все вложенные данные в объект, использовать только заголовок
     
     def __init__(self):
         self.meta = None
@@ -108,6 +108,7 @@ class GedcomReader:
         return blocks    
     
     def add_info(self, obj, head, lines):
+        '''obj: one of Person, Family, Source, Event, Document'''
         if head.startswith('NOTE') or head.startswith('TEXT'):
             key, text = self.read_note(head, lines)
             obj[key] = text
@@ -128,7 +129,7 @@ class GedcomReader:
             else:    
                 obj[key] = value
         else:
-            print('undefined: ['+head+'] in '+str(obj)) 
+            print('undefined: [{head}] in {obj_type}:{obj}'.format(head=head, obj_type=type(obj), obj=str(obj)))
     
     def add_all_info(self, obj, lines):
         blocks = self.split_on_blocks(lines)
@@ -143,6 +144,7 @@ class GedcomReader:
     
     def read_meta(self, head, lines):
         '''блок HEAD - метаданные о дереве'''
+        pass
         
     def read_person(self, head, lines):
         '''блок INDI - персональные данные'''
@@ -176,7 +178,7 @@ class GedcomReader:
         return source        
     
     def read_simple(self, head):
-        '''простой однострочный блок вроде CONC, NAME, SEX, OCCU, PLAC, DATE и т.д.'''
+        '''простой однострочный блок вроде CONC, NAME, SEX, OCCU, PLAC, DATE, FILE и т.д.'''
         parts = head.split(maxsplit=1)
         key = parts[0].strip()
         value = parts[1] if len(parts) >= 2 else ""

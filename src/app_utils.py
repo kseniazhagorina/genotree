@@ -23,7 +23,7 @@ class TreeMapSvg:
     class Node:
         def __init__(self, id):
             self.id = id
-            
+
     def __init__(self, content):
         self.nodes = {}
         self.svg_content = content[content.find('<svg'):]
@@ -147,7 +147,7 @@ class Document:
         self.content = content
         self.is_photo = is_photo
         self.is_primary = is_primary
-        
+
     @staticmethod
     def from_gedcom_document(document, files):
         file_path = files.get(document.get('FILE', ''))
@@ -171,7 +171,7 @@ def get_documents(documents, files):
     '''документы персоны или события распределить на фотографии и документы-источники'''
     photos = []
     docs = []
-    for document in documents: 
+    for document in documents:
         doc = Document.from_gedcom_document(document, files)
         if doc is None:
             continue
@@ -441,7 +441,7 @@ def get_person_snippets(gedcom, files):
 
     for person in snippets.values():
         person.relatives = get_blood_relatives(person)
-        
+
     return snippets
 
 def get_person_owners(persons_snippets):
@@ -457,7 +457,7 @@ def get_person_owners(persons_snippets):
         for match in  ok.finditer(text):
             id = match.group('id')
             owners.add(('ok', id, uid))
-    return owners    
+    return owners
 
 class FilesDict(dict):
     pass
@@ -477,7 +477,7 @@ TREE_NAMES = {
     'zhagoriny': 'Жагорины',
     'motyrevy': 'Мотыревы',
     'cherepanovy': 'Черепановы',
-    'farenuyk': 'Фаренюки'
+    'farenyuk': 'Фаренюк',
 }
 
 class Data:
@@ -489,8 +489,8 @@ class Data:
             self.name = TREE_NAMES.get(uid) or uid
             self.img = img
             self.map = map
-            
-            
+
+
     def __init__(self, site, static_path, data_path):
         '''
            site - url 'http://host.ru'
@@ -501,24 +501,24 @@ class Data:
         self.load_error = 'Data is unloaded.'
         self.static_path = static_path
         self.data_path = data_path
-    
+
     def is_valid(self):
         return self.load_error is None
-        
+
     def load(self, archive=None):
         try:
-            self.load_error = 'Данные сайта обновляются прямо сейчас'          
+            self.load_error = 'Данные сайта обновляются прямо сейчас'
             if archive is not None:
                 load_package(archive, self.site, self.static_path, self.data_path)
-            
+
             self.files_dir = 'tree/files'
             self.files = get_files_dict(os.path.join(self.data_path, 'files.tsv'), os.path.join(self.static_path, 'files'))
-            
+
             self.gedcom = GedcomReader().read_gedcom(os.path.join(self.data_path, 'tree.ged'))
             self.persons_snippets = get_person_snippets(self.gedcom, self.files)
             self.persons_owners = get_person_owners(self.persons_snippets)
-            
-            # Загружаем деревья - 
+
+            # Загружаем деревья -
             trees = select_tree_img_files(self.static_path)
             self.trees = {}
             for tree in trees:
@@ -526,11 +526,11 @@ class Data:
                 self.trees[tree_uid] = Data.Tree(tree_uid,
                                                  '/static/tree/'+tree.img,
                                                  get_tree_map(os.path.join(self.static_path, tree.img)))
-            
+
             if len(self.trees) == 0:
                 raise Exception('No files *_tree_img.png in {} directory'.format(self.static_path))
 
-            self.default_tree_name = DEFAULT_TREE if DEFAULT_TREE in self.trees else tree_uids[0]  
+            self.default_tree_name = DEFAULT_TREE if DEFAULT_TREE in self.trees else tree_uids[0]
             self.load_error = None
         except:
             self.load_error = traceback.format_exc()
