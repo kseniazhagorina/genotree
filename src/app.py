@@ -128,7 +128,11 @@ def only_for_admin(func):
 
 @app.route('/sources.html')
 def static_from_content():
-    return send_from_directory(os.path.join(app.static_folder, 'content'), request.path[1:])
+    return send_from_directory(config["content_static"], request.path[1:])
+
+@app.route('/faq.html')
+def faq():
+    return render_template('faq.html')
 
 @app.route('/static/tree/<path:path>')
 def static_from_tree(path):
@@ -226,6 +230,7 @@ def user_profile(user):
                            api=OAuth(), user=user, context=Context(data, user=user),
                            owned=owned, relatives=relatives)
 
+# сейчас нельзя войти на сайт через соц сети
 @app.route('/login/auth/<service>')
 @get_user
 def auth(service, user):

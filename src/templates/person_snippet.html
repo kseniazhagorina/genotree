@@ -1,6 +1,6 @@
 {% macro draw_related_person(rel) %}
 
-    {{rel.role}}: 
+    {{rel.role}}:
     {% if rel.person %}
     <a class="select-person" person-uid="{{rel.person.uid}}">{{rel.person.name|default("...", true)}}</a>
     {% else %}
@@ -24,13 +24,13 @@
             />
     </a>
     {% else %}
-        <img 
+        <img
             src="{{url_for('static', filename=person.choose_by_sex('BlankMale.jpg', 'BlankFemale.jpg'))}}"
             class="img-fluid img-rounded img-person"
             alt="no photo"
             title="no photo"
         />
-             
+
     {% endif %}
 {% endmacro %}
 
@@ -47,20 +47,20 @@
                 alt="{{person.name|default('')}}"
         />
     {% else %}
-        <img 
+        <img
             src="{{url_for('static', filename=person.choose_by_sex('BlankMale.jpg', 'BlankFemale.jpg'))}}"
             class="img-fluid img-rounded img-person"
             alt="no photo"
             title="no photo"
         />
-             
+
     {% endif %}
 {% endmacro %}
 
 {% macro draw_short_person_info(person, privacy, show_comment=true) %}
     <ul class="list-unstyled">
         {% if person.birth %}
-        <li>Рождение: 
+        <li>Рождение:
             {{person.birth.date|default("?", true)}}
             {% if person.birth.place %} , {{privacy.address(person.birth.place)}} {% endif %}
         </li>
@@ -73,7 +73,7 @@
         {% if person.age() %}
         <li>{% if person.is_alive() %} Возраст: {% else %} Продолжительность жизни: {% endif %}
             {{person.age()}}
-        </li>       
+        </li>
         {% endif %}
         {% if person.residence %}
         <li>Место жительства: {{privacy.address(person.residence)}}</li>
@@ -117,13 +117,13 @@
                 <li>{{ draw_related_person(child) }}</li>
                 {% endfor %}
             {% endif %}
-        {% endfor %}	
+        {% endfor %}
     </ul>
 {% endmacro %}
 
 {% macro draw_tree_button(person, context, right=true) %}
     {% if context.trees|length > 0 %}
-    
+
         <div class="btn-group">
             <a type="button" class="dropdown-toggle btn btn-default" data-toggle="dropdown">
             Древо <span class="caret"></span></a>
@@ -143,7 +143,7 @@
             <a data-toggle="collapse" href="#" class="close">&times;</a>
 			<h3 class="panel-title">...</h3>
 		</div>
-		
+
 		<div class="panel-body">
 			<div class="row">
                 <div class="col-sm-11">
@@ -153,7 +153,6 @@
                     {% else %}
                     Информация скрыта настройками приватности.
                     {% endif %}
-                    <a href="/lk" target="_blank">Подробнее...</a></p>
                 </div>
 			</div>
 		</div>
@@ -168,30 +167,30 @@
 		<div class="panel-heading">
             <a data-toggle="collapse" href="#" class="close">&times;</a>
 			<h3 class="panel-title">{{person.name|default('...')}}</h3>
-            
-            
+
+
 		</div>
-		
+
 		<div class="panel-body">
 			<div class="row">
                 <div class="col-sm-1 col-sm-push-11">
                     <div class="btn-group btn-group-vertical pull-right" style="z-index:1;">
                         {{ draw_tree_button(person, context) }}
                         <a  type="button" class="btn btn-default pull-right" href="/person/{{person.uid}}" target="blank">Биография</a>
-                    </div>                    
+                    </div>
                 </div>
 				<div class="col-sm-6 col-sm-pull-1">
 					<div class="media-left">
-                        {{ draw_person_photo(person, context) }}       
-					</div>	
+                        {{ draw_person_photo(person, context) }}
+					</div>
 					<div class="media-body">
 						{{ draw_short_person_info(person, privacy) }}
-					</div>		
-				</div>	
+					</div>
+				</div>
 				<div class="col-sm-5 col-sm-pull-1">
 					{{ draw_person_family(person) }}
 				</div>
-                                
+
 			</div>
 		</div>
 	</div>
@@ -202,7 +201,7 @@
     (род. {% if person.birth -%}
         {{person.birth.date|default("??.??.????", true)}}{% if person.birth.place %}, {{privacy.address(person.birth.place)}} {% endif %}
     {%- else -%}
-        ??.??.????        
+        ??.??.????
     {%- endif -%}
     {%- if not person.is_alive() %} &mdash; ум. {% if person.death -%}
             {{person.death.date|default("??.??.????", true)}}{% if person.death.place %}, {{privacy.address(person.death.place)}} {% endif %}{% if person.age() %} в возрасте {{person.age()}} {% if person.age()%10 == 1 %}года{% else %}лет{% endif %}{% endif %}
@@ -211,15 +210,15 @@
         {%- endif -%}
     {%- elif person.age() -%}
         , {{person.age()}} {% if person.age()%10==1%}год{% elif person.age()%10 <= 3 and person.age()%10 > 0 %}года{% else %}лет{% endif %}
-    {%- endif -%}    
-    )    
+    {%- endif -%}
+    )
     {%- if person.main_occupation %} {{person.main_occupation }} {%- endif -%}
 {%- endmacro %}
 
 {% macro draw_person_opengraph(person, context) %}
     {% set privacy = context.privacy %}
     <meta property="og:type" content="profile"/>
-    
+
     <meta property="og:image" content="
     {%- if person.photo -%}
         {{url_for('static', _external=True, filename=context.files_dir+'/'+person.photo.path)}}
@@ -235,4 +234,4 @@
 {% macro draw_person_meta(person, context) %}
     {% set privacy = context.privacy %}
     <meta name="description" content="{{person.name|default('...')}} {{draw_short_description(person, privacy)}}"/>
-{% endmacro %}    
+{% endmacro %}

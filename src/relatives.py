@@ -4,7 +4,7 @@
 __all__ = ['get_blood_relatives']
 
 
-# X-мать, Y-отец, x-дочь, y-сын
+# X-Mother, Y-Father, x-doughter, y-sun
 # W-wife, H-husband
 
 def fill_person(person, relation, relatives, deep):
@@ -15,7 +15,7 @@ def fill_person(person, relation, relatives, deep):
         return False
     relatives[person.uid] = relation
     return True
-    
+
 def fill_children(person, prefix, relatives, deep):
     for family in person.families:
         for child in family.children:
@@ -23,7 +23,7 @@ def fill_children(person, prefix, relatives, deep):
                relation = prefix + child.person.choose_by_sex('y', 'x')
                if fill_person(child.person, relation, relatives, deep):
                    fill_children(child.person, relation, relatives, deep)
-    
+
 def fill_parents(person, prefix, relatives, deep):
     father = person.father.person
     if father:
@@ -38,7 +38,7 @@ def fill_parents(person, prefix, relatives, deep):
             fill_children(mother, relation, relatives, deep)
             fill_parents(mother, relation, relatives, deep)
 
-                   
+
 def get_blood_relatives(person):
     deep = None
     relatives = {person.uid: ''}
@@ -47,4 +47,3 @@ def get_blood_relatives(person):
     del relatives[person.uid]
     return relatives
 
-    

@@ -8,6 +8,7 @@ import chardet
 import traceback
 import re
 import random, string
+import json
 from copy import copy
 from datetime import date
 from dateutil.relativedelta import relativedelta
@@ -471,22 +472,19 @@ def get_files_dict(filename, files_path):
             files[k] = v
     return files
 
-DEFAULT_TREE = 'default'
-TREE_NAMES = {
-    DEFAULT_TREE: 'Общее',
-    'zhagoriny': 'Жагорины',
-    'motyrevy': 'Мотыревы',
-    'cherepanovy': 'Черепановы',
-    'farenyuk': 'Фаренюк',
-}
+
+
 
 class Data:
     '''статические данные о персонах/загруженных деревьях не зависящие
        от текущего пользователя, запрошенной страницы, отображаемой персоны'''
+
+    DEFAULT_TREE_NAME = 'default'
+
     class Tree:
-        def __init__(self, uid, img, map):
+        def __init__(self, uid, name, img, map):
             self.uid = uid
-            self.name = TREE_NAMES.get(uid) or uid
+            self.name = name
             self.img = img
             self.map = map
 
@@ -518,19 +516,23 @@ class Data:
             self.persons_snippets = get_person_snippets(self.gedcom, self.files)
             self.persons_owners = get_person_owners(self.persons_snippets)
 
+            trees_config = os.path.join(self.data_path, 'trees.json')
+            self.trees_names = json.loads(open(trees_config).read()) if os.path.exists(trees_config) else {}
+
             # Загружаем деревья -
             trees = select_tree_img_files(self.static_path)
             self.trees = {}
             for tree in trees:
-                tree_uid = tree.name or DEFAULT_TREE
+                tree_uid = tree.name or Data.DEFAULT_TREE_NAME
                 self.trees[tree_uid] = Data.Tree(tree_uid,
+                                                 self.trees_names.get(tree_uid) or tree_uid,
                                                  '/static/tree/'+tree.img,
                                                  get_tree_map(os.path.join(self.static_path, tree.img)))
 
             if len(self.trees) == 0:
                 raise Exception('No files *_tree_img.png in {} directory'.format(self.static_path))
 
-            self.default_tree_name = DEFAULT_TREE if DEFAULT_TREE in self.trees else tree_uids[0]
+            self.default_tree_name = Data.DEFAULT_TREE_NAME if Data.DEFAULT_TREE_NAME in self.trees else list(self.trees.keys())[0]
             self.load_error = None
         except:
             self.load_error = traceback.format_exc()

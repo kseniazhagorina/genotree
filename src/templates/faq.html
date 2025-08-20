@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+
+<html>
+	<head>
+        <title>О сайте</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="description" content="О сайте"/>
+
+        {% include 'include.html' %}
+
+        <style>
+
+        .collapse-more-less:not(.in) {
+            min-height: 12.8em;
+            max-height: 12.8em;
+            display: block;
+            overflow: hidden;
+        }
+
+        </style>
+
+        {% import 'author_contacts.html' as author %}
+        {% import 'yandex_metrika.html' as metrika %}
+        {{ metrika.common_counter(user) }}
+    </head>
+
+    <body>
+        <div class="container">
+
+
+          <h2>О сайте</h2>
+            <div class="row">
+                <div class="col-sm-6">
+                    <h3>Генеалогия как хобби</h3>
+                    <p>Здесь будет информация о сайте</p>
+                </div>
+                <div class="col-sm-6">
+                        <h3>Вопрос - ответ:</h3>
+                        <div class="alert alert-info" role="alert">
+                            <p>
+                            <b>Q: Меня нет в дереве, но я нашел своих родственников. Как мне присоединиться к проекту?</b></br>
+                            <b>A: </b>
+                            Просто напишите автору сайта. Мы всегда рады новым знакомствам!
+                            </p>
+                        </div>
+
+                        <div class="alert alert-info" role="alert alert-info">
+                            <p>
+                            <b>Q: Я нашел ошибку в данных на сайте. Что делать?</b></br>
+                            <b>A: </b>
+                            Просто сообщите об этом автору сайта. Мы будем очень рады вашей помощи и исправим или дополним вашу биографию как можно скорее.
+                            </p>
+                        </div>
+
+                    <div class="alert alert-info" role="alert">
+                        <p>
+                            <b>Q: Как связаться с автором сайта?</b></br>
+                            <b>A:  </b> Автор: {{ author.draw_author_name() }} </br>
+
+
+                                Вы можете легко найти меня в социальных сетях:</br>
+                                {{ author.draw_author_contacts() }}
+                            </p>
+                        </div>
+
+                </div>
+          </div>
+       </div>
+    </body>
+</html>

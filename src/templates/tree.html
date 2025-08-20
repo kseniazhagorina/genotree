@@ -193,6 +193,7 @@
 		{% import 'person_snippet.html' as ps %}
         {% import 'photo_carousel.html' as pc %}
         {% import 'yandex_metrika.html' as metrika %}
+        {% import 'author_contacts.html' as author %}
 
         {{ metrika.common_counter(user) }}
         {{ metrika.goals() }}
@@ -248,8 +249,7 @@
                       </form>
                   </li>
                   <li><a href="#" data-toggle="modal" data-target="#contacts"><span class="glyphicon glyphicon-envelope"></span> Написать автору</a></li>
-                  <li><a href="/lk" target='_blank'><span class="glyphicon glyphicon-user"></span>
-                  {% if user and user.is_authenticated() %} {{user.auth_info().me.first_name}} {% else %} Войти {% endif %}</a></li>
+                  <li><a href="/faq.html">О сайте</a></li>
                 </ul>
             </div>
         </nav>
@@ -260,15 +260,12 @@
             <div class="modal-content">
               <div class="modal-header">
                 <button type="button" class="close" data-dismiss="modal">&times;</button>
-                <h4 class="modal-title">Автор: <a href="/person/530">Жагорина Ксения Андреевна</a></h4>
+                <h4 class="modal-title"> Автор: {{ author.draw_author_name() }} </h4>
               </div>
               <div class="modal-body">
-                <p><ul class="list-unstyled">
-                    <li><i class="fa fa-fw fa-odnoklassniki fa-colored"></i><a title="Odnoklassniki" href="https://ok.ru/ksenia.zhagorina"> https://ok.ru/ksenia.zhagorina</a></li>
-                    <li><i class="fa fa-fw fa-vk fa-colored"></i><a title="Vkontakte" href="https://vk.com/kzhagorina"> https://vk.com/kzhagorina</a></li>
-                    <li><i class="fa fa-fw fa-telegram fa-colored"></i> <a title="Telegram" href="tg://resolve?domain=KseniaZhagorina">KseniaZhagorina</a></li>
-                    <li><i class="fa fa-fw fa-whatsapp fa-colored"></i> <a title="WhatsApp" href="#" onclick="window.open(atob('aHR0cHM6Ly93YS5tZS83OTkyMDAwOTU5NA=='));"> WatsApp</a></li>
-                </ul></p>
+                <p>
+                    {{ author.draw_author_contacts() }}
+                </p>
               </div>
             </div>
 

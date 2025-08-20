@@ -31,13 +31,18 @@ def strip_begin(text, prefix):
         return text
     return text[len(prefix):]
 
-def copy(src_dir, dst_dir, filenames):
+def copy(src_dir, dst_dir, filenames, required=True):
     create_folder(dst_dir)
     for file in filenames:
         src_path = os.path.join(src_dir, file)
         dst_path = os.path.join(dst_dir, file)
         if not os.path.exists(src_path):
-            raise Exception('File {0} does not exists'.format(src_path))
+            if required:
+                raise Exception('File {0} does not exists'.format(src_path))
+            if os.path.exists(dst_path):
+                shutil.rmtree(dst_path)
+                return
+
         if os.path.isfile(src_path):
             shutil.copy(src_path, dst_path)
         else:
@@ -277,6 +282,8 @@ def create_package(export_dir, archive_name):
     try:
         create_folder(tmp_dir, empty=True)
         trees = select_tree_img_files(export_dir)
+        print('copy trees.json')
+        copy(export_dir, tmp_dir, ['trees.json'])
         print('copy tree.ged')
         copy(export_dir, tmp_dir, ['tree.ged'])
         gedcom = os.path.join(tmp_dir, 'tree.ged')
@@ -382,6 +389,9 @@ def load_package(archive, site, static_dir, data_dir, tmp_dir):
 
         print('copy documents')
         copy(tmp_dir, data_dir, ['files.tsv'])
+        print('copy trees.json')
+        copy(tmp_dir, data_dir, ['trees.json'], required=False)
+        print('copy files')
         copy(tmp_dir, static_dir, ['files'])
 
         trees = select_tree_img_files(tmp_dir)

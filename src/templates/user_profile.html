@@ -8,27 +8,28 @@
         <title>Личный кабинет</title>
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="description" content="Родословное древо Жагориных, Черепановых, Мотыревых, Фаренюков... Войти на сайт. Написать автору."/>
-        
+
         {% include 'include.html' %}
-        
+
         <style>
-        
+
         .collapse-more-less:not(.in) {
             min-height: 12.8em;
             max-height: 12.8em;
             display: block;
             overflow: hidden;
         }
-        
+
         </style>
-        
+
+        {% import 'author_contacts.html' as author %}
         {% import 'yandex_metrika.html' as metrika %}
         {{ metrika.common_counter(user) }}
     </head>
-    
+
     <body>
         <div class="container">
-            
+
             {% if user and user.is_authenticated() %}
                 <h2>Добро пожаловать, {{user.auth_info().me.first_name}}!</h2>
                 <div class="row">
@@ -39,19 +40,19 @@
                                 <img src="{{vk_info.me.photo50}}"/>
                                 <div class="caption">
                                    <a href="{{api.vk.auth.unauth_url}}">Выйти</a>
-                                </div>                        
+                                </div>
                             </div>
                             {% endif %}
-                            
+
                             {% if ok_info %}
                             <div class="col-sm-1">
                                 <img src="{{ok_info.me.photo50}}"/>
                                 <div class="caption">
                                    <a href="{{api.ok.auth.unauth_url}}">Выйти</a>
-                                </div>                        
+                                </div>
                             </div>
                             {% endif %}
-                        </div>                   
+                        </div>
                     </div>
             {% else %}
                 <h2>Войти на сайт</h2>
@@ -60,7 +61,7 @@
                         <p>Некоторая информация о ныне живущих людях доступна только для их близких родствеников. Чтобы увидеть ее необходимо войти на сайт.</p>
                     </div>
             {% endif %}
-        
+
             <div class="col-sm-6">
                 <ul class="list-unstyled">
                 {% if not vk_info %}
@@ -71,20 +72,20 @@
                 {% if not ok_info %}
                     <li>
                     <i class="fa fa-fw fa-odnoklassniki fa-colored"></i> <a href="{{api.ok.auth.auth_dialog_url}}">Войти через Одноклассники</a>
-                    </li>    
+                    </li>
                 {% endif %}
                 </ul>
             </div>
           </div>
 
-          
+
           <div class="row">
               <div class="col-sm-6">
                {% if user and user.is_authenticated() %}
                   <h3>Обо мне:</h3>
                   {% if not owned %}
                      <p>К сожалению нам пока ничего о вас не известно.</p>
-                     
+
                   {% else %}
                      <ul class="list-unstyled">
                      {% for person in owned %}
@@ -92,10 +93,10 @@
                      {% endfor %}
                      </ul>
                   {% endif %}
-              
-              
+
+
                   {% if relatives %}
-          
+
                       <h3>О моих ближайших родственниках:</h3>
                       <div class="collapse collapse-more-less" id="relatives_block">
                           <ul class="list-unstyled">
@@ -103,15 +104,15 @@
                               <li><a href="/person/{{person.uid}}">{{person.name|default("...", true)}}</a></li>
                           {% endfor %}
                           </ul>
-                      </div>    
-                
+                      </div>
+
                       <a href="#relatives_block" data-toggle="collapse" class="collapsed">
                             <span class="text-danger readMore">Все</span>
                             <span class="text-danger readLess">Свернуть</span>
                       </a>
-  
+
                   {% endif %}
-               {% endif %}   
+               {% endif %}
             </div>
 
             <div class="col-sm-6">
@@ -124,16 +125,16 @@
                         <b>A: </b>
                         Дополнительная информация видна только вам и вашим ближайшим родственникам, если они вошли на сайт  их профиль в социальной сети привязан к их страничке в дереве.
                         </p>
-                    
+
                         <p>
-                        Чтобы увидеть, как видят вашу страницу незарегистрированные пользователи - откройте ее в режиме инкогнито или просто нажмите "Выйти" под иконкой вашего профиля вверху страницы.                          
+                        Чтобы увидеть, как видят вашу страницу незарегистрированные пользователи - откройте ее в режиме инкогнито или просто нажмите "Выйти" под иконкой вашего профиля вверху страницы.
                         </p>
                     </div>
                     <div class="alert alert-info" role="alert alert-info">
                         <p>
                         <b>Q: В моей биографии есть ошибка. Что делать?</b></br>
                         <b>A: </b>
-                        Просто сообщите об этом автору сайта. Мы будем очень рады вашей помощи и исправим или дополним вашу биографию как можно скорее.                          
+                        Просто сообщите об этом автору сайта. Мы будем очень рады вашей помощи и исправим или дополним вашу биографию как можно скорее.
                         </p>
                     </div>
                 {% else %}
@@ -144,7 +145,7 @@
                         Дополнительная информация видна только если ваш профиль в социальной сети привязан к вашей страничке в дереве (на страничке должна быть ссылка на ваш профиль в соц.сети). Чтобы привязать профиль - обратитесь к автору сайта.
                         </p>
                     </div>
-                    
+
                     <div class="alert alert-info" role="alert">
                         <p>
                         <b>Q: Меня нет в дереве, но я нашел своих родственников. Как мне присоединиться к проекту?</b></br>
@@ -154,25 +155,24 @@
                     </div>
 
                 {% endif %}
-                {% endif %}                
+                {% endif %}
 
                    <div class="alert alert-info" role="alert">
                        <p>
                         <b>Q: Как связаться с автором сайта?</b></br>
                         <b>A: </b>
-                        Вы можете легко найти меня в социальных сетях:                          
+                        Вы можете легко найти меня в социальных сетях:
                         </p>
-                        <p><ul class="list-unstyled">
-                                <li><i class="fa fa-fw fa-odnoklassniki fa-colored"></i><a href="https://ok.ru/ksenia.zhagorina"> https://ok.ru/ksenia.zhagorina</a></li>
-                                <li><i class="fa fa-fw fa-vk fa-colored"></i><a href="https://vk.com/kzhagorina"> https://vk.com/kzhagorina</a></li>
-                                <li><i class="fa fa-fw fa-telegram fa-colored"></i> <a title="Telegram" href="tg://resolve?domain=KseniaZhagorina">KseniaZhagorina</a></li>
-                            </ul>
-                            </p>
+                        <p>
+                            {{ author.draw_author_name() }}
                         </p>
-                    </div>    
-               
-            </div>             
-          </div>         
-       </div>         
+                        <p>
+                            {{ author.draw_author_contacts() }}
+                        </p>
+                    </div>
+
+            </div>
+          </div>
+       </div>
     </body>
-</html>    
+</html>
