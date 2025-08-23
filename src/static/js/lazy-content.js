@@ -1,4 +1,4 @@
-// загружает фотографии имеющие аттрибут lazy-src
+// Р·Р°РїРѕР»РЅСЏРµС‚ Р°С‚СЂРёР±СѓС‚ src РёР· Р°С‚СЂРёР±СѓС‚Р° lazy-src С‡С‚Рѕ РёРЅРёС†РёРёР·РёСЂСѓРµС‚ РїРѕРґРіСЂСѓР·РєСѓ РєР°СЂС‚РёРЅРєРё
 function loadLazyContent(container) {
     container.find('img[lazy-src]').each(function(){
         var img = $(this);

@@ -327,7 +327,7 @@ def convert_svg(svg_file):
 
     svg = svg.replace(files_dir_name, '/static/tree/files/preview')
     print('replace {} on /static/tree/files/preview'.format(files_dir_name))
-    svg = re.sub('(<image[^>]+?)xlink:href=', r'\1 href="/static/1x1_white.png" lazy-href=', svg)
+    svg = re.sub('(<image[^>]+?)xlink:href=', r'\1 href="/static/img/1x1_white.png" lazy-href=', svg)
     with codecs.open(svg_file, 'w+', 'utf-8') as f:
         f.write(svg)
 

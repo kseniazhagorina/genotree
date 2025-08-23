@@ -9,15 +9,15 @@
 
 {% endmacro %}
 
-{% macro draw_person_photo(person, context, lazy=true) %}
+{% macro draw_person_photo(person, person_ctx, lazy=true) %}
     {% if person.photo %}
     <a href="#" data-toggle="modal" data-target="#carousel-for-{{person.uid}}">
         <img class="img-fluid img-rounded img-person"
             {% if lazy %}
-            src="{{url_for('static', filename=person.choose_by_sex('BlankMale.jpg', 'BlankFemale.jpg'))}}"
-            lazy-src="{{url_for('static', filename=context.files_dir+'/'+person.photo.path)}}"
+            src="{{url_for('static', filename=person.choose_by_sex('img/BlankMale.jpg', 'img/BlankFemale.jpg'))}}"
+            lazy-src="{{url_for('static', filename=person_ctx.files_dir+'/'+person.photo.path)}}"
             {% else %}
-            src="{{url_for('static', filename=context.files_dir+'/'+person.photo.path)}}"
+            src="{{url_for('static', filename=person_ctx.files_dir+'/'+person.photo.path)}}"
             {% endif %}
 
             alt="{{person.name|default('')}}"
@@ -25,7 +25,7 @@
     </a>
     {% else %}
         <img
-            src="{{url_for('static', filename=person.choose_by_sex('BlankMale.jpg', 'BlankFemale.jpg'))}}"
+            src="{{url_for('static', filename=person.choose_by_sex('img/BlankMale.jpg', 'img/BlankFemale.jpg'))}}"
             class="img-fluid img-rounded img-person"
             alt="no photo"
             title="no photo"
@@ -34,21 +34,21 @@
     {% endif %}
 {% endmacro %}
 
-{% macro draw_person_preview_photo(person, context, lazy=true) %}
+{% macro draw_person_preview_photo(person, person_ctx, lazy=true) %}
     {% if person.photo %}
         <img class="img-fluid img-rounded img-person"
                 {% if lazy %}
-                src="{{url_for('static', filename=person.choose_by_sex('BlankMale.jpg', 'BlankFemale.jpg'))}}"
-                lazy-src="{{url_for('static', filename=context.files_dir+'/'+person.photo.path)}}"
+                src="{{url_for('static', filename=person.choose_by_sex('img/BlankMale.jpg', 'img/BlankFemale.jpg'))}}"
+                lazy-src="{{url_for('static', filename=person_ctx.files_dir+'/'+person.photo.path)}}"
                 {% else %}
-                src="{{url_for('static', filename=context.files_dir+'/'+person.photo.path)}}"
+                src="{{url_for('static', filename=person_ctx.files_dir+'/'+person.photo.path)}}"
                 {% endif %}
 
                 alt="{{person.name|default('')}}"
         />
     {% else %}
         <img
-            src="{{url_for('static', filename=person.choose_by_sex('BlankMale.jpg', 'BlankFemale.jpg'))}}"
+            src="{{url_for('static', filename=person.choose_by_sex('img/BlankMale.jpg', 'img/BlankFemale.jpg'))}}"
             class="img-fluid img-rounded img-person"
             alt="no photo"
             title="no photo"
@@ -121,14 +121,14 @@
     </ul>
 {% endmacro %}
 
-{% macro draw_tree_button(person, context, right=true) %}
-    {% if context.trees|length > 0 %}
+{% macro draw_tree_button(person, person_ctx, right=true) %}
+    {% if person_ctx.trees|length > 0 %}
 
         <div class="btn-group">
             <a type="button" class="dropdown-toggle btn btn-default" data-toggle="dropdown">
             Древо <span class="caret"></span></a>
             <ul class="dropdown-menu {% if right %} pull-left {% else %} pull-right {% endif %}" role="menu">
-                {% for tree in context.trees %}
+                {% for tree in person_ctx.trees %}
                 <li><a href="/{{tree.uid}}#{{person.uid}}">{{tree.name}}</a></li>
                 {% endfor %}
             </ul>
@@ -160,9 +160,9 @@
 {%endmacro %}
 
 
-{% macro draw_person_snippet(person, context) %}
+{% macro draw_person_snippet(person, person_ctx) %}
 
-    {% set privacy = context.privacy %}
+    {% set privacy = person_ctx.privacy %}
 	<div class="panel {{person.choose_by_sex('panel-info', 'panel-danger', 'panel-default')}}">
 		<div class="panel-heading">
             <a data-toggle="collapse" href="#" class="close">&times;</a>
@@ -175,13 +175,13 @@
 			<div class="row">
                 <div class="col-sm-1 col-sm-push-11">
                     <div class="btn-group btn-group-vertical pull-right" style="z-index:1;">
-                        {{ draw_tree_button(person, context) }}
+                        {{ draw_tree_button(person, person_ctx) }}
                         <a  type="button" class="btn btn-default pull-right" href="/person/{{person.uid}}" target="blank">Биография</a>
                     </div>
                 </div>
 				<div class="col-sm-6 col-sm-pull-1">
 					<div class="media-left">
-                        {{ draw_person_photo(person, context) }}
+                        {{ draw_person_photo(person, person_ctx) }}
 					</div>
 					<div class="media-body">
 						{{ draw_short_person_info(person, privacy) }}
@@ -215,15 +215,15 @@
     {%- if person.main_occupation %} {{person.main_occupation }} {%- endif -%}
 {%- endmacro %}
 
-{% macro draw_person_opengraph(person, context) %}
-    {% set privacy = context.privacy %}
+{% macro draw_person_opengraph(person, person_ctx) %}
+    {% set privacy = person_ctx.privacy %}
     <meta property="og:type" content="profile"/>
 
     <meta property="og:image" content="
     {%- if person.photo -%}
-        {{url_for('static', _external=True, filename=context.files_dir+'/'+person.photo.path)}}
+        {{url_for('static', _external=True, filename=person_ctx.files_dir+'/'+person.photo.path)}}
     {%- else -%}
-        {{url_for('static', _external=True, filename=person.choose_by_sex('BlankMale.jpg', 'BlankFemale.jpg'))}}
+        {{url_for('static', _external=True, filename=person.choose_by_sex('img/BlankMale.jpg', 'img/BlankFemale.jpg'))}}
     {%- endif -%}
     "/>
     <meta property="og:url" content="{{url_for('biography', person_uid=person.uid, _external=True)}}"/>
@@ -231,7 +231,7 @@
     <meta property="og:description" content="{{draw_short_description(person, privacy)}}"/>
 {% endmacro %}
 
-{% macro draw_person_meta(person, context) %}
-    {% set privacy = context.privacy %}
+{% macro draw_person_meta(person, person_ctx) %}
+    {% set privacy = person_ctx.privacy %}
     <meta name="description" content="{{person.name|default('...')}} {{draw_short_description(person, privacy)}}"/>
 {% endmacro %}

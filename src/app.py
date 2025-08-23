@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from app_utils import Data, first_or_default
-from content_generator import generate_content
+from content_generator import generate_content, copy_static
 from gedcom import GedcomReader
 from privacy import Privacy, PrivacyMode
 from search import SearchEngine
@@ -20,7 +20,7 @@ config = json.loads(open('config/site.config').read())
 app = Flask(
     __name__,
     template_folder=config["templates"],
-    static_folder=config["common_static"]
+    static_folder=config["static"]
 )
 
 app.debug = True
@@ -36,7 +36,7 @@ def OAuth():
 
 
 
-data = Data(config["host"], config["tree_static"], config["tree_data"])
+data = Data(config["host"], config["author"], config["tree_static"], config["tree_data"])
 data.load()
 if data.load_error:
     raise Exception(data.load_error)
@@ -45,6 +45,8 @@ search_engine = SearchEngine(data.persons_snippets)
 db = create_db(config["db"])
 access_manager = UserAccessManager(db, data)
 session_manager = UserSessionManager(db)
+
+copy_static(config)
 generate_content(config)
 
 class Context:
@@ -132,7 +134,7 @@ def static_from_content():
 
 @app.route('/faq.html')
 def faq():
-    return render_template('faq.html')
+    return render_template('faq.html', context=Context(data))
 
 @app.route('/static/tree/<path:path>')
 def static_from_tree(path):
@@ -191,7 +193,7 @@ def person_snippet(tree_name, person_uid, user):
         abort(404)
     person_snippet = data.persons_snippets[person_uid]
     person_context = Context(data, user=user, requested_tree=tree_name).person_context(person_uid)
-    return render_template('tree_person_snippet.html', user=user, person=person_snippet, context=person_context)
+    return render_template('tree_person_snippet.html', user=user, person=person_snippet, person_ctx=person_context)
 
 @app.route('/person/<person_uid>')
 @check_data_is_valid
@@ -203,7 +205,7 @@ def biography(person_uid, user):
     person_context = Context(data, user=user).person_context(person_uid)
     if person_context.privacy.is_access_denied():
         abort(403)
-    return render_template('biography.html', user=user, person=person_snippet, context=person_context)
+    return render_template('biography.html', user=user, person=person_snippet, person_ctx=person_context)
 
 
 @app.route('/admin/users')

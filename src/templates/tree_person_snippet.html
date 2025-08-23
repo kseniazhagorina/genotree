@@ -2,12 +2,12 @@
 {% import 'photo_carousel.html' as pc %}
 
 <nav id="snippet-for-{{person.uid}}" class="navbar navbar-default navbar-fixed-bottom person-snippet" style="display:none;">
-    {% if context.privacy.is_access_denied() %}
+    {% if person_ctx.privacy.is_access_denied() %}
         {{ ps.draw_private_person_snippet(user) }}
     {% else %}
-        {{ ps.draw_person_snippet(person, context) }}
+        {{ ps.draw_person_snippet(person, person_ctx) }}
         {% if person.photos %}
-            {{ pc.draw_photo_carousel('carousel-for-'+person.uid, person.photos, context.privacy) }}
+            {{ pc.draw_photo_carousel('carousel-for-'+person.uid, person.photos, person_ctx.privacy) }}
         {% endif %}
     {% endif %}
 </nav>

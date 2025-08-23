@@ -3,13 +3,13 @@
 <html>
 	<head>
         <title>403 — Нет доступа</title>
-        
-        
+
+
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="description" content="Иформация скрыта настройками приватности"/>
-        
-        
-        <link rel="icon" href="/static/favicon.png">
+
+
+        <link rel="icon" href="/static/img/favicon.png">
 
     </head>
     <body>
@@ -23,8 +23,8 @@
                     {% for tree in context.data.trees.values() %}
                     <li><a href="/{{tree.uid}}">{{tree.name}}</a></li>
                     {% endfor %}
-                </ul>    
+                </ul>
             {% endif %}
-        </div>    
+        </div>
     </body>
-</html>    
+</html>

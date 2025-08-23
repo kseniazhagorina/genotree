@@ -10,7 +10,7 @@
         <meta name="description" content="Родословное древо Жагориных, Черепановых, Мотыревых, Фаренюков..."/>
 
         <meta property="og:type" content="website" />
-        <meta property="og:image" content="{{url_for('static', filename='preview.tree.png', _external=True)}}"/>
+        <meta property="og:image" content="{{url_for('static', filename='img/preview.tree.png', _external=True)}}"/>
         <meta property="og:image" content="{{url_for('tree', tree_name=context.tree.uid, _external=True)}}"/>
         <meta property="og:title" content="Мое родословие"/>
         <meta property="og:description" content="Родословное древо Жагориных, Черепановых, Мотыревых, Фаренюков..."/>
@@ -260,11 +260,11 @@
             <div class="modal-content">
               <div class="modal-header">
                 <button type="button" class="close" data-dismiss="modal">&times;</button>
-                <h4 class="modal-title"> Автор: {{ author.draw_author_name() }} </h4>
+                <h4 class="modal-title"> Автор: {{ author.draw_author_name(context.data.author) }} </h4>
               </div>
               <div class="modal-body">
                 <p>
-                    {{ author.draw_author_contacts() }}
+                    {{ author.draw_author_contacts(context.data.author) }}
                 </p>
               </div>
             </div>

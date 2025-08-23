@@ -1,16 +1,35 @@
-{% macro draw_author_name() %}
-    <a href="/person/530">Жагорина Ксения Андреевна</a>
+{% macro draw_author_name(author) %}
+    {% if author.link %}
+        <a href="{{ author.link }}">{{ author.name }}</a>
+    {% else %}
+        <span>{{ author.name }}</span>
+    {% endif %}
 {% endmacro %}
 
 
-{% macro draw_author_contacts() %}
+{% macro draw_author_contacts(author) %}
 
 
-<ul class="list-unstyled">
-    <li><i class="fa fa-fw fa-odnoklassniki fa-colored"></i><a href="https://ok.ru/ksenia.zhagorina"> https://ok.ru/ksenia.zhagorina</a></li>
-    <li><i class="fa fa-fw fa-vk fa-colored"></i><a href="https://vk.com/kzhagorina"> https://vk.com/kzhagorina</a></li>
-    <li><i class="fa fa-fw fa-telegram fa-colored"></i> <a title="Telegram" href="tg://resolve?domain=KseniaZhagorina">KseniaZhagorina</a></li>
-    <li><i class="fa fa-fw fa-whatsapp fa-colored"></i> <a title="WhatsApp" href="#" onclick="window.open(atob('aHR0cHM6Ly93YS5tZS83OTkyMDAwOTU5NA=='));"> WhatsApp</a></li>
-</ul>
+    <ul class="list-unstyled">
+        {% if author.contacts.odnoklassniki %}
+        <li><i class="fa fa-fw fa-colored fa-odnoklassniki"></i> <a title="Одноклассники" href="https://ok.ru/{{ author.contacts.odnoklassniki }}">https://ok.ru/{{ author.contacts.odnoklassniki}}</a></li>
+        {% endif %}
+
+        {% if author.contacts.vk %}
+        <li><i class="fa fa-fw fa-colored fa-vk"></i> <a title="ВКонтакте" href="https://vk.com/{{ author.contacts.vk }}">https://vk.com/{{ author.contacts.vk}}</a></li>
+        {% endif %}
+
+        {% if author.contacts.telegram %}
+        <li><i class="fa fa-fw fa-colored fa-telegram"></i> <a title="Telegram" href="tg://resolve?domain={{ author.contacts.telegram }}">{{ author.contacts.telegram }}</a></li>
+        {% endif %}
+
+        {% if author.contacts.whatsapp %}
+        <li><i class="fa fa-fw fa-colored fa-whatsapp"></i> <a title="WhatsApp" href="#" onclick="window.open(atob('{{ author.contacts.whatsapp }}'))">WhatsApp</a></li>
+        {% endif %}
+
+        {% if author.contacts.instagram %}
+        <li><i class="fa fa-fw fa-colored fa-instagram"></i> <a title="Instagram" href="https://www.instagram.com/{{ author.contacts.instagram }}">https://www.instagram.com/{{ author.contacts.instagram}}</a></li>
+        {% endif %}
+    </ul>
 
 {% endmacro %}

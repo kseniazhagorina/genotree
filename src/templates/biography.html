@@ -31,27 +31,27 @@
         {% import 'source.html' as src %}
         {% import 'yandex_metrika.html' as metrika %}
 
-        {{ ps.draw_person_opengraph(person, context) }}
+        {{ ps.draw_person_opengraph(person, person_ctx) }}
 
-        {{ ps.draw_person_meta(person, context) }}
+        {{ ps.draw_person_meta(person, person_ctx) }}
 
         {{ metrika.common_counter(user) }}
         {{ metrika.goals() }}
     </head>
     <body>
-        {% set privacy = context.privacy %}
+        {% set privacy = person_ctx.privacy %}
         {% set sources_on_page = [] %}
         <div class="container">
             <h1>{{person.name}}</h1>
             <div class="row">
                 <div class="col-sm-1 col-sm-push-11">
                     <div class="btn-group btn-group-vertical pull-right" style="z-index:1">
-                        {{ ps.draw_tree_button(person, context) }}
+                        {{ ps.draw_tree_button(person, person_ctx) }}
                     </div>
                 </div>
                 <div class="col-sm-7 col-sm-pull-1">
                     <div class="media-left">
-                        {{ ps.draw_person_photo(person, context, lazy=false) }}
+                        {{ ps.draw_person_photo(person, person_ctx, lazy=false) }}
                     </div>
 
                     <div class="media-body">
@@ -65,7 +65,7 @@
 
                             {% for s in person_sources %}
                                 {% set _ = sources_on_page.append(s) %}
-                                {{ src.draw_source_link(s, sources_on_page|length, context) }}
+                                {{ src.draw_source_link(s, sources_on_page|length, person_ctx) }}
                                 </br>
                             {% endfor %}
                         </p>
@@ -102,7 +102,7 @@
                             <p>
                                 <a href="#" data-toggle="modal" data-target="#carousel-for-event-{{loop.index}}">
                                     <img
-                                         src="{{url_for('static', filename=context.files_dir+'/'+e.photo.path)}}"
+                                         src="{{url_for('static', filename=person_ctx.files_dir+'/'+e.photo.path)}}"
                                          style="width:100%;"
                                          class="img-rounded img-fluid"
                                          alt="{{e.photo.title|default('')}}"
@@ -140,7 +140,7 @@
                             <p class="small">
                                 {% for s in event_sources %}
                                     {% set _ = sources_on_page.append(s) %}
-                                    {{ src.draw_source_link(s, sources_on_page|length, context) }}
+                                    {{ src.draw_source_link(s, sources_on_page|length, person_ctx) }}
                                     </br>
                                 {% endfor %}
                             </p>
@@ -156,7 +156,7 @@
             <div class="row">
                     {% for s in sources_on_page %}
                         <div class="col-sm-6">
-                        {{src.draw_source_content(s, loop.index, context, privacy)}}
+                        {{src.draw_source_content(s, loop.index, person_ctx, privacy)}}
                         </div>
                     {% endfor %}
                 </div>

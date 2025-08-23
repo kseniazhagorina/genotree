@@ -489,13 +489,15 @@ class Data:
             self.map = map
 
 
-    def __init__(self, site, static_path, data_path):
+    def __init__(self, site, author, static_path, data_path):
         '''
            site - url 'http://host.ru'
+           author - информация об авторе сайта
            static_path - path to src/static/tree
            data_path - path to data/tree
         '''
         self.site = site
+        self.author = author
         self.load_error = 'Data is unloaded.'
         self.static_path = static_path
         self.data_path = data_path

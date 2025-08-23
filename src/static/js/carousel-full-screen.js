@@ -1,21 +1,19 @@
 function initCarouselFullScreenIn(container) {
-    // инициализирует (настраивает размер, обработку событий и пр.)
-    // для всех объектов имеющих класс .carousel.full-screen
-    
-    // карусель в режиме полного экрана
-    var item = $(container).find('.carousel.full-screen .item'); 
+
+    // РґР»СЏ РІСЃРµС… СЌР»РµРјРµРЅС‚РѕРІ СЃ РєР»Р°СЃСЃРѕРј .carousel.full-screen
+    // СѓСЃС‚Р°РЅРѕРІРёС‚СЊ РєРѕСЂСЂРµРєС‚РЅС‹Р№ СЂР°Р·РјРµСЂ
+    var item = $(container).find('.carousel.full-screen .item');
     var wHeight = $(window).height();
     item.height(wHeight);
     $(window).on('resize', function (){
       wHeight = $(window).height();
       item.height(wHeight);
     });
-    
-    // загрузка ленивого контента в модальных окнах
+
     container.find('.modal.carousel.full-screen').on('shown.bs.modal', function() {
-        $(this).css('background-image', 'url(/static/carousel_background.jpg)');
+        $(this).css('background-image', 'url(/static/img/carousel_background.jpg)');
         loadLazyContent($(this));
         yaGoals.open_photo_gallery();
         $(this).carousel('pause');
     })
-}    
+}

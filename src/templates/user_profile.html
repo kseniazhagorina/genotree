@@ -164,10 +164,10 @@
                         Вы можете легко найти меня в социальных сетях:
                         </p>
                         <p>
-                            {{ author.draw_author_name() }}
+                            {{ author.draw_author_name(context.data.author) }}
                         </p>
                         <p>
-                            {{ author.draw_author_contacts() }}
+                            {{ author.draw_author_contacts(context.data.author) }}
                         </p>
                     </div>
 

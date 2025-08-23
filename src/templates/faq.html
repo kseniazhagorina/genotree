@@ -55,11 +55,11 @@
                     <div class="alert alert-info" role="alert">
                         <p>
                             <b>Q: Как связаться с автором сайта?</b></br>
-                            <b>A:  </b> Автор: {{ author.draw_author_name() }} </br>
+                            <b>A:  </b> Автор: {{ author.draw_author_name(context.data.author) }} </br>
 
 
                                 Вы можете легко найти меня в социальных сетях:</br>
-                                {{ author.draw_author_contacts() }}
+                                {{ author.draw_author_contacts(context.data.author) }}
                             </p>
                         </div>
 
