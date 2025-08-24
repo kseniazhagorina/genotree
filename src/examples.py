@@ -17,6 +17,8 @@ def create_package_linux(version):
     print(archive)
 
 # scp data.zip kzhagorina@ssh.pythonanywhere.com:~/me-in-history/upload/data.zip
+# scp data.zip c62259@h22.netangels.ru:/home/c62259/me-in-history.ru/upload/data.zip
+# scp data.zip c109400@h62.netangels.ru:/home/c109400/tavatuy-history.ru/upload/data.zip
 
 
 def load_package_windows(version, config_file):
@@ -28,6 +30,10 @@ def load_package_windows(version, config_file):
                         'http://localhost:5000',
                         r'D:\Development\Python\IPythonNotebooks\genotree\src\static\tree',
                         r'D:\Development\Python\IPythonNotebooks\genotree\data\tree')
+
+# examples.load_package_linux('/home/kzhagorina/src/me-in-history/config')
+# examples.load_package_linux('/home/c62259/me-in-history.ru/config')
+# examples.load_package_linux('/home/c109400/tavatuy-history.ru/config')
 
 def load_package_linux(config_dir):
     '''load package at dev-server at local machine'''

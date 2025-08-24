@@ -9,7 +9,7 @@ The site has following structure
 me_in_history
 |
 ├── config
-│   ├── app.secret.txt
+│   ├── app.secret.txt // secret app key to sign site cookies
 │   ├── oauth.config // data to connect to vk, fb or odnoklassniki
 │   └── site.config // config of pathes on your site
 ├── genotree  // github content
@@ -42,9 +42,14 @@ me_in_history
     └── tmp_dir
 ```
 
+install requirenments using
+```
+pip install -r requirements.txt
+```
+
 command to start app to local debug
 ```
 cd me-in-history
 python3 genotree/src/app.py
 ```
- 
+
