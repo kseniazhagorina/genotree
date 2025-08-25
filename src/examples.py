@@ -48,7 +48,11 @@ def load_package_linux(config_dir):
 
 def generate_develop_linux_config(config_dir):
     config = {
-        "host": "http://localhost:5000",
+        "site": {
+            "host": "http://localhost:5000",
+            "title": "Родословный сайт Жагориной К.А.",
+            "description": "Родословное древо Жагориных, Черепановых, Мотыревых, Фаренюков..."
+        },
         "author": {
             "name": "Жагорина Ксения Андреевна",
             "link": "/person/530",
@@ -82,8 +86,11 @@ def generate_develop_linux_config(config_dir):
 
 def generate_production_me_in_history_linux_config(config_dir):
     config = {
-        "host": "http://me-in-history.ru",
-
+        "site": {
+            "host": "http://me-in-history.ru",
+            "title": "Родословный сайт Жагориной К.А.",
+            "description": "Родословное древо Жагориных, Черепановых, Мотыревых, Фаренюков..."
+        },
         "author": {
             "name": "Александр Зиновьев",
             "link": "/person/530",
@@ -117,7 +124,13 @@ def generate_production_me_in_history_linux_config(config_dir):
 
 def generate_production_tavatuy_linux_config(config_dir):
     config = {
-        "host": "http://tavatuy-history.ru",
+
+
+        "site": {
+            "host": "http://tavatuy-history.ru",
+            "title": "История села Таватуй",
+            "description": "300 лет истории старообрядческой деревни Таватуй. Родословное древо от первых поселенцев до наших дней."
+        },
 
         "author": {
             "name": "Александр Зиновьев",
@@ -134,7 +147,7 @@ def generate_production_tavatuy_linux_config(config_dir):
         "db": "/home/c109400/tavatuy-history.ru/data/db/tree.db",
 
         "common_static" : "/home/c109400/tavatuy-history.ru/genotree/src/static",
-        "custom_static" : "/home/c109400/tavatuy-history.ru/genotree/src/custom/me-in-history/static",
+        "custom_static" : "/home/c109400/tavatuy-history.ru/genotree/src/custom/tavatuy-history/static",
         "content": "/home/c109400/tavatuy-history.ru/genotree/src/content",
 
         "templates": "/home/c109400/tavatuy-history.ru/genotree/src/templates",

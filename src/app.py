@@ -13,7 +13,7 @@ import json
 import threading
 import os
 
-from flask import Flask, render_template, send_from_directory, request, url_for, redirect, abort, session
+from flask import Flask, render_template, send_from_directory, request, url_for, redirect, abort, session, Response
 
 config = json.loads(open('config/site.config').read())
 
@@ -36,7 +36,7 @@ def OAuth():
 
 
 
-data = Data(config["host"], config["author"], config["tree_static"], config["tree_data"])
+data = Data(config["site"], config["author"], config["tree_static"], config["tree_data"])
 data.load()
 if data.load_error:
     raise Exception(data.load_error)
@@ -143,7 +143,13 @@ def static_from_tree(path):
 @app.route('/robots.txt')
 @app.route('/sitemap.xml')
 def static_from_root():
-    return send_from_directory(app.static_folder, request.path[1:])
+    file_path = request.path[1:]
+    content = render_template(file_path, site=data.site)
+    ext = os.path.splitext(file_path)[-1].lower()
+    mimetype = ('text/plain; charset=utf-8' if ext == '.txt' else
+                'application/xml; charset=utf-8' if ext == '.xml' else
+                'text/html; charset=utf-8')
+    return Response(content, mimetype=mimetype)
 
 @app.route('/<tree_name>')
 @check_data_is_valid

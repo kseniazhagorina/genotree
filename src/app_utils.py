@@ -491,7 +491,7 @@ class Data:
 
     def __init__(self, site, author, static_path, data_path):
         '''
-           site - url 'http://host.ru'
+           site - информация о сайте: host + title + description
            author - информация об авторе сайта
            static_path - path to src/static/tree
            data_path - path to data/tree
@@ -509,7 +509,7 @@ class Data:
         try:
             self.load_error = 'Данные сайта обновляются прямо сейчас'
             if archive is not None:
-                load_package(archive, self.site, self.static_path, self.data_path)
+                load_package(archive, self.site["host"], self.static_path, self.data_path)
 
             self.files_dir = 'tree/files'
             self.files = get_files_dict(os.path.join(self.data_path, 'files.tsv'), os.path.join(self.static_path, 'files'))
