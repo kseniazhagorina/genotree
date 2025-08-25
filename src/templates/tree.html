@@ -11,6 +11,7 @@
 
         <meta property="og:type" content="website" />
         <meta property="og:image" content="{{url_for('static', filename='img/preview.tree.png', _external=True)}}"/>
+        <meta property="og:url" content="{{url_for('tree', tree_name=context.tree.uid, _external=True)}}"/>
         <meta property="og:title" content="{{context.data.site.title}}"/>
         <meta property="og:description" content="{{context.data.site.description}}"/>
 
