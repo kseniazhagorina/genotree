@@ -152,7 +152,7 @@ def generate_production_tavatuy_linux_config(config_dir):
 
         "templates": "/home/c109400/tavatuy-history.ru/genotree/src/templates",
         "upload": "/home/c109400/tavatuy-history.ru/upload",
-        "tmp": "/home/c6c1094002259/tavatuy-history.ru/tmp"
+        "tmp": "/home/c109400/tavatuy-history.ru/tmp"
     }
 
     with open(os.path.join(config_dir, 'site.config'), 'w') as config_file:
