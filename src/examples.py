@@ -40,7 +40,7 @@ def load_package_linux(config_dir):
     config = json.loads(open(os.path.join(config_dir, 'site.config')).read())
     archive = os.path.join(config["upload"], 'data.zip')
     upload.load_package(archive,
-                        config["host"],
+                        config["site"]["host"],
                         config["tree_static"],
                         config["tree_data"],
                         os.path.join(config["tmp"], 'unpacked_data'))
