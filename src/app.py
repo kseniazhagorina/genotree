@@ -208,10 +208,11 @@ def biography(person_uid, user):
     if person_uid not in data.persons_snippets:
         abort(404)
     person_snippet = data.persons_snippets[person_uid]
-    person_context = Context(data, user=user).person_context(person_uid)
+    context = Context(data, user=user)
+    person_context = context.person_context(person_uid)
     if person_context.privacy.is_access_denied():
         abort(403)
-    return render_template('biography.html', user=user, person=person_snippet, person_ctx=person_context)
+    return render_template('biography.html', user=user, context=context, person=person_snippet, person_ctx=person_context)
 
 
 @app.route('/admin/users')

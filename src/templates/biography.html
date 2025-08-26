@@ -30,6 +30,7 @@
         {% import 'photo_carousel.html' as pc %}
         {% import 'source.html' as src %}
         {% import 'yandex_metrika.html' as metrika %}
+        {% import 'navbar.html' as navbar %}
 
         {{ ps.draw_person_opengraph(person, person_ctx) }}
 
@@ -39,9 +40,16 @@
         {{ metrika.goals() }}
     </head>
     <body>
+
+        {{ navbar.draw_navbar(context) }}
+
+
         {% set privacy = person_ctx.privacy %}
         {% set sources_on_page = [] %}
         <div class="container">
+
+
+
             <h1>{{person.name}}</h1>
             <div class="row">
                 <div class="col-sm-1 col-sm-push-11">
