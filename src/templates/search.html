@@ -2,44 +2,38 @@
 <html>
     <head>
         <title>Результаты поиска</title>
-        
+
         {% include 'include.html' %}
-        
+
         {% import 'person_snippet.html' as ps %}
-        
+        {% import 'navbar.html' as navbar %}
+
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        
+
         <style>
             .img-person {
                 max-width: 100px;
                 max-height: 160px;
             }
-            
+
             .media, .media-body {
                 overflow: visible;
             }
-            
+
         </style>
-        
+
     </head>
     <body>
-            <nav class="navbar navbar-default" style="background-color: #d8ebd1;" >
-                <form class="navbar-form" role="search" action="/search">
-                      <div class="form-group input-group">
-                        <span class="input-group-addon"><span class="glyphicon glyphicon-search"></span></span> 
-                        <input type="text" class="form-control" placeholder="Фамилия Имя Отчество" value="{{text}}" name="text"/>
-                      </div>
-                </form>
-            </nav>
-            
+            {{navbar.draw_navbar(context, text)}}
+
         <div class="container">
-            
+
             {% if strict %}
             <p>Найдено {{total}} человек:</p>
             {% else %}
             <p>По точному совпадению ничего не нашлось, но возможно вас заинтересуют:</p>
             {% endif %}
-            
+
             {% for person_uid in persons %}
                 {% set person = context.data.persons_snippets.get(person_uid) %}
                 {% set person_ctx = context.person_context(person_uid) %}
@@ -47,24 +41,24 @@
                 <div class="row media">
 
                     <div class="col-sm-6">
-       
+
                             <div class="media-left">
                                 {{ ps.draw_person_preview_photo(person, person_ctx, lazy=false) }}
                                 <div class="btn-group btn-group-vertical pull-right" style="z-index:1;">
                                     {{ ps.draw_tree_button(person, person_ctx, right=true) }}
                                     <a  type="button" class="btn btn-default pull-left" href="/person/{{person.uid}}" target="blank">Биография</a>
-                                </div>                                 
-                            </div>	
+                                </div>
+                            </div>
                             <div class="media-body">
                                 <h4 class="media-heading">{{person.name}}</h4>
                                 {{ ps.draw_short_person_info(person, privacy, show_comment=false) }}
-                            </div>		
+                            </div>
                     </div>
                     <div class="col-sm-1">
-                                            
+
                     </div>
                 </div>
             {% endfor %}
         </div>
     </body>
-</html>    
+</html>

@@ -1,6 +1,37 @@
 {% import 'author_contacts.html' as author %}
 
-{% macro draw_navbar(context) %}
+{% macro draw_navbar_trees_button(context) %}
+
+
+        <a href="#" type="button" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
+            <span class="glyphicon glyphicon-grain"></span>
+            {% if context.tree %}
+                {{context.tree.name}}
+            {% else %}
+                Открыть древо
+            {% endif %}
+            <span class="caret"></span>
+        </a>
+        <ul class="dropdown-menu">
+        {% for tree in context.data.trees.values() %}
+            <li><a href="/{{tree.uid}}">{{tree.name}}</a></li>
+        {% endfor %}
+        </ul>
+
+{% endmacro %}
+
+{% macro draw_navbar_search_form(text) %}
+
+    <form class="navbar-form" role="search" action="/search">
+        <div class="form-group input-group">
+        <span class="input-group-addon"><span class="glyphicon glyphicon-search"></span></span>
+        <input type="text" class="form-control" placeholder="Фамилия Имя Отчество" value="{{text}}" name="text"/>
+        </div>
+    </form>
+
+{% endmacro %}
+
+{% macro draw_navbar(context, text=null) %}
 
 <nav class="navbar navbar-default" style="background-color: #d8ebd1;" >
     <div class="navbar-header">
@@ -9,35 +40,29 @@
         <span class="glyphicon glyphicon-menu-hamburger" aria-hidden="true"></span>
       </a>
 
-      <div class="navbar-brand">
-              <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
-              <span class="glyphicon glyphicon-grain"></span>
-                {% if context.tree %}
-                     {{context.tree.name}}
-                {% else %}
-                     Открыть древо
-                {% endif %}
-                <span class="caret"></span></a>
-              <ul class="dropdown-menu">
-                {% for tree in context.data.trees.values() %}
-                    <li><a href="/{{tree.uid}}">{{tree.name}}</a></li>
-                {% endfor %}
-              </ul>
-      </div>
+      <ul class="nav navbar-nav navbar-left pull-left">
+
+        <li>
+            {% if text != null %}
+                {{draw_navbar_search_form(text)}}
+            {% else %}
+                {{draw_navbar_trees_button(context)}}
+            {% endif %}
+        </li>
+
+      </ul>
 
 
     </div>
     <div class="collapse navbar-collapse" id="navbar-other-items">
-
-
         <ul class="nav navbar-nav navbar-right pull-right">
           <li>
-              <form class="navbar-form" role="search" action="/search">
-                  <div class="form-group input-group">
-                    <span class="input-group-addon"><span class="glyphicon glyphicon-search"></span></span>
-                    <input type="text" class="form-control" placeholder="Фамилия Имя Отчество" name="text"/>
-                  </div>
-              </form>
+
+              {% if text != null %}
+                {{draw_navbar_trees_button(context)}}
+              {% else %}
+                {{draw_navbar_search_form(text)}}
+              {% endif %}
           </li>
           <li><a href="#" data-toggle="modal" data-target="#contacts"><span class="glyphicon glyphicon-envelope"></span> Написать автору</a></li>
           <li><a href="/faq.html">О сайте</a></li>
