@@ -6,15 +6,11 @@ import json
 import os.path
 from common_utils import convert_to_utf8
 
-def create_package_windows(version):
+def create_package(path):
     '''create package at local machine'''
-    archive = upload.create_package(r'D:\site\{}'.format(version), 'data')
+    archive = upload.create_package(path, 'data')
     print(archive)
 
-def create_package_linux(version):
-    '''create package at local machine on linux'''
-    archive = upload.create_package('/home/kzhagorina/family/zhagoriny_tree/site/{}'.format(version), 'data')
-    print(archive)
 
 # scp data.zip kzhagorina@ssh.pythonanywhere.com:~/me-in-history/upload/data.zip
 # scp data.zip c62259@h22.netangels.ru:/home/c62259/me-in-history.ru/upload/data.zip

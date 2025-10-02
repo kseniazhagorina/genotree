@@ -114,7 +114,7 @@ class TreeHtml:
             # Use DOTALL flag to match across multiple lines
             svg_match = re.search(svg_pattern, html, re.DOTALL | re.IGNORECASE)
             svg = svg_match.group(1) if svg_match else None
-            # pattern stye like this
+            # pattern style like this
             # .s0 { fill:none;stroke:none; }
 			# .s1 { font-size:12px;font-style:normal;font-weight:normal;font-family:Tahoma;fill:#000000; }
             style_pattern = r'((\s+\.s\d+\s{[^}]*})+)'
@@ -125,8 +125,11 @@ class TreeHtml:
             return None
 
         svg = '<?xml version="1.0" encoding="UTF-8"?>\n' + svg
+        # удаляем скрипты
         svg = re.sub(r'(<script[^>]*>.*?</script>)', '', svg)
         svg = re.sub(r'\sxmlns:svg="(.*?)"', r' xmlns:svg="\1" xmlns="\1" xmlns:at="https://genery.com/ru"', svg)
+
+        # дописываем стили в сам svg-блок
         svg = re.sub(r'(<svg[^>]*>)',
                      r'\1\n<defs>\n\t<style type="text/css">\n\t\t<![CDATA[\n' + style + r'\n\t\t]]>\n\t</style>\n</defs>\n',
                      svg)
@@ -188,10 +191,15 @@ def select_tree_img_files(folder):
             img = TreeImgSvg(f)
             if img.valid:
                 imgs.append(img)
+                continue
 
             html = TreeHtml(f)
             if html.valid:
                 imgs.append(html)
+                continue
+
+            print('{} is not valid svg or html'.format(f))
+
     return imgs
 
 
@@ -260,6 +268,7 @@ def copy_documents(gedcom, folder):
                 if file_path in files:
                     continue
                 if not os.path.exists(file_path):
+                    print('Document {} not found'.format(file_path))
                     continue
                 if '(private)' in file_path:
                     continue
@@ -311,10 +320,38 @@ from gedcom import GedcomReader, GedcomWriter, Gedcom
 import xml.etree.ElementTree
 from datetime import date
 
+def convert_svg_duplicate_person_links(svg):
+    '''
+    Находит "стрелочки" с одинаковыми сносками и матчит их друг с другом
+    <g id="g5978" transform="translate(63,112)">
+	    <text id="t7202" class="s4 po" link-id="1"  x="0" y="9">1</text>
+	</g>
+    '''
+    links = {}
+    link_pattern = r'<g id="(g\d+)"[^>]+>\s+<text [^>]+?class="s4 po"[^>]+>(\d+)'
+    link_matches = re.finditer(r'<g id="(g\d+)"[^>]+>\s+<text [^>]+?class="s4 po"[^>]+>(\d+)', svg)
+    for link_match in link_matches:
+        block_id = link_match.group(1) # g5978
+        link_id = link_match.group(2) # 1
+        blocks = links.get(link_id, [])
+        blocks.append(block_id)
+        links[link_id] = blocks
+
+    link_to = {}
+    for link_id, blocks in links.items():
+        if len(blocks) != 2:
+            print("link [{}] has {} referenses".format(link_id, len(blocks)))
+            continue
+        b1, b2 = blocks
+        svg = re.sub(r'(<g id="{}")'.format(b1), r'\1 class="duplicate-person-link po" link-to="{}"'.format(b2), svg)
+        svg = re.sub(r'(<g id="{}")'.format(b2), r'\1 class="duplicate-person-link po" link-to="{}"'.format(b1), svg)
+
+    return svg
 
 def convert_svg(svg_file):
     '''преобразует svg файл так, чтобы ссылки на картинки вели в static/tree/preview/xxx.jpg
-       у нужных блоков был бы прописан класс 'select-person' и атрибут 'person-uid'
+       у нужных блоков персон был бы прописан класс 'select-person' и атрибут 'person-uid'
+       у стрелочек-линкеров для дублирующихся персон был бы прописан класс
     '''
     files_dir_name = os.path.split(svg_file)[1] + '.files'
     svg = None
@@ -323,13 +360,17 @@ def convert_svg(svg_file):
     # здесь скорее не person-uid (_UID 9c4cf28d4313fcf6b98fb3d2dfc1002a) а person-id (@I600@ INDI)
     # 0 @I600@ INDI
     # 1 _UID 9c4cf28d4313fcf6b98fb3d2dfc1002a
-    svg = re.sub(r'\sat:id="(\d+)"', r' class="select-person" person-uid="\1"', svg)
+    svg = re.sub(r'\sat:id="(\d+)"', r' class="select-person po" person-uid="\1"', svg)
+
+    svg = convert_svg_duplicate_person_links(svg)
 
     svg = svg.replace(files_dir_name, '/static/tree/files/preview')
     print('replace {} on /static/tree/files/preview'.format(files_dir_name))
     svg = re.sub('(<image[^>]+?)xlink:href=', r'\1 href="/static/img/1x1_white.png" lazy-href=', svg)
     with codecs.open(svg_file, 'w+', 'utf-8') as f:
         f.write(svg)
+
+
 
 
 def generage_sitemap(site, trees, gedcom):

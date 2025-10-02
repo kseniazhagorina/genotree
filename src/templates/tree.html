@@ -26,8 +26,13 @@
 
 
 		<style>
+            .po {
+                cursor: pointer;
+            }
+
 			.person-snippet {
 				margin-bottom: 18px;
+
 			}
             .person-snippet .panel {
                 margin-bottom: 0px;
@@ -116,20 +121,19 @@
                 snippet.show();
 			}
 
-            // возвращает позицию блока персоны на изображении и его размер
-            function getPersonAreaPosition(person_uid) {
-                var person_area = $('#tree-container .select-person[person-uid='+person_uid+']');
+            // возвращает позицию блока
+            function getAreaPosition(area) {
                 var zero = $('#tree-img');
-                if (!person_area.length) {
+                if (!area.length) {
                     return null; // некоторые персоны могут не присутствовать в дереве
                 }
 
-                var left = person_area.position().left - zero.position().left;
-				var top = person_area.position().top - zero.position().top;
-                var width = person_area.width();
-                var height = person_area.height();
-                if (person_area[0].nodeName == 'g') {
-                    var box = person_area[0].getBBox();
+                var left = area.position().left - zero.position().left;
+				var top = area.position().top - zero.position().top;
+                var width = area.width();
+                var height = area.height();
+                if (area[0].nodeName == 'g') {
+                    var box = area[0].getBBox();
                     width = box.width;
                     height = box.height;
                 }
@@ -137,6 +141,18 @@
                 return {'left': left, 'top':top, 'width':width, 'height':height};
             }
 
+            // возвращает позицию блока персоны на изображении и его размер
+            function getPersonAreaPosition(person_uid) {
+                var person_area = $('#tree-container .select-person[person-uid='+person_uid+']');
+                return getAreaPosition(person_area);
+            }
+
+            // возвращает позицию блока ссылки на дубликат
+            function getDuplicatePersonLinkAreaPosition(link) {
+                var link_to = link.attr('link-to')
+                var link_area = $('#tree-container .duplicate-person-link[id='+link_to+']');
+                return getAreaPosition(link_area);
+            }
 
 
             // фокусируется на выбранной персоне в дереве и подсвечивает ее
@@ -187,6 +203,14 @@
                 viewPersonSnippet(person_uid);
 				hilightPersonArea(person_uid);
                 window.location.hash = person_uid;
+            }
+
+            function scrollToDuplicatePersonLink(link) {
+                p = getDuplicatePersonLinkAreaPosition(link);
+                if (!p) {
+                    return;
+                }
+                scrollTreeIfNeed(p.left, p.top, p.width, p.height);
             }
 
 		</script>
@@ -248,19 +272,27 @@
                 loadLazyContentSvg(tree_container);
             });
 
-            // Эмулируем клик на персону, если в якоре урла передан person_uid
-            // Это проскроллит экран до персоны, выделит ее и откроет сниппет с информацией
+
             $(document).ready(function(){
                 $(".select-person").click(function(e) {
                     e.preventDefault();
                     selectPerson($(this));
                 });
 
+                $(".duplicate-person-link").click(function(e) {
+                    e.preventDefault();
+                    scrollToDuplicatePersonLink($(this));
+                });
+
+                // Эмулируем клик на персону, если в якоре урла передан person_uid
+                // Это проскроллит экран до персоны, выделит ее и откроет сниппет с информацией
                 selected_uid = window.location.hash.substring(1);
                 if (selected_uid) {
                     $(".select-person[person-uid='"+selected_uid+"']").first().click();
                 }
             });
+
+
         </script>
 	</body>
 </html>
