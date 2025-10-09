@@ -30,6 +30,10 @@
         {% if author.contacts.instagram %}
         <li><i class="fa fa-fw fa-colored fa-instagram"></i> <a title="Instagram" href="https://www.instagram.com/{{ author.contacts.instagram }}">https://www.instagram.com/{{ author.contacts.instagram}}</a></li>
         {% endif %}
+
+        {% if author.contacts.email %}
+        <li><i class="fa fa-fw fa-colored fa-envelope"></i> <span>{{ author.contacts.email}}</span></li>
+        {% endif %}
     </ul>
 
 {% endmacro %}

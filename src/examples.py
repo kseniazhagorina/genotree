@@ -95,7 +95,8 @@ def generate_production_me_in_history_linux_config(config_dir):
                 "vk": "kzhagorina",
                 "telegram" : "KseniaZhagorina",
                 "whatsapp" : "aHR0cHM6Ly93YS5tZS83OTkyMDAwOTU5NA==",
-                "instagram" : null
+                "instagram" : null,
+                "email": null
             }
         },
 
@@ -132,6 +133,9 @@ def generate_production_tavatuy_linux_config(config_dir):
             "name": "Александр Зиновьев",
             "link": null,
             "contacts": {
+                "email": "Tavatuy1723@gmail.com",
+                "telegram" : "AlexZinoviev",
+                "whatsapp": "aHR0cHM6Ly93YS5tZS83OTIyMjAyMDAwMA=="
             }
         },
 

@@ -4,7 +4,6 @@
 import os.path
 import xml.etree.ElementTree
 import codecs
-import chardet
 import traceback
 import re
 import random, string
