@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Главная страница</title>
+    <!-- Bootstrap CSS -->
+
+    <script src="/static/js/jquery.min.js"></script>
+    <link rel="stylesheet" href="/static/css/bootstrap.min.css">
+    <script src="/static/js/bootstrap.min.js"></script>
+    <link rel="stylesheet" href="/static/css/font-awesome.min.css">
+
+    <link rel="icon" href="/static/img/favicon.png">
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .article-block {
+            margin-bottom: 30px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+        .article-block:hover {
+            transform: translateY(-5px);
+        }
+        .article-block img {
+            width: 100%;
+            height: auto;
+            border-radius: 3px;
+        }
+        .article-block h3 {
+            margin-top: 15px;
+            font-size: 18px;
+        }
+        .article-block p {
+            color: #666;
+            margin-bottom: 20px;
+        }
+        .carousel-inner img {
+            width: 100%;
+            height: auto;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Карусель -->
+    <div id="mainCarousel" class="carousel slide" data-ride="carousel">
+        <ol class="carousel-indicators">
+            <li data-target="#mainCarousel" data-slide-to="0" class="active"></li>
+            <li data-target="#mainCarousel" data-slide-to="1"></li>
+            <li data-target="#mainCarousel" data-slide-to="2"></li>
+        </ol>
+
+        <div class="carousel-inner">
+            <div class="item active">
+                <img src="https://placebeard.it/1200x400/aaa" alt="Слайд 1">
+                <div class="carousel-caption">
+                    <h3>Заголовок слайда 1</h3>
+                    <p>Описание слайда 1</p>
+                </div>
+            </div>
+            <div class="item">
+                <img src="https://placebeard.it/1200x400/bbb" alt="Слайд 2">
+                <div class="carousel-caption">
+                    <h3>Заголовок слайда 2</h3>
+                    <p>Описание слайда 2</p>
+                </div>
+            </div>
+            <div class="item">
+                <img src="https://placebeard.it/1200x400/ccc" alt="Слайд 3">
+                <div class="carousel-caption">
+                    <h3>Заголовок слайда 3</h3>
+                    <p>Описание слайда 3</p>
+                </div>
+            </div>
+        </div>
+
+        <a class="left carousel-control" href="#mainCarousel" role="button" data-slide="prev">
+            <span class="glyphicon glyphicon-chevron-left"></span>
+            <span class="sr-only">Предыдущий</span>
+        </a>
+        <a class="right carousel-control" href="#mainCarousel" role="button" data-slide="next">
+            <span class="glyphicon glyphicon-chevron-right"></span>
+            <span class="sr-only">Следующий</span>
+        </a>
+    </div>
+
+
+    <!-- Сетка статей -->
+    <div class="container">
+        <div class="row">
+            <div class="col-md-12 col-sm-6">
+
+
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-4 col-sm-6">
+                <a href="#" class="article-block">
+                    <img src="https://placebeard.it/400x300/aaa" alt="Статья 1">
+                    <h3>Заголовок статьи 1</h3>
+                    <p>Краткое описание первой статьи...</p>
+                </a>
+            </div>
+            <div class="col-md-4 col-sm-6">
+                <a href="#" class="article-block">
+                    <img src="https://placebeard.it/400x300/bbb" alt="Статья 2">
+                    <h3>Заголовок статьи 2</h3>
+                    <p>Описание второй статьи...</p>
+                </a>
+            </div>
+            <div class="col-md-4 col-sm-6">
+                <a href="#" class="article-block">
+                    <img src="https://placebeard.it/400x300/ccc" alt="Статья 3">
+                    <h3>Заголовок статьи 3</h3>
+                    <p>Третье описание статьи...</p>
+                </a>
+            </div>
+            <!-- Добавьте еще блоки по аналогии -->
+        </div>
+    </div>
+
+    <!-- Bootstrap JS и jQuery -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+</body>
+</html>
+
+<!DOCTYPE html>
+<html>
+    <head>
+
+
+    </head>
+    <body>
+        <div class="container">
+
+        </div>
+    </body>
+</html>

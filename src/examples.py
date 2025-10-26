@@ -6,6 +6,9 @@ import json
 import os.path
 from common_utils import convert_to_utf8
 
+# examples.create_package('/home/kzhagorina/family/tavatuy/site/v6')
+# examples.create_package('/home/kzhagorina/family/zhagoriny_tree/site/v6')
+
 def create_package(path):
     '''create package at local machine'''
     archive = upload.create_package(path, 'data')

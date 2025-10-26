@@ -13,7 +13,7 @@
             <span class="caret"></span>
         </a>
         <ul class="dropdown-menu">
-        {% for tree in context.data.trees.values() %}
+        {% for tree in context.data.trees_sorted_by_names %}
             <li><a href="/{{tree.uid}}">{{tree.name}}</a></li>
         {% endfor %}
         </ul>

@@ -501,6 +501,12 @@ class Data:
         self.static_path = static_path
         self.data_path = data_path
 
+    @property
+    def trees_sorted_by_names(self):
+        return list(sorted(self.trees.values(), key=lambda tree: tree.name))
+
+
+
     def is_valid(self):
         return self.load_error is None
 
