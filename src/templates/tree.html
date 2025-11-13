@@ -154,6 +154,12 @@
                 return getAreaPosition(link_area);
             }
 
+            function getRootPersonAreaPosition() {
+                var svg = document.getElementById('svg0');
+                var e = $('#tree-container #' + svg.dataset.root);
+                return getAreaPosition(e);
+            }
+
 
             // фокусируется на выбранной персоне в дереве и подсвечивает ее
 			function hilightPersonArea(person_uid) {
@@ -207,6 +213,14 @@
 
             function scrollToDuplicatePersonLink(link) {
                 p = getDuplicatePersonLinkAreaPosition(link);
+                if (!p) {
+                    return;
+                }
+                scrollTreeIfNeed(p.left, p.top, p.width, p.height);
+            }
+
+            function scrollToRoot() {
+                p = getRootPersonAreaPosition();
                 if (!p) {
                     return;
                 }
@@ -286,9 +300,12 @@
 
                 // Эмулируем клик на персону, если в якоре урла передан person_uid
                 // Это проскроллит экран до персоны, выделит ее и откроет сниппет с информацией
+                // Если в урле нет person_uid то скроллим экран к корню дерева
                 selected_uid = window.location.hash.substring(1);
                 if (selected_uid) {
                     $(".select-person[person-uid='"+selected_uid+"']").first().click();
+                } else {
+                    scrollToRoot();
                 }
             });
 

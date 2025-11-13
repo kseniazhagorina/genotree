@@ -539,7 +539,7 @@ class Data:
             if len(self.trees) == 0:
                 raise Exception('No files *_tree_img.png in {} directory'.format(self.static_path))
 
-            self.default_tree_name = Data.DEFAULT_TREE_NAME if Data.DEFAULT_TREE_NAME in self.trees else list(self.trees.keys())[0]
+            self.default_tree_name = Data.DEFAULT_TREE_NAME if Data.DEFAULT_TREE_NAME in self.trees else self.trees_sorted_by_names[0].uid
             self.load_error = None
         except:
             self.load_error = traceback.format_exc()

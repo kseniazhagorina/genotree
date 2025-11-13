@@ -126,7 +126,13 @@ class TreeHtml:
 
         svg = '<?xml version="1.0" encoding="UTF-8"?>\n' + svg
         # удаляем скрипты
-        svg = re.sub(r'(<script[^>]*>.*?</script>)', '', svg)
+        # svg = re.sub(script_pattern, '', svg, flags=re.DOTALL | re.IGNORECASE) почему то не работает
+        script_pattern = r'(<script[^>]*>.*?</script>)'
+        script_matches = re.finditer(script_pattern, svg, flags=re.DOTALL | re.IGNORECASE)
+        for script_match in script_matches:
+            svg = svg.replace(script_match.group(1), '')
+
+
         svg = re.sub(r'\sxmlns:svg="(.*?)"', r' xmlns:svg="\1" xmlns="\1" xmlns:at="https://genery.com/ru"', svg)
 
         # дописываем стили в сам svg-блок
