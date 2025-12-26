@@ -329,8 +329,15 @@ from datetime import date
 def convert_svg_duplicate_person_links(svg):
     '''
     Находит "стрелочки" с одинаковыми сносками и матчит их друг с другом
+    Добавляет элемент rect чтобы увеличить область клика <rect fill="transparent" x="-30" y="-10" width="60" height="30"></rect>
     <g id="g5978" transform="translate(63,112)">
-	    <text id="t7202" class="s4 po" link-id="1"  x="0" y="9">1</text>
+	    <text id="t7202" class="s4 po" x="0" y="9">1</text>
+	</g>
+
+
+    <g id="g5978" class="duplicate-person-link po" link-to="g7458" transform="translate(93,210)">
+		<rect fill="transparent" x="-30" y="-10" width="60" height="30"></rect>
+	    <text id="t7202" class="s4 po" x="0" y="9">1</text>
 	</g>
     '''
     links = {}
@@ -351,6 +358,10 @@ def convert_svg_duplicate_person_links(svg):
         b1, b2 = blocks
         svg = re.sub(r'(<g id="{}")'.format(b1), r'\1 class="duplicate-person-link po" link-to="{}"'.format(b2), svg)
         svg = re.sub(r'(<g id="{}")'.format(b2), r'\1 class="duplicate-person-link po" link-to="{}"'.format(b1), svg)
+
+    svg = re.sub(r'(<text [^>]+?class="s4 po"[^>]+>)',
+                 r'<rect fill="transparent" x="-30" y="-10" width="70" height="30"></rect>\n\1',
+                 svg)
 
     return svg
 
