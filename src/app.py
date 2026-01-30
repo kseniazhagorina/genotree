@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from app_utils import Data, first_or_default
-from content_generator import generate_content, copy_static
+from content_generator import generate_content, make_include_content_func, copy_static
 from gedcom import GedcomReader
 from privacy import Privacy, PrivacyMode
 from search import SearchEngine
@@ -25,6 +25,8 @@ app = Flask(
 
 app.debug = True
 app.secret_key = open('config/app.secret.txt').read().strip()
+
+app.jinja_env.globals["include_content"] = make_include_content_func(config)
 
 oauth.API = None
 def OAuth():
