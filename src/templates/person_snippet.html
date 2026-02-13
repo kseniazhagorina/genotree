@@ -100,22 +100,48 @@
    <ul class="list-unstyled">
         <li>{{ draw_related_person(person.father) }}</li>
         <li>{{ draw_related_person(person.mother) }}</li>
+        {% if person.parent_family and person.parent_family.children %}
+        <li>
+            <ul>
+            {% for child in person.parent_family.children %}
+            <li>{{ draw_related_person(child) }}</li>
+            {% endfor %}
+            </ul>
         </li>
-        {% for family in person.families %}
-            {% if family.spouse and family.spouse.person %}
-            <li>{{ draw_related_person(family.spouse) }}
-                {% if family.children %}
+        {% endif %}
+
+        {% for family in person.other_parent_families %}
+            {% if family.father %}
+            <li>{{ draw_related_person(family.father) }}<li>
+            {% endif %}
+            {% if family.mother %}
+            <li>{{ draw_related_person(family.mother) }}<li>
+            {% endif %}
+
+            {% if family.children %}
+            <li>
                 <ul>
                     {% for child in family.children %}
                     <li>{{ draw_related_person(child) }}</li>
                     {% endfor %}
                 </ul>
-                {% endif %}
             </li>
-            {% else %}
-                {% for child in family.children %}
-                <li>{{ draw_related_person(child) }}</li>
-                {% endfor %}
+            {% endif %}
+        {% endfor %}
+        <li><br/></li>
+
+        {% for family in person.own_families %}
+            {% if family.spouse and family.spouse.person %}
+            <li>{{ draw_related_person(family.spouse) }}<li>
+            {% endif %}
+            {% if family.children %}
+            <li>
+                <ul>
+                    {% for child in family.children %}
+                    <li>{{ draw_related_person(child) }}</li>
+                    {% endfor %}
+                </ul>
+            </li>
             {% endif %}
         {% endfor %}
     </ul>

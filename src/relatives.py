@@ -17,7 +17,7 @@ def fill_person(person, relation, relatives, deep):
     return True
 
 def fill_children(person, prefix, relatives, deep):
-    for family in person.families:
+    for family in person.own_families:
         for child in family.children:
             if child.person:
                relation = prefix + child.person.choose_by_sex('y', 'x')

@@ -98,7 +98,7 @@
                 Подробная информация о событиях скрыта настройками приватности.
                 {% endif %}
             {% else %}
-                {% set person_events = privacy.events(person.events) %}
+                {% set person_events = privacy.events(person.ext_events) %}
                 {% if person_events %}
                     {% for e in person_events %}
                         <div class="row">

@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 
 import re
-from datetime import date
+from datetime import date, timedelta 
 from calendar import monthrange
 
 class ReMaker:
     '''Класс для составления сложных регекспов'''
-   
+
     class NextName:
         def __init__(self, name):
             self.name = name
@@ -65,7 +65,7 @@ class GedDate:
     #форматы
     Gedcom = None
     Genery = None
-    
+
     MIN = date(1, 1, 1)
 
     @staticmethod
@@ -79,10 +79,10 @@ class GedDate:
             # одноэлементные даты, в которых границы описываются одной и той же датой
             self.date = date or date2
             self.date2 = self.date
-        else:    
+        else:
             self.date = date
-            self.date2 = date2 
-        
+            self.date2 = date2
+
         self.format = GedDate.Genery
 
     def __eq__(self, other):
@@ -90,7 +90,7 @@ class GedDate:
 
     def __repr__(self):
         return self.format.format(self)
-        
+
     def min_date(self):
         if self.date is not None:
             year, month, day = self.date
@@ -99,7 +99,7 @@ class GedDate:
                 day = day if day else 1
                 return date(year, month, day)
         return None
-    
+
     def max_date(self):
         if self.date2 is not None:
             year, month, day = self.date2
@@ -111,8 +111,8 @@ class GedDate:
 
     def to_date(self):
         return self.min_date() or self.max_date()
-            
-        
+
+
 
 class DateFormat(object):
     def __init__(self, date_regex, monthes, formats):

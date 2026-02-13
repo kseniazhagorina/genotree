@@ -8,6 +8,7 @@ import traceback
 import re
 import random, string
 import json
+from collections import defaultdict
 from copy import copy
 from datetime import date
 from dateutil.relativedelta import relativedelta
@@ -92,10 +93,165 @@ class PersonSnippet:
             self.info = info # доп.информация отображаемая в скобочках
 
     class Family:
-        def __init__(self, spouse=None, children=None, events=None):
-            self.spouse = spouse #RelPerson
-            self.children = children or [] #[RelPerson]
-            self.events = events or [] #[Event]
+        '''Семья по отношению к конкретному человеку (ребенку или супругу)'''
+        def __init__(self, family_id, me, husband=None, wife=None, children=None, events=None):
+            self.id = family_id
+            self.me = me #RelPerson
+
+            # не None если я - супруг/супруга
+            self.spouse = None #RelPerson
+
+            # не None если я - один из детей
+            self.mother = None #RelPerson
+            self.father = None #RelPerson
+            self.is_parent_family = False # это родительская семья для me
+
+            self.children = [] #[RelPerson]
+            self.events = [copy(event) for event in events] #[Event]
+
+            if me.role in ['Мать', 'Отец']:
+                person2 = first_or_default([husband, wife], lambda p: p is not None and p.uid != me.person.uid)
+                if person2:
+                    self.spouse = RelPerson(person2.choose_by_sex('Супруг', 'Супруга'), person2)
+                    for e in self.events:
+                        # тут только MARR и DIV
+                        e.members = e.members + [self.spouse]
+                        e.head = Event.get_event_head(e.type, me.person.sex)
+
+                for child in children:
+                    child_role = child.choose_by_sex('Сын', 'Дочь', 'Ребенок')
+                    self.children.append(RelPerson(child_role, child))
+
+            elif me.role in ['Сын', 'Дочь', 'Ребенок']:
+                if me.person.father.person == husband and me.person.mother.person == wife:
+                    if wife:
+                        self.mother = RelPerson('Мать', wife)
+                    if husband:
+                        self.father = RelPerson('Отец', husband)
+                    self.is_parent_family = True
+
+                    for e in self.events:
+                        e.head = Event.get_event_head(e.type, sex='U')
+                        for spouse in [husband, wife]:
+                            if spouse:
+                                e.members = list(e.members) + [RelPerson(spouse.choose_by_sex('Супруг(отец)', 'Супруга(мать)'), spouse)]
+
+                elif me.person.father.person == husband:
+                    # новый брак отца
+                    self.mother = RelPerson('Жена отца', wife)
+
+                    for e in self.events:
+                        e.head = Event.get_event_head(e.type, sex='U')
+                        for spouse in [husband, wife]:
+                            if spouse:
+                                e.members = list(e.members) + [RelPerson(spouse.choose_by_sex('Супруг(отец)', 'Супруга(мачеха)'), spouse)]
+
+                elif me.person.mother.person == wife:
+                    # новый брак матери
+                    self.father = RelPerson('Муж матери', husband)
+
+                    for e in self.events:
+                        e.head = Event.get_event_head(e.type, sex='U')
+                        for spouse in [husband, wife]:
+                            if spouse:
+                                e.members = list(e.members) + [RelPerson(spouse.choose_by_sex('Супруг(отчим)', 'Супруга(мать)'), spouse)]
+
+                for child in children:
+                    child_role = child.choose_by_sex('Брат', 'Сестра', 'Сиблинг') if child.uid != me.person.uid else 'Я'
+                    self.children.append(RelPerson(child_role, child))
+
+            self.first_date = Event.first_date_of(self.events + self.children_birth_events(filter_for_me=False))
+            self.last_date = Event.last_date_of(self.events + self.children_birth_events(filter_for_me=False))
+
+        def children_birth_events(self, filter_for_me=True):
+            '''рождения детей в браке'''
+
+            births = []
+            for child in self.children:
+                # событие рождение ребенка для родителей или братьев/сестер
+                # участник - ребенок
+                birth = copy(first_or_default(child.person.events, lambda e: e.type == 'BIRT', Event(type='BIRT', head=None)))
+                birth.type = 'FAML'
+                birth.head = child.person.choose_by_sex('Родился', 'Родилась') + ' ' + child.role.lower()
+                birth.members = [RelPerson(child.person.choose_by_sex('Родился', 'Родилась'), child.person)] + birth.members
+                births.append(birth)
+
+                if filter_for_me:
+                    # если точные даты рождения детей неизвестны ориентирумся на порядок
+                    # рождения братьев до меня - не являются событиями в моей жизни
+                    if child.person.uid == self.me.person.uid:
+                        births = []
+
+            return births
+
+
+        def marr_div_events(self):
+            events = []
+            me = self.me
+            for event in self.events:
+                event_date = (event.date.to_date() if event.date else
+                              self.first_date if event.type == 'MARR' else
+                              self.last_date if event.type == 'DIV' else
+                              None)
+                if event_date:
+                    if me.person.birth and me.person.birth.date and event_date <= me.person.birth.date.to_date():
+                        continue
+                    elif me.person.death and me.person.death.date and event_date > me.person.death.date.to_date():
+                        continue
+
+                if self.me.role in ['Сын', 'Дочь', 'Ребенок']:
+                    if event_date is None or me.person.birth is None or me.person.birth.date is None:
+                        if event.type == 'MARR' and self.is_parent_family:
+                            # скорее всего свадьба была до рождения детей в этой семье
+                            continue
+                events.append(event)
+            return events
+
+        def death_events(self):
+            '''смерти членов семьи'''
+            deaths = []
+            for member in self.children + [self.mother, self.father, self.spouse]:
+                if member is None or member.person is None:
+                    continue
+                death = copy(first_or_default(member.person.events, lambda e: e.type == 'DEAT' and e.date is not None, None))
+                if death is None:
+                    continue
+
+                death.type = 'FAML'
+                death.head = member.person.choose_by_sex('Умер', 'Умерла') + ' ' + member.role.lower()
+                death.members = [RelPerson(member.person.choose_by_sex('Умер', 'Умерла'), member.person)] + death.members
+
+                if (self.me.person.birth and
+                    self.me.person.birth.date and
+                    self.me.person.birth.date.to_date() > death.date.to_date()):
+                    # брат или сестра умерли раньше чем мы родились
+                    continue
+
+                if self.me.person.death and self.me.person.death.date:
+                    # ребенок или брат/сестра/родитель умер раньше чем мы
+                    if self.me.person.death.date.to_date() > death.date.to_date():
+                        deaths.append(death)
+                else:
+
+                    if member.role in ['Сын', 'Дочь', 'Ребенок']:
+                        # ребенок умер в молодом возрасте а смерть родителя неизвестна
+                        if member.person.age() is not None and member.person.age() < 40:
+                            deaths.append(death)
+                    else:
+                        # родитель умер в молодом возрасте ребенка а смерть ребенка неизвестна
+                        if self.me.person.age_at(death) is not None:
+                            deaths.append(death)
+
+            death = list(sorted(deaths, key=Event.order))
+            return death
+
+        def all_events(self):
+            events = []
+            events = Event.merge(events, self.marr_div_events())
+            events = Event.merge(events, self.children_birth_events())
+            events = Event.merge(events, self.death_events())
+            return events
+
 
     def __init__(self, person_uid,
                  name=None, sex=None, birth=None, death=None,
@@ -112,18 +268,31 @@ class PersonSnippet:
         self.comment = comment
         self.mother = mother #RelPerson
         self.father = father #RelPerson
-        self.families = families or [] #[Family]
+
+        self.parent_family = None #Family - семья непосредственных родителей ребенка
+        self.other_parent_families = [] #[Family] предыдущие и последующие браки родителей
+        self.own_families = families or [] #[Family] собственные браки и дети в них
+
         self.relatives = {}
         self.photo = photo
         self.photos = photos or [] #[Document]
         self.sources = sources or [] #[Document]
         self.events = [] #[Event]
+        self.ext_events = []
 
     def choose_by_sex(self, male, female, unknown=None):
         return choose_by_sex(self.sex, male, female, unknown)
 
     def is_alive(self):
         return self.death is None
+
+    def age_at(self, some_event):
+        birth_date = self.birth.date.to_date() if self.birth and self.birth.date else None
+        event_date = some_event.date.to_date() if some_event and some_event.date else None
+        if birth_date is not None and event_date is not None and event_date > birth_date:
+            return relativedelta(event_date, birth_date).years
+        else:
+            return None
 
     def age(self):
         birth_date = self.birth.date.to_date() if self.birth and self.birth.date else None
@@ -133,7 +302,6 @@ class PersonSnippet:
             return relativedelta(end_date, birth_date).years
         else:
             return None
-
 
 class Document:
     def __init__(self, path, sys_path, title=None, comment=None, content=None, is_photo=False, is_primary=False):
@@ -240,6 +408,28 @@ class Event:
         self.sources = sources or []
 
     @staticmethod
+    def get_event_head(event_type, sex):
+        if event_type == 'BIRT':
+            event_head = choose_by_sex(sex, 'Родился', 'Родилась')
+        elif event_type == 'DEAT':
+            event_head = choose_by_sex(sex, 'Умер', 'Умерла')
+        elif event_type == 'TRNS':
+            event_head = 'Переезд'
+        elif event_type == 'EDUC':
+            event_head = 'Обучение'
+        elif event_type == 'OCCU':
+            event_head = 'Устройство на работу'
+        elif event_type == '__2':
+            event_head = 'Служба в армии'
+        elif event_type == 'MARR':
+            event_head = choose_by_sex(sex, 'Женился', 'Вышла замуж', 'Свадьба')
+        elif event_type == 'DIV':
+            event_head = choose_by_sex(sex, 'Развелся', 'Развелась', 'Развод')
+        else:
+            event_head = None
+        return event_head
+
+    @staticmethod
     def from_gedcom_event(event, sex, gedcom, files):
         event_type = event.event_type
         event_date = GedDate.parse(event.get('DATE', ''))
@@ -251,30 +441,21 @@ class Event:
         event_sources = list(Source.from_gedcom_sources(gedcom.sources, event.sources)) + list(Source.from_documents(event_docs))
         event_head = None
 
-        if event_type == 'BIRT':
-            event_head = choose_by_sex(sex, 'Родился', 'Родилась')
-        elif event_type == 'DEAT':
-            event_head = choose_by_sex(sex, 'Умер', 'Умерла')
-        elif event_type == 'RESI':
+        if event_type == 'RESI':
             has_from_to = event_comment_row is not None and ('Откуда:' in event_comment_row or 'Куда:' in event_comment_row)
             if event_place is not None and not has_from_to:
                 # это не событие, это место жительства
                 event_type = 'RESIDENCE'
             else:
                 # это событие переезд
+                event_type = 'TRNS'
                 event_head = 'Переезд'
-        elif event_type == 'EDUC':
-            event_head = 'Обучение'
-        elif event_type == 'OCCU':
-            event_head = 'Устройство на работу'
-        elif event_type == '__2':
-            event_head = 'Служба в армии'
-        elif event_type == 'MARR':
-            event_head = choose_by_sex(sex, 'Женился', 'Вышла замуж')
-        elif event_type == 'DIV':
-            event_head = choose_by_sex(sex, 'Развелся', 'Развелась')
+
         elif event_type == 'EVEN':
             event_head = event.get('TYPE', None)
+        else:
+            event_head = Event.get_event_head(event_type, sex) or ''
+
 
         return Event(type=event_type, head=event_head, date=event_date, place=event_place,
                      comment = event_comment, photo = event_photo, photos = event_photos,
@@ -283,12 +464,12 @@ class Event:
     @staticmethod
     def order(event):
         '''метод для получения ключа для упорядочивания персональных событий'''
-        d = event.date.to_date() if event.date else None
+        event_date = event.date.to_date() if event.date else None
         if event.type == 'BIRT':
-            return (-1, d or GedDate.MIN) # рождение в начале
+            return (-1, event_date or GedDate.MIN) # рождение в начале
         if event.type == 'DEAT':
-            return (1 if d is None else 0, d or GedDate.MIN) # смерть без даты в конце
-        return (0, d or GedDate.MIN)
+            return (1 if event_date is None else 0, event_date or GedDate.MIN) # смерть без даты в конце
+        return (0, event_date or GedDate.MIN)
 
     @staticmethod
     def merge(personal_events, family_events):
@@ -308,9 +489,39 @@ class Event:
             events += family_events[f:]
         return events
 
+    @staticmethod
+    def first_date_of(events):
+        mind = None
+        for e in events:
+            d = e.date.to_date() if e.date else None
+            if d is not None and (mind is None or d < mind):
+                mind = d
+        return mind
+
+    @staticmethod
+    def last_date_of(events):
+        maxd = None
+        for e in events:
+            d = e.date.to_date() if e.date else None
+            if d is not None and (maxd is None or d > maxd):
+                maxd = d
+        return maxd
+
 def get_person_snippets(gedcom, files):
     snippets = dict()
     indi_to_uid = dict()
+
+    def get_children(family):
+        '''все дети в семье отсортированные по дате рождения'''
+        children = []
+        for child_indi in family.get('CHIL', []):
+            child = snippets.get(indi_to_uid.get(child_indi), None)
+            if child is None:
+                print ('cant find child with id ['+child_indi+']')
+                continue
+            children.append(child)
+        return list(sorted(children, key=lambda child: child.birth.date.to_date() or GedDate.MIN if child.birth and child.birth.date else GedDate.MIN))
+
     for person in gedcom.persons:
         person_uid = person['_UID']
         name = GedName.parse(person.get('NAME', ''))
@@ -348,41 +559,21 @@ def get_person_snippets(gedcom, files):
             if event.head is not None:
                 snippet.events.append(event)
 
-
         snippet.events = list(sorted(snippet.events, key=Event.order))
         snippets[person_uid] = snippet
+
+    all_children = defaultdict(list) # uid->[(child, family_id)]
 
     for family in gedcom.families:
         wife = snippets.get(indi_to_uid.get(family.get('WIFE')), None)
         husband = snippets.get(indi_to_uid.get(family.get('HUSB')), None)
-        children = []
-        children_birth = []
-
-        def get_children(family):
-            '''все дети в семье отсортированные по дате рождения'''
-            children = []
-            for child_indi in family.get('CHIL', []):
-                child = snippets.get(indi_to_uid.get(child_indi), None)
-                if child is None:
-                    print ('cant find child with id ['+child_indi+']')
-                    continue
-                children.append(child)
-            return list(sorted(children, key=lambda child: child.birth.date.to_date() or GedDate.MIN if child.birth and child.birth.date else GedDate.MIN))
 
         for child in get_children(family):
             child.mother.person = wife
             child.father.person = husband
-            child_role = child.choose_by_sex('Сын', 'Дочь', 'Ребенок')
-            children.append(RelPerson(child_role, child))
 
-            # событие для родителей - участник - ребенок
-            birth = copy(first_or_default(child.events, lambda e: e.type == 'BIRT', Event(type='BIRT', head=None)))
-            birth.type = 'CHIL'
-            birth.head = child.choose_by_sex('Родился', 'Родилась') + ' ' + (child.name.name or child.choose_by_sex('сын', 'дочь', 'ребенок'))
-            birth.members = birth.members + [RelPerson(child.choose_by_sex('Родился', 'Родилась'), child)]
-            children_birth.append(birth)
-
-            # событие для ребенка - участники - родители
+            # событие рождение для ребенка
+            # добавляем участников - родителей
             birth = first_or_default(child.events, lambda e: e.type == 'BIRT')
             if birth:
                 if child.father.person:
@@ -390,54 +581,61 @@ def get_person_snippets(gedcom, files):
                 if child.mother.person:
                     birth.members.append(child.mother)
 
+            for parent in [wife, husband]:
+                if parent:
+                    all_children[parent.uid].append((child, family.id))
+
+
+    for family in gedcom.families:
+
+        # PersonSnippet
+        wife = snippets.get(indi_to_uid.get(family.get('WIFE')), None)
+        husband = snippets.get(indi_to_uid.get(family.get('HUSB')), None)
+        children = []
+
+        for child in get_children(family):
+            children.append(child)
+
+        events = []
         marr = first_or_default(family.events, lambda e: e.event_type == 'MARR')
         div = first_or_default(family.events, lambda e: e.event_type == 'DIV')
+        if marr:
+            marr_event = Event.from_gedcom_event(marr, 'U', gedcom, files)
+            events.append(marr_event)
+        if div:
+            div_event = Event.from_gedcom_event(div, 'U', gedcom, files)
+            events.append(div_event)
 
-        def get_family_for(person1, person2=None):
-            spouse = RelPerson(person2.choose_by_sex('Супруг', 'Супруга'), person2) if person2 else None
-            parent = RelPerson(person2.choose_by_sex('Отец', 'Мать'), person2) if person2 else None
-            events = []
-            if marr:
-                marr_event = Event.from_gedcom_event(marr, person1.sex, gedcom, files)
-                if spouse:
-                    marr_event.members.append(spouse)
-                events.append(marr_event)
-            for birth in children_birth:
-                birth_event = copy(birth)
-                if parent:
-                    birth_event.members = birth_event.members + [parent]
-                events.append(birth_event)
-            if div:
-                div_event = Event.from_gedcom_event(div, person1.sex, gedcom, files)
-                if spouse:
-                    div_event.members.append(spouse)
-                events.append(div_event)
+        events = list(sorted(events, key=Event.order))
 
+        def get_family_for(me):
+            if wife is not None and me.uid == wife.uid:
+                return PersonSnippet.Family(family.id, me=RelPerson('Мать', me), wife=wife, husband=husband, children=children, events=events)
+            if husband is not None and me.uid == husband.uid:
+                return PersonSnippet.Family(family.id, me=RelPerson('Отец', me), wife=wife, husband=husband, children=children, events=events)
+            return PersonSnippet.Family(family.id, me=RelPerson('Ребенок', me), wife=wife, husband=husband, children=children, events=events)
 
-            return PersonSnippet.Family(spouse, children, events)
-
-        if wife:
-            wife.families.append(get_family_for(wife, husband))
-        if husband:
-            husband.families.append(get_family_for(husband, wife))
-
-
-
-    def first_date_of(events):
-        mind = None
-        for e in events:
-            d = e.date.to_date() if e.date else None
-            if d is not None and (mind is None or d < mind):
-                mind = d
-        return mind
+        for parent in [wife, husband]:
+            if parent:
+                parent.own_families.append(get_family_for(parent))
+                for child, child_parent_family_id in all_children[parent.uid]:
+                    if child_parent_family_id != family.id:
+                        # ребенок из другой семьи отца/матери
+                        # для него текущая семья будет другой семьей у отца/матери
+                        child.other_parent_families.append(get_family_for(child))
+                    elif child.parent_family is None:
+                        # ребенок из текущей семьи - это его родная семя
+                        child.parent_family = get_family_for(child)
 
 
     for person in snippets.values():
-        person.families = list(sorted(person.families, key=lambda fam: first_date_of(fam.events) or GedDate.MIN))
+        person.own_families = list(sorted(person.own_families, key=lambda fam: fam.first_date or GedDate.MIN))
         family_events = []
-        for family in person.families:
-            family_events += family.events
-        person.events = Event.merge(person.events, family_events)
+        for family in [person.parent_family] + person.own_families + person.other_parent_families:
+            if family:
+                family_events = Event.merge(family_events, family.all_events())
+
+        person.ext_events = Event.merge(person.events, family_events)
 
     for person in snippets.values():
         person.relatives = get_blood_relatives(person)
