@@ -17,7 +17,18 @@ me_in_history
 │   └── src
 │       ├── app.py
 │       ├── .... source code files
-│       └── wsgi.py
+|       ├── wsgi.py
+│       ├── content
+|       |   └── // sources for generated content
+│       ├── custom
+|       |   ├── tavatuy-history // custom images and content for site
+|       |   └── me-in-history
+│       ├── static
+|       |   └── ... // common css, fonts, images, js etc - will be copy to static
+│       ├── templates
+│       └── test
+│           └── test_some_functional.py
+│
 ├── static // static data for site generated when you update tree data
 │   ├── content
 │   │   └── sources.html
@@ -51,5 +62,13 @@ command to start app to local debug
 ```
 cd me-in-history
 python3 genotree/src/app.py
+```
+
+command to run tests (or one of them)
+```
+cd me-in-history/genotree/src
+python3 -m unittest discover -s test -p "test_*.py"
+
+python3 -m unittest test.test_some_functional
 ```
 

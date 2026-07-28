@@ -14,6 +14,7 @@ from datetime import date
 from dateutil.relativedelta import relativedelta
 from gedcom import GedcomReader
 from geddate import GedDate
+from gedname import GedName
 from genery_note import Note
 from relatives import get_blood_relatives
 from common_utils import *
@@ -42,40 +43,7 @@ def get_tree(gedcom_filename):
     return GedcomReader().read_gedcom(gedcom_filename)
 
 
-class GedName:
-    def __init__(self, name=None, patronymic=None, surname=None, surname_at_birth=None, unparsed=None):
-        self.name = name or ""
-        self.patronymic = patronymic or ""
-        self.surname = surname or ""
-        self.surname_at_birth = surname_at_birth or ""
-        self.unparsed = unparsed
 
-    def __repr__(self):
-        if self.unparsed is not None:
-            return self.unparsed
-        parts = []
-        if self.surname != "":
-            parts.append(self.surname)
-        if self.surname_at_birth != "" and self.surname_at_birth != self.surname:
-            parts.append('('+self.surname_at_birth+')')
-        parts.append(self.name if self.name != "" else '...')
-        if self.patronymic != "":
-            parts.append(self.patronymic)
-        return ' '.join(parts)
-
-    # Александр Сергеевич /Пушкин/
-    # Наталья Николаевна /Пушкина (Гончарова)/
-    gedcom_name_regex = re.compile('^(((?P<name>[\w\?-]*) )?(?P<patronymic>[\w\?-]*) )?/(?P<surname>[\w\?-]*)\s*(\((?P<surname_at_birth>[\w\?-]*)\))?/$')
-    @staticmethod
-    def parse(s):
-        m = GedName.gedcom_name_regex.match(s)
-        if m is not None:
-            name = m.groupdict().get('name')
-            patronymic = m.groupdict().get('patronymic')
-            surname = m.groupdict().get('surname')
-            surname_at_birth = m.groupdict().get('surname_at_birth')
-            return GedName(name=name, patronymic=patronymic, surname=surname, surname_at_birth=surname_at_birth)
-        return GedName(unparsed=s.strip())
 
 class RelPerson:
     '''человек+отношение'''
@@ -186,6 +154,7 @@ class PersonSnippet:
 
 
         def marr_div_events(self):
+            '''свадьба и развод'''
             events = []
             me = self.me
             for event in self.events:
