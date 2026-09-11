@@ -102,7 +102,7 @@ class PersonSnippet:
                         e.head = Event.get_event_head(e.type, sex='U')
                         for spouse in [husband, wife]:
                             if spouse:
-                                e.members = list(e.members) + [RelPerson(spouse.choose_by_sex('Супруг(отец)', 'Супруга(мать)'), spouse)]
+                                e.members = list(e.members) + [RelPerson(spouse.choose_by_sex('Супруг (отец)', 'Супруга (мать)'), spouse)]
 
                 elif me.person.father.person == husband:
                     # новый брак отца
@@ -112,7 +112,7 @@ class PersonSnippet:
                         e.head = Event.get_event_head(e.type, sex='U')
                         for spouse in [husband, wife]:
                             if spouse:
-                                e.members = list(e.members) + [RelPerson(spouse.choose_by_sex('Супруг(отец)', 'Супруга(мачеха)'), spouse)]
+                                e.members = list(e.members) + [RelPerson(spouse.choose_by_sex('Супруг (отец)', 'Супруга (мачеха)'), spouse)]
 
                 elif me.person.mother.person == wife:
                     # новый брак матери
@@ -122,7 +122,7 @@ class PersonSnippet:
                         e.head = Event.get_event_head(e.type, sex='U')
                         for spouse in [husband, wife]:
                             if spouse:
-                                e.members = list(e.members) + [RelPerson(spouse.choose_by_sex('Супруг(отчим)', 'Супруга(мать)'), spouse)]
+                                e.members = list(e.members) + [RelPerson(spouse.choose_by_sex('Супруг (отчим)', 'Супруга (мать)'), spouse)]
 
                 for child in children:
                     child_role = child.choose_by_sex('Брат', 'Сестра', 'Сиблинг') if child.uid != me.person.uid else 'Я'
@@ -142,13 +142,12 @@ class PersonSnippet:
                 birth.type = 'FAML'
                 birth.head = child.person.choose_by_sex('Родился', 'Родилась') + ' ' + child.role.lower()
                 birth.members = [RelPerson(child.person.choose_by_sex('Родился', 'Родилась'), child.person)] + birth.members
-                births.append(birth)
 
-                if filter_for_me:
-                    # если точные даты рождения детей неизвестны ориентирумся на порядок
-                    # рождения братьев до меня - не являются событиями в моей жизни
-                    if child.person.uid == self.me.person.uid:
-                        births = []
+
+                if filter_for_me and self.me.person.age_at(birth) is None:
+                    continue
+
+                births.append(birth)
 
             return births
 
@@ -257,11 +256,17 @@ class PersonSnippet:
 
     def age_at(self, some_event):
         birth_date = self.birth.date.to_date() if self.birth and self.birth.date else None
+        death_date = self.death.date.to_date() if self.death and self.death.date else None
         event_date = some_event.date.to_date() if some_event and some_event.date else None
+
         if birth_date is not None and event_date is not None and event_date > birth_date:
-            return relativedelta(event_date, birth_date).years
-        else:
-            return None
+            age_at_event = relativedelta(event_date, birth_date).years
+            if death_date is not None and event_date < death_date:
+                return age_at_event
+            elif death_date is None and age_at_event < 80:
+                return age_at_event
+
+        return None
 
     def age(self):
         birth_date = self.birth.date.to_date() if self.birth and self.birth.date else None
